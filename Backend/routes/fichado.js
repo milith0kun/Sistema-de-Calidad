@@ -69,6 +69,7 @@ router.post('/entrada', authenticateToken, requireGPSValidation(true), (req, res
                         res.json({
                             success: true,
                             message: 'Entrada registrada correctamente',
+                            hora: horaEntrada, // Campo que espera la aplicación móvil
                             data: {
                                 id: this.lastID,
                                 fecha,
@@ -172,6 +173,8 @@ router.post('/salida', authenticateToken, requireGPSValidation(false), (req, res
                         res.json({
                             success: true,
                             message: 'Salida registrada correctamente',
+                            hora: horaSalida, // Campo que espera la aplicación móvil
+                            horasTrabajadas: horasTrabajadas, // Campo adicional para horas trabajadas
                             data: {
                                 id: entry.id,
                                 fecha,
