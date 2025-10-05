@@ -1,11 +1,12 @@
 // Ruta temporal de health check para aplicativo móvil
 const express = require('express');
 const router = express.Router();
+const { getPeruTimestamp } = require('../utils/timeUtils');
 
 router.get('/', (req, res) => {
     res.json({
         status: 'OK',
-        timestamp: new Date().toISOString(),
+        timestamp: getPeruTimestamp(),
         uptime: process.uptime(),
         environment: process.env.NODE_ENV || 'production',
         server: {

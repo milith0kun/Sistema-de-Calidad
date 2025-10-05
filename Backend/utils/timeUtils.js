@@ -122,6 +122,49 @@ function isSameDay(date1, date2) {
     return peru1.toDateString() === peru2.toDateString();
 }
 
+/**
+ * Obtiene la fecha de inicio de la semana actual en zona horaria de Perú
+ * @returns {string} Fecha en formato YYYY-MM-DD
+ */
+function getStartOfWeek() {
+    const peruDate = getCurrentPeruDate();
+    const dayOfWeek = peruDate.getDay(); // 0 = domingo, 1 = lunes, etc.
+    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Lunes como inicio de semana
+    peruDate.setDate(peruDate.getDate() - daysToSubtract);
+    return formatDateForDB(peruDate);
+}
+
+/**
+ * Obtiene la fecha de inicio del mes actual en zona horaria de Perú
+ * @returns {string} Fecha en formato YYYY-MM-DD
+ */
+function getStartOfMonth() {
+    const peruDate = getCurrentPeruDate();
+    peruDate.setDate(1);
+    return formatDateForDB(peruDate);
+}
+
+/**
+ * Obtiene la fecha de inicio del año actual en zona horaria de Perú
+ * @returns {string} Fecha en formato YYYY-MM-DD
+ */
+function getStartOfYear() {
+    const peruDate = getCurrentPeruDate();
+    peruDate.setMonth(0, 1);
+    return formatDateForDB(peruDate);
+}
+
+/**
+ * Obtiene la fecha hace N días en zona horaria de Perú
+ * @param {number} days - Número de días hacia atrás
+ * @returns {string} Fecha en formato YYYY-MM-DD
+ */
+function getDateDaysAgo(days) {
+    const peruDate = getCurrentPeruDate();
+    peruDate.setDate(peruDate.getDate() - days);
+    return formatDateForDB(peruDate);
+}
+
 module.exports = {
     PERU_TIMEZONE,
     getCurrentPeruDate,
@@ -131,5 +174,9 @@ module.exports = {
     formatTimeFor12Hour,
     getPeruTimestamp,
     getTimeInfo,
-    isSameDay
+    isSameDay,
+    getStartOfWeek,
+    getStartOfMonth,
+    getStartOfYear,
+    getDateDaysAgo
 };

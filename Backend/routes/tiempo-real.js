@@ -2,7 +2,7 @@
 // Proporciona información de tiempo actualizada para el frontend
 
 const express = require('express');
-const { getTimeInfo } = require('../utils/timeUtils');
+const { getTimeInfo, getCurrentPeruDate, formatDateForDB, formatTimeForDB, formatDateForDisplay, formatTimeFor12Hour, getPeruTimestamp } = require('../utils/timeUtils');
 const router = express.Router();
 
 // GET /api/tiempo-real/ahora - Obtener fecha y hora actual del servidor
@@ -29,21 +29,21 @@ router.get('/ahora', (req, res) => {
 router.get('/formato', (req, res) => {
     try {
         const { formato = 'completo' } = req.query;
-        const ahora = new Date();
+        const ahora = getCurrentPeruDate();
         
         let resultado;
         
         switch (formato.toLowerCase()) {
             case 'fecha':
-                resultado = ahora.toISOString().split('T')[0];
+                resultado = formatDateForDB(ahora);
                 break;
                 
             case 'hora':
-                resultado = ahora.toTimeString().split(' ')[0];
+                resultado = formatTimeForDB(ahora);
                 break;
                 
             case 'timestamp':
-                resultado = ahora.toISOString();
+                resultado = getPeruTimestamp(ahora);
                 break;
                 
             case 'unix':
@@ -52,38 +52,28 @@ router.get('/formato', (req, res) => {
                 
             case 'español':
                 resultado = {
-                    fecha: ahora.toLocaleDateString('es-ES'),
-                    hora: ahora.toLocaleTimeString('es-ES'),
-                    completo: ahora.toLocaleString('es-ES')
+                    fecha: formatDateForDisplay(ahora),
+                    hora: formatTimeFor12Hour(ahora),
+                    completo: `${formatDateForDisplay(ahora)} ${formatTimeFor12Hour(ahora)}`
                 };
                 break;
                 
             case 'dashboard':
                 resultado = {
-                    fecha_actual: ahora.toISOString().split('T')[0],
-                    hora_actual: ahora.toTimeString().split(' ')[0],
-                    fecha_completa: ahora.toLocaleDateString('es-ES', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                    }),
-                    dia_semana: ahora.toLocaleDateString('es-ES', { weekday: 'long' }),
-                    timestamp: ahora.toISOString()
+                    fecha_actual: formatDateForDB(ahora),
+                    hora_actual: formatTimeForDB(ahora),
+                    fecha_completa: formatDateForDisplay(ahora),
+                    dia_semana: ahora.toLocaleDateString('es-ES', { weekday: 'long', timeZone: 'America/Lima' }),
+                    timestamp: getPeruTimestamp(ahora)
                 };
                 break;
                 
             default: // 'completo'
                 resultado = {
-                    timestamp: ahora.toISOString(),
-                    fecha: ahora.toISOString().split('T')[0],
-                    hora: ahora.toTimeString().split(' ')[0],
-                    fecha_completa: ahora.toLocaleDateString('es-ES', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                    })
+                    timestamp: getPeruTimestamp(ahora),
+                    fecha: formatDateForDB(ahora),
+                    hora: formatTimeForDB(ahora),
+                    fecha_completa: formatDateForDisplay(ahora)
                 };
         }
 
@@ -91,7 +81,7 @@ router.get('/formato', (req, res) => {
             success: true,
             formato: formato,
             data: resultado,
-            server_time: ahora.toISOString()
+            server_time: getPeruTimestamp(ahora)
         });
 
     } catch (error) {
@@ -106,9 +96,9 @@ router.get('/formato', (req, res) => {
 // GET /api/tiempo-real/zona-trabajo - Información de tiempo para zona de trabajo
 router.get('/zona-trabajo', (req, res) => {
     try {
-        const ahora = new Date();
+        const ahora = getCurrentPeruDate();
         
-        // Determinar turno de trabajo
+        // Determinar turno de trabajo usando zona horaria de Perú
         const hora = ahora.getHours();
         let turno;
         
@@ -122,28 +112,24 @@ router.get('/zona-trabajo', (req, res) => {
         
         // Información específica para zona de trabajo
         const zonaTrabajoInfo = {
-            timestamp: ahora.toISOString(),
-            fecha_trabajo: ahora.toISOString().split('T')[0],
-            hora_actual: ahora.toTimeString().split(' ')[0],
+            timestamp: getPeruTimestamp(ahora),
+            fecha_trabajo: formatDateForDB(ahora),
+            hora_actual: formatTimeForDB(ahora),
             
             turno_actual: turno,
             es_dia_laboral: ahora.getDay() >= 1 && ahora.getDay() <= 5, // Lunes a Viernes
             
-            fecha_legible: ahora.toLocaleDateString('es-ES', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-            }),
+            fecha_legible: formatDateForDisplay(ahora),
             
             hora_legible: ahora.toLocaleTimeString('es-ES', {
                 hour: '2-digit',
-                minute: '2-digit'
+                minute: '2-digit',
+                timeZone: 'America/Lima'
             }),
             
             // Información para fichado
             puede_fichar: true, // Siempre se puede fichar
-            mensaje_turno: `Turno de ${turno} - ${ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`
+            mensaje_turno: `Turno de ${turno} - ${ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Lima' })}`
         };
 
         res.json({

@@ -34,6 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.ui.viewmodel.FichadoViewModel
 import com.example.sistemadecalidad.utils.LocationManager
+import com.example.sistemadecalidad.utils.TimeUtils
 import com.google.gson.Gson
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -204,8 +205,7 @@ fun MarcacionesScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 
                 Text(
-                    text = SimpleDateFormat("EEEE, dd 'de' MMMM", Locale("es", "ES"))
-                        .format(Date()),
+                    text = TimeUtils.formatDateForDisplay(Date()),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -434,16 +434,32 @@ fun MarcacionesScreen(
                 
                 estadoFichado?.horaEntrada?.let { entrada ->
                     Spacer(modifier = Modifier.height(8.dp))
+                    // Formatear la hora usando TimeUtils para consistencia
+                    val horaFormateada = try {
+                        val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+                        val date = sdf.parse(entrada)
+                        if (date != null) TimeUtils.formatTimeForDisplay(date) else entrada
+                    } catch (e: Exception) {
+                        entrada // Fallback al valor original si hay error
+                    }
                     Text(
-                        text = "Entrada: $entrada",
+                        text = "Entrada: $horaFormateada",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 
                 estadoFichado?.horaSalida?.let { salida ->
+                    // Formatear la hora usando TimeUtils para consistencia
+                    val horaFormateada = try {
+                        val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+                        val date = sdf.parse(salida)
+                        if (date != null) TimeUtils.formatTimeForDisplay(date) else salida
+                    } catch (e: Exception) {
+                        salida // Fallback al valor original si hay error
+                    }
                     Text(
-                        text = "Salida: $salida",
+                        text = "Salida: $horaFormateada",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

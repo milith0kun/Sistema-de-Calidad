@@ -317,7 +317,7 @@ router.get('/historial', authenticateToken, (req, res) => {
 router.get('/estado-hoy', authenticateToken, (req, res) => {
     try {
         const usuarioId = req.user.id;
-        const fecha = new Date().toISOString().split('T')[0];
+        const fecha = formatDateForDB(); // Usar zona horaria de Perú
 
         db.get(
             `SELECT 

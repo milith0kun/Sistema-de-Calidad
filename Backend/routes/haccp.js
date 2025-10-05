@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../utils/database');
 const { authenticateToken } = require('../middleware/auth');
+const { getCurrentPeruDate, formatDateForDB, formatTimeForDB } = require('../utils/timeUtils');
 
 // =====================================================
 // 1. RECEPCIÓN DE MERCADERÍA
@@ -337,14 +338,13 @@ router.post('/control-coccion', authenticateToken, (req, res) => {
         
         console.log('Responsable:', responsable.nombre, responsable.apellido);
         
-        // Generar fecha/hora automáticamente (timezone Peru: UTC-5)
-        const now = new Date();
-        const peruDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Lima' }));
+        // Generar fecha/hora automáticamente usando timeUtils (timezone Peru: UTC-5)
+        const peruDate = getCurrentPeruDate();
         const anio = peruDate.getFullYear();
         const mes = peruDate.getMonth() + 1;
         const dia = peruDate.getDate();
-        const fecha = `${anio}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-        const hora = peruDate.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const fecha = formatDateForDB();
+        const hora = formatTimeForDB();
 
         console.log('Fecha generada:', fecha, 'Hora:', hora);
         
@@ -484,16 +484,15 @@ router.post('/lavado-frutas', authenticateToken, (req, res) => {
 
         const usuario = req.usuario;
         
-        // Generar DÍA y HORA automáticamente (timezone Peru: UTC-5)
-        const now = new Date();
-        const peruDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Lima' }));
+        // Generar DÍA y HORA automáticamente usando timeUtils (timezone Peru: UTC-5)
+        const peruDate = getCurrentPeruDate();
         
         // Usar MES y AÑO del frontend (input del usuario)
         const mes = mesInput || (peruDate.getMonth() + 1); // Si no envían, usar actual
         const anio = anioInput || peruDate.getFullYear(); // Si no envían, usar actual
         const dia = peruDate.getDate();
-        const fecha = `${anio}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-        const hora = peruDate.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const fecha = formatDateForDB();
+        const hora = formatTimeForDB();
 
         console.log('[LAVADO FRUTAS] Fecha generada:', { mes, anio, dia, fecha, hora });
         console.log('[LAVADO FRUTAS] Supervisor:', `${usuario.nombre} ${usuario.apellido} - ${usuario.cargo}`);
@@ -675,13 +674,12 @@ router.post('/lavado-manos', authenticateToken, (req, res) => {
             console.log('=== PROCESANDO REGISTRO ===');
             console.log('Empleado:', empleado.nombre, empleado.apellido);
         
-        // Generar fecha/hora automáticamente (timezone Peru: UTC-5)
-        const now = new Date();
-        const peruDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Lima' }));
+        // Generar fecha/hora automáticamente usando timeUtils (timezone Peru: UTC-5)
+        const peruDate = getCurrentPeruDate();
         const anio = peruDate.getFullYear();
         const mes = String(peruDate.getMonth() + 1).padStart(2, '0');
-        const fecha = `${anio}-${mes}-${String(peruDate.getDate()).padStart(2, '0')}`;
-        const hora = peruDate.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const fecha = formatDateForDB();
+        const hora = formatTimeForDB();
 
         // Determinar turno automáticamente según hora si no se proporciona
         let turnoFinal = turno;
@@ -881,13 +879,12 @@ router.post('/temperatura-camaras', authenticateToken, (req, res) => {
 
         const usuario = req.usuario;
         
-        // Generar fecha automáticamente
-        const now = new Date();
-        const peruDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Lima' }));
+        // Generar fecha automáticamente usando timeUtils
+        const peruDate = getCurrentPeruDate();
         const anio = peruDate.getFullYear();
         const mes = String(peruDate.getMonth() + 1).padStart(2, '0');
         const dia = String(peruDate.getDate()).padStart(2, '0');
-        const fecha = `${anio}-${mes}-${dia}`;
+        const fecha = formatDateForDB();
 
         // Verificar si ya existe registro para esta cámara hoy
         db.get(

@@ -1,7 +1,7 @@
 const express = require('express');
 const { db } = require('../utils/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { formatDateForDB, formatTimeForDB, formatDateForDisplay } = require('../utils/timeUtils');
+const { formatDateForDB, formatTimeForDB, formatDateForDisplay, getStartOfWeek, getStartOfMonth, getStartOfYear, getDateDaysAgo, getCurrentPeruDate } = require('../utils/timeUtils');
 
 const router = express.Router();
 
@@ -142,25 +142,19 @@ router.get('/resumen', authenticateToken, (req, res) => {
         const { periodo = 'mes' } = req.query; // mes, semana, año
 
         let fechaInicio;
-        const fechaFin = new Date().toISOString().split('T')[0];
+        const fechaFin = formatDateForDB();
 
-        // Calcular fecha de inicio según el período
+        // Calcular fecha de inicio según el período usando zona horaria de Perú
         switch (periodo) {
             case 'semana':
-                const inicioSemana = new Date();
-                inicioSemana.setDate(inicioSemana.getDate() - 7);
-                fechaInicio = inicioSemana.toISOString().split('T')[0];
+                fechaInicio = getDateDaysAgo(7);
                 break;
             case 'año':
-                const inicioAño = new Date();
-                inicioAño.setFullYear(inicioAño.getFullYear(), 0, 1);
-                fechaInicio = inicioAño.toISOString().split('T')[0];
+                fechaInicio = getStartOfYear();
                 break;
             case 'mes':
             default:
-                const inicioMes = new Date();
-                inicioMes.setDate(1);
-                fechaInicio = inicioMes.toISOString().split('T')[0];
+                fechaInicio = getStartOfMonth();
                 break;
         }
 
@@ -258,7 +252,7 @@ router.get('/resumen', authenticateToken, (req, res) => {
 // GET /api/dashboard/admin - Dashboard para administradores
 router.get('/admin', authenticateToken, requireAdmin, (req, res) => {
     try {
-        const fecha = new Date().toISOString().split('T')[0];
+        const fecha = formatDateForDB();
 
         // Estadísticas generales de hoy
         const statsHoyQuery = `
@@ -340,9 +334,10 @@ router.get('/admin', authenticateToken, requireAdmin, (req, res) => {
                 db.get(controlesHoyQuery, [fecha, fecha, fecha, fecha, fecha, fecha], (err, controlesHoy) => {
                     const totalControlesHoy = controlesHoy ? controlesHoy.total : 0;
 
-                    // Obtener no conformidades del mes actual
-                    const mesActual = new Date().getMonth() + 1;
-                    const anioActual = new Date().getFullYear();
+                    // Obtener no conformidades del mes actual usando zona horaria de Perú
+                    const fechaActual = getCurrentPeruDate();
+                    const mesActual = fechaActual.getMonth() + 1;
+                    const anioActual = fechaActual.getFullYear();
                     
                     const noConformidadesQuery = `
                         SELECT COUNT(*) as total FROM recepcion_mercaderia 
@@ -353,10 +348,8 @@ router.get('/admin', authenticateToken, requireAdmin, (req, res) => {
                     db.get(noConformidadesQuery, [mesActual.toString().padStart(2, '0'), anioActual.toString()], (err, noConformidades) => {
                         const totalNoConformidades = noConformidades ? noConformidades.total : 0;
 
-                        // Obtener productos rechazados esta semana
-                        const inicioSemana = new Date();
-                        inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay());
-                        const fechaInicioSemana = inicioSemana.toISOString().split('T')[0];
+                        // Obtener productos rechazados esta semana usando zona horaria de Perú
+                        const fechaInicioSemana = getStartOfWeek();
 
                         const productosRechazadosQuery = `
                             SELECT 

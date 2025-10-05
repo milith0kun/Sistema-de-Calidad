@@ -6,6 +6,7 @@ const axios = require('axios');
 const os = require('os');
 const { initializeDatabase } = require('./utils/database');
 const { config, displayConfig } = require('./config-app-universal');
+const { getPeruTimestamp } = require('./utils/timeUtils');
 
 // Cargar variables de entorno
 dotenv.config();
@@ -83,7 +84,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Middleware especial para bypass completo y compatibilidad total
 app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    console.log(`${getPeruTimestamp()} - ${req.method} ${req.path}`);
     
     // Headers para máxima compatibilidad
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -122,7 +123,7 @@ app.use('/api/configuracion', require('./routes/configuracion'));
 app.get('/health', (req, res) => {
     res.json({
         status: 'OK',
-        timestamp: new Date().toISOString(),
+        timestamp: getPeruTimestamp(),
         uptime: process.uptime(),
         environment: process.env.NODE_ENV || 'development',
         server: {
@@ -143,7 +144,7 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
     res.json({
         message: '🍷 Servidor HACCP Wino funcionando correctamente',
-        timestamp: new Date().toISOString(),
+        timestamp: getPeruTimestamp(),
         server: {
             host: HOST,
             port: PORT,

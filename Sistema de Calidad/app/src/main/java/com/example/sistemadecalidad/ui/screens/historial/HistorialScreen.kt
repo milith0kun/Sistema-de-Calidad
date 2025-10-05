@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.sistemadecalidad.ui.viewmodel.FichadoViewModel
 import com.example.sistemadecalidad.ui.viewmodel.AuthViewModel
+import com.example.sistemadecalidad.utils.TimeUtils
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -382,9 +383,16 @@ fun RegistroMarcacionItem(registro: RegistroMarcacion) {
                 
                 Spacer(modifier = Modifier.height(4.dp))
                 
-                // Hora: 07:57:57 (formato completo)
+                // Hora: 07:57:57 (formato completo) - Formatear usando TimeUtils
+                val horaFormateada = try {
+                    val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+                    val date = sdf.parse(registro.hora)
+                    if (date != null) TimeUtils.formatTimeForDisplay(date) else registro.hora
+                } catch (e: Exception) {
+                    registro.hora // Fallback al valor original si hay error
+                }
                 Text(
-                    text = registro.hora,
+                    text = horaFormateada,
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

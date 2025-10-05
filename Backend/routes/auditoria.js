@@ -1,6 +1,7 @@
 const express = require('express');
 const { db } = require('../utils/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { formatDateForDB, formatTimeForDB } = require('../utils/timeUtils');
 
 const router = express.Router();
 
@@ -95,8 +96,8 @@ router.post('/log', authenticateToken, async (req, res) => {
         const usuario_id = req.user.id;
         const ip_address = req.ip || req.connection.remoteAddress;
 
-        const fecha = new Date().toISOString().split('T')[0];
-        const hora = new Date().toTimeString().split(' ')[0];
+        const fecha = formatDateForDB();
+        const hora = formatTimeForDB();
 
         await db.run(`
             INSERT INTO logs_auditoria 
