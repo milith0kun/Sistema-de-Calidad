@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es } from 'date-fns/locale/index.js';
 
 // =====================================================
 // UTILIDADES COMUNES PARA FORMATEO
@@ -547,7 +547,7 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
   // ============= FILA 3: ENCABEZADOS DE COLUMNAS =============
   const headers = [
     'Día', 'Hora', 'Producto a\ncocinar', 'Proceso de\ncocción',
-    'Temperatura\ncocción (°C)', 'Tiempo\ncocción (min)',
+    'Temperatura de\ncocción (°C)', 'Tiempo de cocción\n(minutos)',
     'Acción correctiva', 'Responsable'
   ];
 
@@ -676,27 +676,13 @@ export const generarFormularioLavadoFrutas = async (datos = null, mes = null, an
     worksheet.getColumn(index + 1).width = width / 7; // Conversión aproximada a unidades de Excel
   });
 
-  // ============= FILA 1: REGISTRO HACCP =============
-  worksheet.mergeCells('A1:J1');
-  const registroCell = worksheet.getCell('A1');
-  registroCell.value = 'REGISTRO HACCP';
-  registroCell.font = { name: 'Arial', size: 14, bold: true };
-  registroCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  registroCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
-  registroCell.border = {
-    top: { style: 'thin', color: { argb: 'FF000000' } },
-    left: { style: 'thin', color: { argb: 'FF000000' } },
-    bottom: { style: 'thin', color: { argb: 'FF000000' } },
-    right: { style: 'thin', color: { argb: 'FF000000' } }
-  };
-
-  // ============= FILA 2: TÍTULO ESPECÍFICO =============
-  worksheet.mergeCells('A2:J2');
-  const tituloCell = worksheet.getCell('A2');
-  tituloCell.value = 'Control de Lavado y Desinfección de Frutas y Verduras';
-  tituloCell.font = { name: 'Arial', size: 12, bold: true };
+  // ============= FILA 1: TÍTULO PRINCIPAL =============
+  worksheet.mergeCells('A1:I1');
+  const tituloCell = worksheet.getCell('A1');
+  tituloCell.value = 'CONTROL DE LAVADO Y DESINFECCIÓN DE FRUTAS Y VERDURAS';
+  tituloCell.font = { name: 'Arial', size: 14, bold: true };
   tituloCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  tituloCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6E6' } };
+  tituloCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
   tituloCell.border = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
     left: { style: 'thin', color: { argb: 'FF000000' } },
@@ -704,42 +690,64 @@ export const generarFormularioLavadoFrutas = async (datos = null, mes = null, an
     right: { style: 'thin', color: { argb: 'FF000000' } }
   };
 
-  // ============= FILA 3: ÁREA O ESTACIÓN =============
-  worksheet.mergeCells('A3:J3');
-  const areaCell = worksheet.getCell('A3');
-  areaCell.value = 'Área o Estación: Preparación de Alimentos';
-  areaCell.font = { name: 'Arial', size: 10, bold: true };
-  areaCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  areaCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
-  areaCell.border = {
+  // ============= CELDA J1: VERSIÓN =============
+  const versionCell = worksheet.getCell('J1');
+  versionCell.value = 'Versión: 01';
+  versionCell.font = { name: 'Arial', size: 9 };
+  versionCell.alignment = { horizontal: 'right', vertical: 'middle' };
+  versionCell.border = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
     left: { style: 'thin', color: { argb: 'FF000000' } },
     bottom: { style: 'thin', color: { argb: 'FF000000' } },
     right: { style: 'thin', color: { argb: 'FF000000' } }
   };
 
-  // ============= FILA 4: MES =============
-  worksheet.mergeCells('A4:E4');
-  const mesCell = worksheet.getCell('A4');
-  mesCell.value = `Mes: ${mes || ''}`;
-  mesCell.font = { name: 'Arial', size: 10, bold: true };
-  mesCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  mesCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
-  mesCell.border = {
+  // ============= FILA 2: MES, PRODUCTO QUÍMICO, AÑO =============
+  // MES
+  const mesLabelCell = worksheet.getCell('A2');
+  mesLabelCell.value = 'Mes:';
+  mesLabelCell.font = { name: 'Arial', size: 10, bold: true };
+  mesLabelCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  mesLabelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
+  mesLabelCell.border = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
     left: { style: 'thin', color: { argb: 'FF000000' } },
     bottom: { style: 'thin', color: { argb: 'FF000000' } },
     right: { style: 'thin', color: { argb: 'FF000000' } }
   };
 
-  // ============= FILA 5: PRODUCTO QUÍMICO =============
-  worksheet.mergeCells('A5:E5');
-  const productoCell = worksheet.getCell('A5');
-  productoCell.value = `Producto químico: ${productoQuimico || ''}`;
-  productoCell.font = { name: 'Arial', size: 10, bold: true };
-  productoCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  productoCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
-  productoCell.border = {
+  worksheet.mergeCells('B2:C2');
+  const mesValueCell = worksheet.getCell('B2');
+  mesValueCell.value = mes || '';
+  mesValueCell.font = { name: 'Arial', size: 9 };
+  mesValueCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+  mesValueCell.border = {
+    top: { style: 'thin', color: { argb: 'FF000000' } },
+    left: { style: 'thin', color: { argb: 'FF000000' } },
+    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+    right: { style: 'thin', color: { argb: 'FF000000' } }
+  };
+
+  // PRODUCTO QUÍMICO
+  worksheet.mergeCells('D2:E2');
+  const productoLabelCell = worksheet.getCell('D2');
+  productoLabelCell.value = 'Producto químico:';
+  productoLabelCell.font = { name: 'Arial', size: 10, bold: true };
+  productoLabelCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  productoLabelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
+  productoLabelCell.border = {
+    top: { style: 'thin', color: { argb: 'FF000000' } },
+    left: { style: 'thin', color: { argb: 'FF000000' } },
+    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+    right: { style: 'thin', color: { argb: 'FF000000' } }
+  };
+
+  worksheet.mergeCells('F2:G2');
+  const productoValueCell = worksheet.getCell('F2');
+  productoValueCell.value = productoQuimico || '';
+  productoValueCell.font = { name: 'Arial', size: 9 };
+  productoValueCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+  productoValueCell.border = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
     left: { style: 'thin', color: { argb: 'FF000000' } },
     bottom: { style: 'thin', color: { argb: 'FF000000' } },
@@ -747,8 +755,7 @@ export const generarFormularioLavadoFrutas = async (datos = null, mes = null, an
   };
 
   // AÑO
-  worksheet.mergeCells('F4:J4');
-  const anioCell = worksheet.getCell('F4');
+  const anioCell = worksheet.getCell('H2');
   anioCell.value = `Año: ${anio || ''}`;
   anioCell.font = { name: 'Arial', size: 10, bold: true };
   anioCell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -760,9 +767,8 @@ export const generarFormularioLavadoFrutas = async (datos = null, mes = null, an
     right: { style: 'thin', color: { argb: 'FF000000' } }
   };
 
-  // CONCENTRACIÓN
-  worksheet.mergeCells('F5:J5');
-  const concentracionCell = worksheet.getCell('F5');
+  worksheet.mergeCells('I2:J2');
+  const concentracionCell = worksheet.getCell('I2');
   concentracionCell.value = `Concentración: ${concentracion || ''}`;
   concentracionCell.font = { name: 'Arial', size: 10, bold: true };
   concentracionCell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -780,14 +786,14 @@ export const generarFormularioLavadoFrutas = async (datos = null, mes = null, an
     'Lavado con\nAgua potable\n(C/NC)',
     'Desinfección\nproducto químico\n(C/NC)',
     'Concentración\nproducto químico\n(C/NC)',
-    'Tiempo\ndesinfección',
+    'Tiempo de\ndesinfección\n(minutos)',
     'Acción\nCorrectiva',
     'Responsable',
     'Supervisor'
   ];
 
   headers.forEach((header, index) => {
-    const cell = worksheet.getCell(6, index + 1);
+    const cell = worksheet.getCell(3, index + 1);
     cell.value = header;
     cell.font = { name: 'Arial', size: 10, bold: true };
     cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
@@ -801,17 +807,17 @@ export const generarFormularioLavadoFrutas = async (datos = null, mes = null, an
   });
 
   // Altura especial para la fila de encabezados
-  worksheet.getRow(6).height = 50;
+  worksheet.getRow(3).height = 50;
 
   // ============= FILAS DE DATOS =============
-  // 31 filas de datos (filas 7-37) para A4 horizontal
-  for (let row = 7; row <= 37; row++) {
+  // 31 filas de datos (filas 4-34) para A4 horizontal
+  for (let row = 4; row <= 34; row++) {
     for (let col = 1; col <= 10; col++) {
       const cell = worksheet.getCell(row, col);
       
       // Si hay datos, llenar la celda
-      if (datos && datos[row - 7]) {
-        const fila = datos[row - 7];
+      if (datos && datos[row - 4]) {
+        const fila = datos[row - 4];
         switch (col) {
           case 1: cell.value = fila.dia || ''; break;
           case 2: cell.value = fila.hora || ''; break;
@@ -845,8 +851,8 @@ export const generarFormularioLavadoFrutas = async (datos = null, mes = null, an
   }
 
   // ============= LEYENDA =============
-  worksheet.mergeCells('A39:J39');
-  const leyendaCell = worksheet.getCell('A39');
+  worksheet.mergeCells('A36:J36');
+  const leyendaCell = worksheet.getCell('A36');
   leyendaCell.value = 'C = CONFORME | NC = NO CONFORME';
   leyendaCell.font = { name: 'Arial', size: 8, bold: true };
   leyendaCell.alignment = { horizontal: 'center', vertical: 'middle' };

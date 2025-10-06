@@ -27,6 +27,8 @@ const LavadoFrutas = () => {
   const [error, setError] = useState(null);
   const [mes, setMes] = useState(new Date().getMonth() + 1);
   const [anio, setAnio] = useState(new Date().getFullYear());
+  const [productoQuimico, setProductoQuimico] = useState('');
+  const [concentracion, setConcentracion] = useState('');
 
   const cargarRegistros = async () => {
     try {
@@ -57,7 +59,7 @@ const LavadoFrutas = () => {
       setError('No hay registros para exportar');
       return;
     }
-    exportarLavadoFrutas(registros, mes, anio);
+    exportarLavadoFrutas(registros, mes, anio, productoQuimico, concentracion);
   };
 
   const getConformidadColor = (conformidad) => {
@@ -93,7 +95,7 @@ const LavadoFrutas = () => {
 
       <Paper sx={{ p: 3, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={3}>
             <TextField
               label="Mes"
               type="number"
@@ -103,7 +105,7 @@ const LavadoFrutas = () => {
               InputProps={{ inputProps: { min: 1, max: 12 } }}
             />
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={3}>
             <TextField
               label="Año"
               type="number"
@@ -113,12 +115,30 @@ const LavadoFrutas = () => {
               InputProps={{ inputProps: { min: 2020, max: 2030 } }}
             />
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={3}>
+            <TextField
+              label="Producto Químico"
+              value={productoQuimico}
+              onChange={(e) => setProductoQuimico(e.target.value)}
+              fullWidth
+              placeholder="Ej: Cloro"
+            />
+          </Grid>
+          <Grid item xs={12} sm={3}>
+            <TextField
+              label="Concentración"
+              value={concentracion}
+              onChange={(e) => setConcentracion(e.target.value)}
+              fullWidth
+              placeholder="Ej: 200 ppm"
+            />
+          </Grid>
+          <Grid item xs={12}>
             <Button
               variant="contained"
-              fullWidth
               onClick={cargarRegistros}
               disabled={loading}
+              sx={{ mr: 2 }}
             >
               Buscar
             </Button>
