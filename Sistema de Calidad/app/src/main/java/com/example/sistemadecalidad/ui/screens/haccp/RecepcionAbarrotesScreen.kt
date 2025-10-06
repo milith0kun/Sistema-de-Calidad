@@ -15,9 +15,14 @@ import androidx.compose.ui.unit.dp
 import com.example.sistemadecalidad.data.api.Empleado
 import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.ui.viewmodel.HaccpViewModel
+import com.example.sistemadecalidad.utils.TimeUtils
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,12 +31,15 @@ fun RecepcionAbarrotesScreen(
     preferencesManager: PreferencesManager,
     onNavigateBack: () -> Unit
 ) {
-    val today = LocalDate.now()
-    val currentTime = LocalTime.now()
-    val mes = today.monthValue
-    val anio = today.year
-    val fecha = today.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-    val hora = currentTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+    val currentPeruDate = TimeUtils.getCurrentPeruDate()
+    val peruCalendar = Calendar.getInstance(TimeUtils.getPeruTimeZone())
+    peruCalendar.time = currentPeruDate
+    val mes = peruCalendar.get(Calendar.MONTH) + 1
+    val anio = peruCalendar.get(Calendar.YEAR)
+    val fecha = SimpleDateFormat("dd/MM/yyyy", Locale("es", "PE")).apply { 
+        timeZone = TimeUtils.getPeruTimeZone() 
+    }.format(currentPeruDate)
+    val hora = TimeUtils.formatTimeForDisplay(currentPeruDate)
     
     // Obtener usuario logueado
     val usuario by preferencesManager.getUser().collectAsState(initial = null)

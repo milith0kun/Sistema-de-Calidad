@@ -460,10 +460,10 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
   const worksheet = workbook.addWorksheet('Control Cocción');
   
   // ============= CONFIGURACIÓN DE COLUMNAS =============
-  // Anchos optimizados para A4 vertical
-  const columnWidths = [75, 60, 75, 160, 110, 50, 120, 100];
+  // Anchos optimizados para A4 vertical (en unidades de Excel)
+  const columnWidths = [8, 8, 12, 20, 15, 10, 18, 15];
   columnWidths.forEach((width, index) => {
-    worksheet.getColumn(index + 1).width = width / 7; // Conversión aproximada a unidades de Excel
+    worksheet.getColumn(index + 1).width = width;
   });
 
   // ============= FILA 1: REGISTRO HACCP =============
@@ -886,10 +886,10 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
   const worksheet = workbook.addWorksheet('Lavado Manos');
   
   // ============= CONFIGURACIÓN DE COLUMNAS =============
-  // Anchos optimizados para A4 vertical
-  const columnWidths = [75, 60, 75, 160, 110, 50, 120, 100];
+  // Anchos optimizados para A4 vertical (en unidades de Excel)
+  const columnWidths = [8, 8, 12, 20, 15, 10, 18, 15];
   columnWidths.forEach((width, index) => {
-    worksheet.getColumn(index + 1).width = width / 7; // Conversión aproximada a unidades de Excel
+    worksheet.getColumn(index + 1).width = width;
   });
 
   // ============= FILA 1: REGISTRO HACCP =============

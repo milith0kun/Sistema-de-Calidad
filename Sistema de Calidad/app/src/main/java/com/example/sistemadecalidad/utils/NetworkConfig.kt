@@ -21,11 +21,12 @@ object NetworkConfig {
     // Entornos predefinidos con sus URLs - Optimizado para producción
     val ENVIRONMENTS = mapOf(
         "aws_production" to "http://ec2-18-188-209-94.us-east-2.compute.amazonaws.com/api/", // AWS Producción (PRINCIPAL - SIEMPRE)
+        "local_ngrok" to "https://kickless-anamaria-nonwaxing.ngrok-free.dev/api/", // Servidor local con ngrok
         "emulator" to "http://10.0.2.2:3000/" // Solo para desarrollo en emulador
     )
     
-    // URL por defecto para producción
-    const val DEFAULT_BASE_URL = "http://ec2-18-188-209-94.us-east-2.compute.amazonaws.com/api/"
+    // URL por defecto para pruebas (servidor local con ngrok)
+    const val DEFAULT_BASE_URL = "https://kickless-anamaria-nonwaxing.ngrok-free.dev/api/"
     
     // Endpoints principales del backend HACCP según especificaciones
     object Endpoints {
@@ -140,10 +141,10 @@ object NetworkConfig {
                 }
             }
             else -> {
-                // Configuración por defecto: AWS Production
+                // Configuración por defecto: Servidor local para pruebas
                 NetworkModule.setCustomBaseUrl(DEFAULT_BASE_URL)
-                setEnvironment(context, "aws_production")
-                Log.d("NetworkConfig", "Using default AWS Production: $DEFAULT_BASE_URL")
+                setEnvironment(context, "local_ngrok")
+                Log.d("NetworkConfig", "Using default local server: $DEFAULT_BASE_URL")
             }
         }
     }
