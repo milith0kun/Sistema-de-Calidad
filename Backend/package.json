@@ -9,18 +9,26 @@
     "start-ngrok": "node server-with-ngrok.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["haccp", "asistencia", "hotel", "backend"],
+  "keywords": [
+    "haccp",
+    "asistencia",
+    "hotel",
+    "backend"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.0",
-    "sqlite3": "^5.1.0",
-    "jsonwebtoken": "^9.0.0",
+    "@ngrok/ngrok": "^1.0.0",
+    "axios": "^1.6.0",
     "bcryptjs": "^2.4.0",
     "cors": "^2.8.0",
+    "date-fns": "^4.1.0",
     "dotenv": "^16.0.0",
-    "@ngrok/ngrok": "^1.0.0",
-    "axios": "^1.6.0"
+    "exceljs": "^4.4.0",
+    "express": "^4.18.0",
+    "jsonwebtoken": "^9.0.0",
+    "node-cron": "^4.2.1",
+    "sqlite3": "^5.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.0"

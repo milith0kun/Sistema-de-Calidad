@@ -14,8 +14,17 @@ import {
   TableRow,
   CircularProgress,
   Alert,
+  Divider,
+  Card,
+  CardContent,
+  CardActions,
 } from '@mui/material';
-import { Download as DownloadIcon, Assessment as AssessmentIcon } from '@mui/icons-material';
+import { 
+  Download as DownloadIcon, 
+  Assessment as AssessmentIcon,
+  Description as DescriptionIcon,
+  GetApp as GetAppIcon 
+} from '@mui/icons-material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { reportesService } from '../services/api';
 import { exportarResumenNC } from '../utils/exportExcel';
@@ -62,6 +71,58 @@ const Reportes = () => {
       return;
     }
     exportarResumenNC(noConformidades, mes, anio);
+  };
+
+  const descargarFormularioVacio = async (tipo) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/formularios-haccp/formulario-vacio/${tipo}/${mes}/${anio}`);
+      
+      if (!response.ok) {
+        throw new Error('Error al descargar el formulario');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `Formulario_${tipo}_${mes}_${anio}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      setError(`Error al descargar formulario: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const descargarReporte = async (tipo) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/formularios-haccp/reporte/${tipo}/${mes}/${anio}`);
+      
+      if (!response.ok) {
+        throw new Error('Error al descargar el reporte');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `Reporte_${tipo}_${mes}_${anio}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      setError(`Error al descargar reporte: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatTipoControl = (tipo) => {
@@ -143,6 +204,88 @@ const Reportes = () => {
           </Grid>
         </Grid>
       </Paper>
+
+      {/* Sección de Formularios HACCP */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" fontWeight="bold" gutterBottom>
+          Formularios HACCP
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Descarga formularios vacíos para completar manualmente o reportes con datos del período seleccionado
+        </Typography>
+        
+        <Grid container spacing={3}>
+          {/* Recepción de Abarrotes */}
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined">
+              <CardContent>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <DescriptionIcon color="primary" sx={{ mr: 1 }} />
+                  <Typography variant="h6">Recepción de Abarrotes</Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  Control de recepción de productos secos, enlatados y abarrotes en general
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Button
+                  size="small"
+                  startIcon={<DescriptionIcon />}
+                  onClick={() => descargarFormularioVacio('abarrotes')}
+                  disabled={loading}
+                >
+                  Formulario Vacío
+                </Button>
+                <Button
+                  size="small"
+                  startIcon={<GetAppIcon />}
+                  onClick={() => descargarReporte('abarrotes')}
+                  disabled={loading}
+                  variant="contained"
+                >
+                  Reporte con Datos
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+
+          {/* Recepción de Frutas y Verduras */}
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined">
+              <CardContent>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <DescriptionIcon color="primary" sx={{ mr: 1 }} />
+                  <Typography variant="h6">Recepción de Frutas y Verduras</Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  Control de recepción de productos frescos, frutas y verduras
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Button
+                  size="small"
+                  startIcon={<DescriptionIcon />}
+                  onClick={() => descargarFormularioVacio('frutas-verduras')}
+                  disabled={loading}
+                >
+                  Formulario Vacío
+                </Button>
+                <Button
+                  size="small"
+                  startIcon={<GetAppIcon />}
+                  onClick={() => descargarReporte('frutas-verduras')}
+                  disabled={loading}
+                  variant="contained"
+                >
+                  Reporte con Datos
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      <Divider sx={{ my: 3 }} />
 
       {loading ? (
         <Box display="flex" justifyContent="center" py={5}>

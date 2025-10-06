@@ -7,6 +7,7 @@ const os = require('os');
 const { initializeDatabase } = require('./utils/database');
 const { config, displayConfig } = require('./config-app-universal');
 const { getPeruTimestamp } = require('./utils/timeUtils');
+const { iniciarCronJobs } = require('./utils/cronJobs');
 
 // Cargar variables de entorno
 dotenv.config();
@@ -113,6 +114,7 @@ app.use('/api/fichado', require('./routes/fichado'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/tiempo-real', require('./routes/tiempo-real'));
 app.use('/api/haccp', require('./routes/haccp'));
+app.use('/api/formularios-haccp', require('./routes/formularios-haccp'));
 app.use('/api/usuarios', require('./routes/usuarios'));
 app.use('/api/reportes', require('./routes/reportes'));
 app.use('/api/auditoria', require('./routes/auditoria'));
@@ -335,6 +337,10 @@ const startServer = async () => {
         console.log('📊 Inicializando base de datos...');
         await initializeDatabase();
         console.log('✅ Base de datos inicializada correctamente');
+        
+        console.log('⏰ Inicializando cron jobs...');
+        iniciarCronJobs();
+        console.log('✅ Cron jobs configurados correctamente');
 
         // Iniciar servidor en HOST y PORT configurados
         const server = app.listen(PORT, HOST, async () => {
