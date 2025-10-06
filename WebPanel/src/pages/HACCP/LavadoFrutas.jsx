@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { Download as DownloadIcon } from '@mui/icons-material';
 import { haccpService } from '../../services/api';
-import { exportarLavadoFrutas } from '../../utils/exportExcel';
+import { exportarLavadoFrutas, exportarFormularioVacioLavadoFrutas } from '../../utils/exportExcel';
 import { format } from 'date-fns';
 
 const LavadoFrutas = () => {
@@ -62,6 +62,10 @@ const LavadoFrutas = () => {
     exportarLavadoFrutas(registros, mes, anio, productoQuimico, concentracion);
   };
 
+  const handleExportarPlantilla = () => {
+    exportarFormularioVacioLavadoFrutas(mes, anio, productoQuimico, concentracion);
+  };
+
   const getConformidadColor = (conformidad) => {
     return conformidad === 'C' ? 'success' : 'error';
   };
@@ -77,14 +81,23 @@ const LavadoFrutas = () => {
             Registro de procedimientos de lavado y desinfección de frutas y verduras
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportar}
-          disabled={registros.length === 0}
-        >
-          Exportar Excel
-        </Button>
+        <Box display="flex" gap={2}>
+          <Button
+            variant="contained"
+            startIcon={<DownloadIcon />}
+            onClick={handleExportar}
+            disabled={registros.length === 0}
+          >
+            Exportar Datos
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={handleExportarPlantilla}
+          >
+            Exportar Plantilla
+          </Button>
+        </Box>
       </Box>
 
       {error && (
