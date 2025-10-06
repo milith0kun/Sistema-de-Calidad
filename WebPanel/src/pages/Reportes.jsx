@@ -76,23 +76,54 @@ const Reportes = () => {
   const descargarFormularioVacio = async (tipo) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/formularios-haccp/formulario-vacio/${tipo}/${mes}/${anio}`);
+      setError('');
+      
+      const response = await fetch(`/api/formularios-haccp/formulario-vacio/${tipo}/${mes}/${anio}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        }
+      });
       
       if (!response.ok) {
-        throw new Error('Error al descargar el formulario');
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText}`);
+      }
+      
+      // Verificar que el contenido sea realmente un archivo Excel
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('spreadsheetml')) {
+        throw new Error('El servidor no devolvió un archivo Excel válido');
       }
       
       const blob = await response.blob();
+      
+      // Verificar que el blob no esté vacío
+      if (blob.size === 0) {
+        throw new Error('El archivo descargado está vacío');
+      }
+      
+      // Crear URL temporal y descargar
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = `Formulario_${tipo}_${mes}_${anio}.xlsx`;
+      a.download = `Formulario_HACCP_${tipo}_${mes.toString().padStart(2, '0')}_${anio}.xlsx`;
+      
+      // Agregar al DOM, hacer clic y limpiar
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      
+      // Limpiar después de un pequeño delay para asegurar la descarga
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 100);
+      
+      console.log(`Formulario ${tipo} descargado exitosamente`);
+      
     } catch (err) {
+      console.error('Error al descargar formulario:', err);
       setError(`Error al descargar formulario: ${err.message}`);
     } finally {
       setLoading(false);
@@ -102,23 +133,54 @@ const Reportes = () => {
   const descargarReporte = async (tipo) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/formularios-haccp/reporte/${tipo}/${mes}/${anio}`);
+      setError('');
+      
+      const response = await fetch(`/api/formularios-haccp/reporte/${tipo}/${mes}/${anio}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        }
+      });
       
       if (!response.ok) {
-        throw new Error('Error al descargar el reporte');
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText}`);
+      }
+      
+      // Verificar que el contenido sea realmente un archivo Excel
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('spreadsheetml')) {
+        throw new Error('El servidor no devolvió un archivo Excel válido');
       }
       
       const blob = await response.blob();
+      
+      // Verificar que el blob no esté vacío
+      if (blob.size === 0) {
+        throw new Error('El archivo descargado está vacío');
+      }
+      
+      // Crear URL temporal y descargar
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = `Reporte_${tipo}_${mes}_${anio}.xlsx`;
+      a.download = `Reporte_HACCP_${tipo}_${mes.toString().padStart(2, '0')}_${anio}.xlsx`;
+      
+      // Agregar al DOM, hacer clic y limpiar
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      
+      // Limpiar después de un pequeño delay para asegurar la descarga
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 100);
+      
+      console.log(`Reporte ${tipo} descargado exitosamente`);
+      
     } catch (err) {
+      console.error('Error al descargar reporte:', err);
       setError(`Error al descargar reporte: ${err.message}`);
     } finally {
       setLoading(false);
