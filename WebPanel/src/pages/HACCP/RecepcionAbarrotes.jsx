@@ -33,6 +33,7 @@ import {
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import haccpService from '../../services/api';
+import { exportarRecepcionAbarrotes } from '../../utils/exportExcel';
 
 const RecepcionAbarrotes = () => {
   const [registros, setRegistros] = useState([]);
@@ -184,9 +185,22 @@ const RecepcionAbarrotes = () => {
     }
   };
 
-  const handleExport = () => {
-    // Implementar exportación a Excel
-    console.log('Exportar a Excel');
+  const handleExport = async () => {
+    try {
+      if (registros.length === 0) {
+        setError('No hay registros para exportar');
+        return;
+      }
+      
+      const mes = new Date().getMonth() + 1;
+      const anio = new Date().getFullYear();
+      
+      await exportarRecepcionAbarrotes(registros, mes, anio);
+      setSuccess('Excel exportado correctamente');
+    } catch (err) {
+      console.error('Error al exportar:', err);
+      setError('Error al exportar el archivo Excel');
+    }
   };
 
   const getChipColor = (value) => {

@@ -1764,8 +1764,152 @@ export const exportarTemperaturaCamaras = async (datos, mes, anio) => {
 
 export const exportarRecepcionMercaderia = exportarRecepcionFrutasVerduras;
 export const exportarAsistencias = async (datos, mes, anio) => {
-  console.warn('exportarAsistencias: Función no implementada para formato HACCP');
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Asistencias');
+    
+    // Configurar columnas
+    worksheet.columns = [
+      { header: 'Fecha', key: 'fecha', width: 12 },
+      { header: 'Empleado', key: 'empleado', width: 25 },
+      { header: 'Hora Entrada', key: 'horaEntrada', width: 12 },
+      { header: 'Hora Salida', key: 'horaSalida', width: 12 },
+      { header: 'Estado', key: 'estado', width: 15 },
+      { header: 'Observaciones', key: 'observaciones', width: 30 }
+    ];
+    
+    // Estilo del encabezado
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE6E6FA' }
+    };
+    
+    // Agregar datos
+    datos.forEach(registro => {
+      worksheet.addRow({
+        fecha: format(new Date(registro.fecha), 'dd/MM/yyyy'),
+        empleado: registro.empleado_nombre || registro.nombre,
+        horaEntrada: registro.hora_entrada,
+        horaSalida: registro.hora_salida,
+        estado: registro.estado,
+        observaciones: registro.observaciones || ''
+      });
+    });
+    
+    // Aplicar bordes a todas las celdas
+    worksheet.eachRow((row, rowNumber) => {
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+    });
+    
+    // Descargar archivo
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Asistencias_${mes || 'Mes'}_${anio || 'Año'}.xlsx`;
+    link.click();
+    
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error al exportar asistencias:', error);
+    throw error;
+  }
 };
 export const exportarResumenNC = async (datos, mes, anio) => {
-  console.warn('exportarResumenNC: Función no implementada para formato HACCP');
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Resumen No Conformidades');
+    
+    // Configurar columnas
+    worksheet.columns = [
+      { header: 'Fecha', key: 'fecha', width: 12 },
+      { header: 'Tipo Control', key: 'tipoControl', width: 20 },
+      { header: 'Descripción', key: 'descripcion', width: 35 },
+      { header: 'Severidad', key: 'severidad', width: 12 },
+      { header: 'Estado', key: 'estado', width: 15 },
+      { header: 'Responsable', key: 'responsable', width: 20 },
+      { header: 'Acción Correctiva', key: 'accionCorrectiva', width: 35 }
+    ];
+    
+    // Estilo del encabezado
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFF6B6B' }
+    };
+    
+    // Agregar datos
+    datos.forEach(nc => {
+      worksheet.addRow({
+        fecha: format(new Date(nc.fecha), 'dd/MM/yyyy'),
+        tipoControl: nc.tipo_control || nc.tipoControl,
+        descripcion: nc.descripcion,
+        severidad: nc.severidad,
+        estado: nc.estado,
+        responsable: nc.responsable_nombre || nc.responsable,
+        accionCorrectiva: nc.accion_correctiva || nc.accionCorrectiva || ''
+      });
+    });
+    
+    // Aplicar bordes a todas las celdas
+    worksheet.eachRow((row, rowNumber) => {
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        
+        // Colorear según severidad
+        if (rowNumber > 1) {
+          const severidad = row.getCell(4).value;
+          if (severidad === 'ALTA' || severidad === 'CRÍTICA') {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFFEAA7' }
+            };
+          } else if (severidad === 'MEDIA') {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFFEAA7' }
+            };
+          }
+        }
+      });
+    });
+    
+    // Descargar archivo
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Resumen_No_Conformidades_${mes || 'Mes'}_${anio || 'Año'}.xlsx`;
+    link.click();
+    
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error al exportar resumen de no conformidades:', error);
+    throw error;
+  }
 };

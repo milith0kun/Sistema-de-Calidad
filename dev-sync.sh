@@ -7,9 +7,9 @@ echo "🔄 Sincronizando cambios con el servidor de desarrollo..."
 
 # Configuración del servidor
 SERVER_USER="ubuntu"
-SERVER_HOST="ec2-54-91-127-89.compute-1.amazonaws.com"
+SERVER_HOST="ec2-18-188-209-94.us-east-2.compute.amazonaws.com"
 SERVER_PATH="/home/ubuntu/SistemaWino"
-SSH_KEY="~/Wino.pem"
+SSH_KEY="~/edmil-key.pem"
 
 # Colores para output
 GREEN='\033[0;32m'

@@ -283,9 +283,6 @@ function App() {
               <Route path="haccp/lavado-frutas" element={<LavadoFrutas />} />
               <Route path="haccp/lavado-manos" element={<LavadoManos />} />
               <Route path="haccp/temperatura-camaras" element={<TemperaturaCamaras />} />
-              
-              {/* Ruta temporal para pruebas */}
-              <Route path="test/excel-generator" element={<GeneradorExcelPrueba />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
