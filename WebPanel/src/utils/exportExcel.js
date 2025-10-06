@@ -460,33 +460,19 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
   const worksheet = workbook.addWorksheet('Control Cocción');
   
   // ============= CONFIGURACIÓN DE COLUMNAS =============
-  // Anchos optimizados para A4 vertical (en unidades de Excel)
-  const columnWidths = [8, 8, 12, 20, 15, 10, 18, 15];
+  // Anchos exactos del script de Google Sheets para A4 vertical
+  const columnWidths = [50, 65, 130, 75, 85, 85, 130, 115];
   columnWidths.forEach((width, index) => {
-    worksheet.getColumn(index + 1).width = width;
+    worksheet.getColumn(index + 1).width = width / 7; // Conversión a unidades Excel
   });
 
-  // ============= FILA 1: REGISTRO HACCP =============
-  worksheet.mergeCells('A1:H1');
-  const registroCell = worksheet.getCell('A1');
-  registroCell.value = 'REGISTRO HACCP';
-  registroCell.font = { name: 'Arial', size: 14, bold: true };
-  registroCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  registroCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
-  registroCell.border = {
-    top: { style: 'thin', color: { argb: 'FF000000' } },
-    left: { style: 'thin', color: { argb: 'FF000000' } },
-    bottom: { style: 'thin', color: { argb: 'FF000000' } },
-    right: { style: 'thin', color: { argb: 'FF000000' } }
-  };
-
-  // ============= FILA 2: CONTROL DE COCCIÓN =============
-  worksheet.mergeCells('A2:H2');
-  const tituloCell = worksheet.getCell('A2');
+  // ============= FILA 1: TÍTULO PRINCIPAL =============
+  worksheet.mergeCells('A1:G1');
+  const tituloCell = worksheet.getCell('A1');
   tituloCell.value = 'Control de Cocción';
-  tituloCell.font = { name: 'Arial', size: 12, bold: true };
+  tituloCell.font = { name: 'Arial', size: 14, bold: true };
   tituloCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  tituloCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6E6' } };
+  tituloCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
   tituloCell.border = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
     left: { style: 'thin', color: { argb: 'FF000000' } },
@@ -494,29 +480,38 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
     right: { style: 'thin', color: { argb: 'FF000000' } }
   };
 
-  // ============= FILA 3: ÁREA O ESTACIÓN =============
-  worksheet.mergeCells('A3:H3');
-  const areaCell = worksheet.getCell('A3');
-  areaCell.value = 'Área o Estación: Cocina';
-  areaCell.font = { name: 'Arial', size: 10, bold: true };
-  areaCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  areaCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
-  areaCell.border = {
+  // ============= CELDA H1: VERSIÓN =============
+  const versionCell = worksheet.getCell('H1');
+  versionCell.value = 'Versión: 01';
+  versionCell.font = { name: 'Arial', size: 9 };
+  versionCell.alignment = { horizontal: 'right', vertical: 'middle' };
+  versionCell.border = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
     left: { style: 'thin', color: { argb: 'FF000000' } },
     bottom: { style: 'thin', color: { argb: 'FF000000' } },
     right: { style: 'thin', color: { argb: 'FF000000' } }
   };
 
-  // ============= FILA 4: MES Y AÑO =============
+  // ============= FILA 2: MES Y AÑO =============
   // MES
-  worksheet.mergeCells('A4:D4');
-  const mesCell = worksheet.getCell('A4');
-  mesCell.value = `Mes: ${mes || ''}`;
-  mesCell.font = { name: 'Arial', size: 10, bold: true };
-  mesCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  mesCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
-  mesCell.border = {
+  worksheet.mergeCells('A2:C2');
+  const mesLabelCell = worksheet.getCell('A2');
+  mesLabelCell.value = 'MES:';
+  mesLabelCell.font = { name: 'Arial', size: 10, bold: true };
+  mesLabelCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  mesLabelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
+  mesLabelCell.border = {
+    top: { style: 'thin', color: { argb: 'FF000000' } },
+    left: { style: 'thin', color: { argb: 'FF000000' } },
+    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+    right: { style: 'thin', color: { argb: 'FF000000' } }
+  };
+
+  const mesValueCell = worksheet.getCell('D2');
+  mesValueCell.value = mes || '';
+  mesValueCell.font = { name: 'Arial', size: 9 };
+  mesValueCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+  mesValueCell.border = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
     left: { style: 'thin', color: { argb: 'FF000000' } },
     bottom: { style: 'thin', color: { argb: 'FF000000' } },
@@ -524,20 +519,32 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
   };
 
   // AÑO
-  worksheet.mergeCells('E4:H4');
-  const anioCell = worksheet.getCell('E4');
-  anioCell.value = `Año: ${anio || ''}`;
-  anioCell.font = { name: 'Arial', size: 10, bold: true };
-  anioCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  anioCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
-  anioCell.border = {
+  worksheet.mergeCells('E2:F2');
+  const anioLabelCell = worksheet.getCell('E2');
+  anioLabelCell.value = 'AÑO:';
+  anioLabelCell.font = { name: 'Arial', size: 10, bold: true };
+  anioLabelCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  anioLabelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
+  anioLabelCell.border = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
     left: { style: 'thin', color: { argb: 'FF000000' } },
     bottom: { style: 'thin', color: { argb: 'FF000000' } },
     right: { style: 'thin', color: { argb: 'FF000000' } }
   };
 
-  // ============= ENCABEZADOS DE COLUMNAS =============
+  worksheet.mergeCells('G2:H2');
+  const anioValueCell = worksheet.getCell('G2');
+  anioValueCell.value = anio || '';
+  anioValueCell.font = { name: 'Arial', size: 9 };
+  anioValueCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+  anioValueCell.border = {
+    top: { style: 'thin', color: { argb: 'FF000000' } },
+    left: { style: 'thin', color: { argb: 'FF000000' } },
+    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+    right: { style: 'thin', color: { argb: 'FF000000' } }
+  };
+
+  // ============= FILA 3: ENCABEZADOS DE COLUMNAS =============
   const headers = [
     'Día', 'Hora', 'Producto a\ncocinar', 'Proceso de\ncocción',
     'Temperatura\ncocción (°C)', 'Tiempo\ncocción (min)',
@@ -545,7 +552,7 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
   ];
 
   headers.forEach((header, index) => {
-    const cell = worksheet.getCell(5, index + 1);
+    const cell = worksheet.getCell(3, index + 1);
     cell.value = header;
     cell.font = { name: 'Arial', size: 10, bold: true };
     cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
@@ -558,38 +565,38 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
     };
   });
 
-  // Altura especial para la fila de encabezados
-  worksheet.getRow(5).height = 40;
+  // Ajustar altura de la fila de encabezados
+  worksheet.getRow(3).height = 40;
 
-  // ============= FILAS DE DATOS =============
-  // 31 filas de datos (filas 6-36) para A4 vertical
-  for (let row = 6; row <= 36; row++) {
+  // ============= FILAS DE DATOS (30 filas para A4 vertical) =============
+  for (let row = 4; row <= 33; row++) {
     for (let col = 1; col <= 8; col++) {
       const cell = worksheet.getCell(row, col);
       
-      // Si hay datos, llenar la celda
-      if (datos && datos[row - 6]) {
-        const fila = datos[row - 6];
-        switch (col) {
-          case 1: cell.value = fila.dia || ''; break;
-          case 2: cell.value = fila.hora || ''; break;
-          case 3: cell.value = fila.producto_cocinar || ''; break;
-          case 4: cell.value = fila.proceso_coccion || ''; break;
-          case 5: cell.value = fila.temperatura_coccion || ''; break;
-          case 6: cell.value = fila.tiempo_coccion || ''; break;
-          case 7: cell.value = fila.accion_correctiva || ''; break;
-          case 8: cell.value = fila.responsable || ''; break;
+      // Aplicar datos si existen
+      if (datos && datos.length > 0) {
+        const dataIndex = row - 4;
+        if (dataIndex < datos.length) {
+          const registro = datos[dataIndex];
+          switch (col) {
+            case 1: cell.value = registro.dia || ''; break;
+            case 2: cell.value = registro.hora || ''; break;
+            case 3: cell.value = registro.producto_cocinar || ''; break;
+            case 4: cell.value = registro.proceso_coccion || ''; break;
+            case 5: cell.value = registro.temperatura_coccion || ''; break;
+            case 6: cell.value = registro.tiempo_coccion || ''; break;
+            case 7: cell.value = registro.accion_correctiva || ''; break;
+            case 8: cell.value = registro.responsable || ''; break;
+          }
         }
       }
 
       // Aplicar estilos
       cell.font = { name: 'Arial', size: 9 };
-      // Centrar columnas específicas
-      const columnasCentradas = [1, 2, 4, 5, 6];
       cell.alignment = { 
-        horizontal: columnasCentradas.includes(col) ? 'center' : 'left', 
-        vertical: 'middle',
-        wrapText: true
+        horizontal: [1,2,4,5,6].includes(col) ? 'center' : 'left', 
+        vertical: 'middle', 
+        wrapText: true 
       };
       cell.border = {
         top: { style: 'thin', color: { argb: 'FF000000' } },
@@ -600,23 +607,23 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
     }
   }
 
-  // ============= NOTA PROCESO =============
-  worksheet.mergeCells('A38:H38');
-  const notaProcesoCell = worksheet.getCell('A38');
-  notaProcesoCell.value = 'PROCESO:    H=Horno    P=Plancha    C=Cocina';
-  notaProcesoCell.font = { name: 'Arial', size: 9, bold: true };
-  notaProcesoCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  // ============= NOTA PROCESO (FILA 35) =============
+  worksheet.mergeCells('A35:H35');
+  const procesoCell = worksheet.getCell('A35');
+  procesoCell.value = 'PROCESO:    H=Horno    P=Plancha    C=Cocina';
+  procesoCell.font = { name: 'Arial', size: 9, bold: true };
+  procesoCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
-  // ============= CRITERIO DE COCCIÓN =============
-  worksheet.mergeCells('A40:H41');
-  const criterioCell = worksheet.getCell('A40');
+  // ============= CRITERIO DE COCCIÓN (FILAS 37-38) =============
+  worksheet.mergeCells('A37:H38');
+  const criterioCell = worksheet.getCell('A37');
   criterioCell.value = 'Criterio de cocción: Temperatura debe ser mayor a 80°C por 15 segundos en la parte central del producto cocido, con énfasis en carne de cerdo y aves.';
   criterioCell.font = { name: 'Arial', size: 8 };
   criterioCell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
 
-  // ============= ACCIÓN CORRECTIVA =============
-  worksheet.mergeCells('A43:H44');
-  const accionCell = worksheet.getCell('A43');
+  // ============= ACCIÓN CORRECTIVA (FILAS 40-41) =============
+  worksheet.mergeCells('A40:H41');
+  const accionCell = worksheet.getCell('A40');
   accionCell.value = 'Acción correctiva: Si el producto no llega a la temperatura adecuada, el cocinero incrementa el tiempo de cocción hasta que cumpla lo requerido.';
   accionCell.font = { name: 'Arial', size: 8 };
   accionCell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
