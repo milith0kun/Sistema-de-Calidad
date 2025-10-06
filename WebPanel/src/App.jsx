@@ -21,6 +21,9 @@ import LavadoFrutas from './pages/HACCP/LavadoFrutas';
 import LavadoManos from './pages/HACCP/LavadoManos';
 import TemperaturaCamaras from './pages/HACCP/TemperaturaCamaras';
 
+
+
+
 import Layout from './components/Layout';
 
 // Tema tipo UNIFYDATA - Dashboard profesional y limpio
@@ -255,7 +258,12 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <Router>
+        <Router
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
           <Routes>
             <Route path="/login" element={<Login />} />
             
@@ -275,6 +283,9 @@ function App() {
               <Route path="haccp/lavado-frutas" element={<LavadoFrutas />} />
               <Route path="haccp/lavado-manos" element={<LavadoManos />} />
               <Route path="haccp/temperatura-camaras" element={<TemperaturaCamaras />} />
+              
+              {/* Ruta temporal para pruebas */}
+              <Route path="test/excel-generator" element={<GeneradorExcelPrueba />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

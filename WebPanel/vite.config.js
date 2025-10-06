@@ -5,11 +5,15 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5173,
+    port: 3000,
     host: '0.0.0.0',
+    strictPort: true,
+    hmr: {
+      port: 3001
+    },
     proxy: {
       '/api': {
-        target: 'http://ec2-18-221-20-228.us-east-2.compute.amazonaws.com:3000',
+        target: 'http://localhost:80',
         changeOrigin: true
       }
     }
@@ -19,11 +23,17 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: false,
     minify: 'terser',
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         entryFileNames: `assets/[name]-[hash].js`,
         chunkFileNames: `assets/[name]-[hash].js`,
-        assetFileNames: `assets/[name]-[hash].[ext]`
+        assetFileNames: `assets/[name]-[hash].[ext]`,
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          mui: ['@mui/material', '@mui/icons-material'],
+          router: ['react-router-dom']
+        }
       }
     }
   }
