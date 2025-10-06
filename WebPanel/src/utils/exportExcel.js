@@ -1481,17 +1481,59 @@ export const generarFormularioTemperaturaCamaras = async (datos = null, mes = nu
 // =====================================================
 
 /**
- * Descargar archivo Excel
+ * Descargar archivo Excel con manejo mejorado de errores
  */
 const descargarExcel = async (workbook, nombreArchivo) => {
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = nombreArchivo;
-  link.click();
-  window.URL.revokeObjectURL(url);
+  try {
+    // Generar buffer del archivo Excel
+    const buffer = await workbook.xlsx.writeBuffer();
+    
+    // Verificar que el buffer no esté vacío
+    if (!buffer || buffer.byteLength === 0) {
+      throw new Error('El archivo Excel generado está vacío');
+    }
+    
+    // Crear blob con el tipo MIME correcto
+    const blob = new Blob([buffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    
+    // Verificar que el blob se creó correctamente
+    if (blob.size === 0) {
+      throw new Error('Error al crear el archivo para descarga');
+    }
+    
+    // Usar la API moderna de descarga si está disponible
+    if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+      // Para Internet Explorer
+      window.navigator.msSaveOrOpenBlob(blob, nombreArchivo);
+    } else {
+      // Para navegadores modernos - crear URL temporal y elemento de descarga
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      
+      // Configurar el enlace de descarga con atributos de seguridad
+      link.style.display = 'none';
+      link.href = url;
+      link.download = nombreArchivo;
+      link.setAttribute('rel', 'noopener noreferrer');
+      link.setAttribute('target', '_self');
+      
+      // Agregar al DOM, hacer clic y limpiar inmediatamente
+      document.body.appendChild(link);
+      link.click();
+      
+      // Limpiar inmediatamente para evitar problemas de seguridad
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }
+    
+    console.log(`Archivo Excel descargado exitosamente: ${nombreArchivo}`);
+    
+  } catch (error) {
+    console.error('Error al descargar archivo Excel:', error);
+    throw new Error(`Error al descargar archivo Excel: ${error.message}`);
+  }
 };
 
 // =====================================================

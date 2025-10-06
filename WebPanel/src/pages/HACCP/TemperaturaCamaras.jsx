@@ -52,12 +52,21 @@ const TemperaturaCamaras = () => {
     cargarRegistros();
   }, [mes, anio]);
 
-  const handleExportar = () => {
-    if (registros.length === 0) {
-      setError('No hay registros para exportar');
-      return;
+  const handleExportar = async () => {
+    try {
+      if (registros.length === 0) {
+        setError('No hay registros para exportar');
+        return;
+      }
+      setError(null);
+      setLoading(true);
+      await exportarTemperaturaCamaras(registros, mes, anio);
+    } catch (err) {
+      console.error('Error al exportar:', err);
+      setError(`Error al exportar archivo Excel: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
-    exportarTemperaturaCamaras(registros, mes, anio);
   };
 
   const getConformidadColor = (conformidad) => {

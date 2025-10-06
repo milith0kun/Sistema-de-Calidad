@@ -57,8 +57,21 @@ const RecepcionMercaderia = () => {
     }
   };
 
-  const handleExportar = () => {
-    exportarRecepcionMercaderia(data, mes, anio, tipo);
+  const handleExportar = async () => {
+    try {
+      if (data.length === 0) {
+        setError('No hay datos para exportar');
+        return;
+      }
+      setError('');
+      setLoading(true);
+      await exportarRecepcionMercaderia(data, mes, anio, tipo);
+    } catch (err) {
+      console.error('Error al exportar:', err);
+      setError(`Error al exportar archivo Excel: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

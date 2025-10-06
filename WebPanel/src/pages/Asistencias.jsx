@@ -58,8 +58,21 @@ const Asistencias = () => {
     }
   };
 
-  const handleExportar = () => {
-    exportarAsistencias(data, mes, anio);
+  const handleExportar = async () => {
+    try {
+      if (data.length === 0) {
+        setError('No hay datos para exportar');
+        return;
+      }
+      setError('');
+      setLoading(true);
+      await exportarAsistencias(data, mes, anio);
+    } catch (err) {
+      console.error('Error al exportar:', err);
+      setError(`Error al exportar archivo Excel: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getEstadoColor = (estado) => {
