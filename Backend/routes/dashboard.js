@@ -11,6 +11,7 @@ router.get('/hoy', authenticateToken, (req, res) => {
         const usuarioId = req.user.id;
         
         // Usar zona horaria de Perú para consistencia
+        const ahora = getCurrentPeruDate();
         const fecha = formatDateForDB();
         const horaActual = formatTimeForDB();
         const fechaCompleta = formatDateForDisplay();
