@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { db } = require('../utils/database');
+const { config } = require('../config-app-universal');
 
 // Middleware para verificar token JWT
 const authenticateToken = async (req, res, next) => {
@@ -16,7 +17,7 @@ const authenticateToken = async (req, res, next) => {
 
     try {
         // Verificar token JWT
-        const user = jwt.verify(token, process.env.JWT_SECRET);
+        const user = jwt.verify(token, config.jwt.secret);
 
         // Verificar que el usuario aún existe y está activo
         const row = await db.get(
@@ -79,7 +80,7 @@ const optionalAuth = (req, res, next) => {
         return next();
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(token, config.jwt.secret, (err, user) => {
         if (err) {
             req.user = null;
         } else {

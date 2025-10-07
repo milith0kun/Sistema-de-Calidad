@@ -12,8 +12,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.ui.viewmodel.HaccpViewModel
-import java.time.LocalDate
-import java.time.format.TextStyle
+import com.example.sistemadecalidad.utils.TimeUtils
+import java.util.Calendar
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,10 +76,12 @@ private fun CamaraFormulario(
     haccpViewModel: HaccpViewModel,
     preferencesManager: PreferencesManager
 ) {
-    val today = LocalDate.now()
-    val mes = today.monthValue
-    val anio = today.year
-    val dia = today.dayOfMonth
+    val currentPeruDate = TimeUtils.getCurrentPeruDate()
+    val peruCalendar = Calendar.getInstance(TimeUtils.getPeruTimeZone())
+    peruCalendar.time = currentPeruDate
+    val mes = peruCalendar.get(Calendar.MONTH) + 1
+    val anio = peruCalendar.get(Calendar.YEAR)
+    val dia = peruCalendar.get(Calendar.DAY_OF_MONTH)
     
     // Obtener usuario logueado
     val usuario by preferencesManager.getUser().collectAsState(initial = null)

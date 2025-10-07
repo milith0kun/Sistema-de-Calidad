@@ -3,6 +3,14 @@ const ExcelJS = require('exceljs');
 const { format, getDaysInMonth } = require('date-fns');
 const { es } = require('date-fns/locale');
 const { db } = require('../utils/database');
+// Importar utilidades de tiempo para zona horaria de Lima, Perú
+const { 
+  getCurrentPeruDate, 
+  formatDateForDB, 
+  formatTimeForDB, 
+  formatDateForDisplay,
+  PERU_TIMEZONE 
+} = require('../utils/timeUtils');
 
 const router = express.Router();
 
@@ -83,6 +91,28 @@ const aplicarEstiloCeldaEditable = (cell, valor = '') => {
   cell.protection = { locked: false };
 };
 
+/**
+ * Formatea una fecha para mostrar en Excel usando zona horaria de Lima, Perú
+ * @param {string|Date} fecha - Fecha a formatear
+ * @returns {string} Fecha formateada en formato dd/MM/yyyy
+ */
+const formatearFechaParaExcel = (fecha) => {
+  if (!fecha) return '';
+  try {
+    // Convertir la fecha a zona horaria de Lima, Perú
+    const fechaLima = new Date(fecha);
+    return fechaLima.toLocaleDateString('es-PE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      timeZone: PERU_TIMEZONE
+    });
+  } catch (error) {
+    console.error('Error al formatear fecha:', error);
+    return '';
+  }
+};
+
 // =====================================================
 // GENERADORES DE FORMULARIOS
 // =====================================================
@@ -127,18 +157,18 @@ const generarFormularioRecepcionAbarrotes = async (datos = null, mes = null, ani
   let fila = 7;
   if (datos && Array.isArray(datos)) {
     datos.forEach(item => {
-      aplicarEstiloCelda(worksheet.getCell(fila, 2), format(new Date(item.fecha), 'dd/MM/yyyy'));
+      aplicarEstiloCelda(worksheet.getCell(fila, 2), formatearFechaParaExcel(item.fecha));
       aplicarEstiloCelda(worksheet.getCell(fila, 3), item.hora);
       aplicarEstiloCelda(worksheet.getCell(fila, 4), item.nombre_proveedor);
       aplicarEstiloCelda(worksheet.getCell(fila, 5), item.nombre_producto);
       aplicarEstiloCelda(worksheet.getCell(fila, 6), item.cantidad_solicitada);
-      aplicarEstiloCelda(worksheet.getCell(fila, 7), item.registro_sanitario_vigente ? 'SÍ' : 'NO', true);
-      aplicarEstiloCelda(worksheet.getCell(fila, 8), item.fecha_vencimiento_producto ? format(new Date(item.fecha_vencimiento_producto), 'dd/MM/yyyy') : '');
+      aplicarEstiloCelda(worksheet.getCell(fila, 7), item.registro_sanitario_vigente === 'Conforme' ? 'SÍ' : 'NO', true);
+      aplicarEstiloCelda(worksheet.getCell(fila, 8), formatearFechaParaExcel(item.fecha_vencimiento_producto));
       aplicarEstiloCelda(worksheet.getCell(fila, 9), item.evaluacion_vencimiento, true);
       aplicarEstiloCelda(worksheet.getCell(fila, 10), item.conformidad_empaque_primario, true);
-      aplicarEstiloCelda(worksheet.getCell(fila, 11), item.uniforme_completo === 'C' ? 'C' : 'NC', true);
-      aplicarEstiloCelda(worksheet.getCell(fila, 12), item.transporte_adecuado === 'C' ? 'C' : 'NC', true);
-      aplicarEstiloCelda(worksheet.getCell(fila, 13), item.puntualidad === 'C' ? 'C' : 'NC', true);
+      aplicarEstiloCelda(worksheet.getCell(fila, 11), item.uniforme_completo === 'Sí' ? 'C' : 'NC', true);
+      aplicarEstiloCelda(worksheet.getCell(fila, 12), item.transporte_adecuado === 'Refrigerado' ? 'C' : 'NC', true);
+      aplicarEstiloCelda(worksheet.getCell(fila, 13), item.puntualidad === 'Puntual' ? 'C' : 'NC', true);
       aplicarEstiloCelda(worksheet.getCell(fila, 14), item.responsable_registro_nombre);
       aplicarEstiloCelda(worksheet.getCell(fila, 15), item.responsable_supervision_nombre);
       aplicarEstiloCelda(worksheet.getCell(fila, 16), item.observaciones || '');
@@ -180,7 +210,7 @@ const generarFormularioRecepcionAbarrotes = async (datos = null, mes = null, ani
  */
 const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes = null, anio = null) => {
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Recepción Frutas/Verduras');
+  const worksheet = workbook.addWorksheet('Recepción Frutas y Verduras');
   
   configurarEstilosBase(worksheet);
 
@@ -215,7 +245,7 @@ const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes = null
   let fila = 7;
   if (datos && Array.isArray(datos)) {
     datos.forEach(item => {
-      aplicarEstiloCelda(worksheet.getCell(fila, 2), format(new Date(item.fecha), 'dd/MM/yyyy'));
+      aplicarEstiloCelda(worksheet.getCell(fila, 2), formatearFechaParaExcel(item.fecha));
       aplicarEstiloCelda(worksheet.getCell(fila, 3), item.hora);
       aplicarEstiloCelda(worksheet.getCell(fila, 4), item.nombre_proveedor);
       aplicarEstiloCelda(worksheet.getCell(fila, 5), item.nombre_producto);
@@ -223,9 +253,9 @@ const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes = null
       aplicarEstiloCelda(worksheet.getCell(fila, 7), item.unidad_medida);
       aplicarEstiloCelda(worksheet.getCell(fila, 8), item.estado_producto, true);
       aplicarEstiloCelda(worksheet.getCell(fila, 9), item.conformidad_integridad_producto, true);
-      aplicarEstiloCelda(worksheet.getCell(fila, 10), item.uniforme_completo === 'C' ? 'C' : 'NC', true);
-      aplicarEstiloCelda(worksheet.getCell(fila, 11), item.transporte_adecuado === 'C' ? 'C' : 'NC', true);
-      aplicarEstiloCelda(worksheet.getCell(fila, 12), item.puntualidad === 'C' ? 'C' : 'NC', true);
+      aplicarEstiloCelda(worksheet.getCell(fila, 10), item.uniforme_completo === 'Sí' ? 'C' : 'NC', true);
+      aplicarEstiloCelda(worksheet.getCell(fila, 11), item.transporte_adecuado === 'Refrigerado' ? 'C' : 'NC', true);
+      aplicarEstiloCelda(worksheet.getCell(fila, 12), item.puntualidad === 'Puntual' ? 'C' : 'NC', true);
       aplicarEstiloCelda(worksheet.getCell(fila, 13), item.responsable_registro_nombre);
       aplicarEstiloCelda(worksheet.getCell(fila, 14), item.responsable_supervision_nombre);
       aplicarEstiloCelda(worksheet.getCell(fila, 15), item.observaciones || '');
@@ -309,42 +339,45 @@ router.get('/reporte/abarrotes/:mes/:anio', async (req, res) => {
   try {
     const { mes, anio } = req.params;
     
+    console.log(`Generando reporte de abarrotes para ${mes}/${anio}`);
+    
     // Consultar datos de abarrotes
     const query = `
       SELECT 
         crm.*,
-        p.nombre as nombre_proveedor,
+        p.nombre_completo as nombre_proveedor,
         prod.nombre as nombre_producto,
         u1.nombre as responsable_registro_nombre,
         u2.nombre as responsable_supervision_nombre
       FROM control_recepcion_mercaderia crm
       LEFT JOIN proveedores p ON crm.proveedor_id = p.id
       LEFT JOIN productos prod ON crm.producto_id = prod.id
-      LEFT JOIN usuarios u1 ON crm.responsable_registro = u1.id
-      LEFT JOIN usuarios u2 ON crm.responsable_supervision = u2.id
-      WHERE crm.tipo_producto = 'ABARROTES'
-        AND strftime('%m', crm.fecha) = ?
-        AND strftime('%Y', crm.fecha) = ?
+      LEFT JOIN usuarios u1 ON crm.responsable_registro_id = u1.id
+      LEFT JOIN usuarios u2 ON crm.responsable_supervision_id = u2.id
+      WHERE crm.tipo_control = 'ABARROTES'
+        AND crm.mes = ?
+        AND crm.anio = ?
       ORDER BY crm.fecha, crm.hora
     `;
     
-    const datos = await new Promise((resolve, reject) => {
-      db.all(query, [mes.padStart(2, '0'), anio], (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
-    });
+    console.log('Ejecutando consulta SQL...');
+    const datos = await db.all(query, [parseInt(mes), parseInt(anio)]);
+    console.log(`Datos encontrados: ${datos ? datos.length : 0} registros`);
     
-    const workbook = await generarFormularioRecepcionAbarrotes(datos, mes, anio);
+    console.log('Generando workbook...');
+    const workbook = await generarFormularioRecepcionAbarrotes(datos || [], mes, anio);
     
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="reporte_abarrotes_${anio}_${mes.padStart(2, '0')}.xlsx"`);
     
+    console.log('Enviando archivo...');
     await workbook.xlsx.write(res);
     res.end();
+    console.log('Reporte enviado exitosamente');
   } catch (error) {
     console.error('Error generando reporte de abarrotes:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ error: 'Error interno del servidor', details: error.message });
   }
 });
 
@@ -353,42 +386,105 @@ router.get('/reporte/frutas-verduras/:mes/:anio', async (req, res) => {
   try {
     const { mes, anio } = req.params;
     
+    console.log(`Generando reporte de frutas y verduras para ${mes}/${anio}`);
+    
     // Consultar datos de frutas y verduras
     const query = `
       SELECT 
         crm.*,
-        p.nombre as nombre_proveedor,
+        p.nombre_completo as nombre_proveedor,
         prod.nombre as nombre_producto,
         u1.nombre as responsable_registro_nombre,
         u2.nombre as responsable_supervision_nombre
       FROM control_recepcion_mercaderia crm
       LEFT JOIN proveedores p ON crm.proveedor_id = p.id
       LEFT JOIN productos prod ON crm.producto_id = prod.id
-      LEFT JOIN usuarios u1 ON crm.responsable_registro = u1.id
-      LEFT JOIN usuarios u2 ON crm.responsable_supervision = u2.id
-      WHERE crm.tipo_producto = 'FRUTAS_VERDURAS'
-        AND strftime('%m', crm.fecha) = ?
-        AND strftime('%Y', crm.fecha) = ?
+      LEFT JOIN usuarios u1 ON crm.responsable_registro_id = u1.id
+      LEFT JOIN usuarios u2 ON crm.responsable_supervision_id = u2.id
+      WHERE crm.tipo_control = 'FRUTAS_VERDURAS'
+        AND crm.mes = ?
+        AND crm.anio = ?
       ORDER BY crm.fecha, crm.hora
     `;
     
-    const datos = await new Promise((resolve, reject) => {
-      db.all(query, [mes.padStart(2, '0'), anio], (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
-    });
+    console.log('Ejecutando consulta SQL...');
+    const datos = await db.all(query, [parseInt(mes), parseInt(anio)]);
+    console.log(`Datos encontrados: ${datos ? datos.length : 0} registros`);
     
-    const workbook = await generarFormularioRecepcionFrutasVerduras(datos, mes, anio);
+    console.log('Generando workbook...');
+    const workbook = await generarFormularioRecepcionFrutasVerduras(datos || [], mes, anio);
     
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="reporte_frutas_verduras_${anio}_${mes.padStart(2, '0')}.xlsx"`);
     
+    console.log('Enviando archivo...');
     await workbook.xlsx.write(res);
     res.end();
+    console.log('Reporte de frutas y verduras enviado exitosamente');
   } catch (error) {
     console.error('Error generando reporte de frutas y verduras:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ error: 'Error interno del servidor', details: error.message });
+  }
+});
+
+// Endpoint de prueba simple
+router.get('/test', (req, res) => {
+  const peruDate = getCurrentPeruDate();
+  res.json({ 
+    success: true, 
+    message: 'Endpoint de formularios-haccp funcionando correctamente',
+    timestamp: peruDate.toISOString(),
+    fecha_lima: formatDateForDisplay(peruDate),
+    hora_lima: formatTimeForDB(peruDate),
+    zona_horaria: PERU_TIMEZONE
+  });
+});
+
+// Endpoint para verificar la estructura de la base de datos
+router.get('/test-db', async (req, res) => {
+  try {
+    // Obtener todas las tablas
+    const allTables = await db.all("SELECT name FROM sqlite_master WHERE type='table'");
+    
+    // Verificar tablas específicas requeridas
+    const requiredTables = ['control_recepcion_mercaderia', 'proveedores', 'productos', 'usuarios'];
+    const tableInfo = {};
+    
+    for (const tableName of requiredTables) {
+      try {
+        const count = await db.get(`SELECT COUNT(*) as count FROM ${tableName}`);
+        const structure = await db.all(`PRAGMA table_info(${tableName})`);
+        tableInfo[tableName] = {
+          exists: true,
+          count: count.count,
+          columns: structure.map(col => ({
+            name: col.name,
+            type: col.type,
+            notnull: col.notnull,
+            pk: col.pk
+          }))
+        };
+      } catch (error) {
+        tableInfo[tableName] = {
+          exists: false,
+          error: error.message
+        };
+      }
+    }
+    
+    const peruDate = getCurrentPeruDate();
+    res.json({
+      success: true,
+      allTables,
+      requiredTables: tableInfo,
+      timestamp: peruDate.toISOString(),
+      fecha_lima: formatDateForDisplay(peruDate),
+      zona_horaria: PERU_TIMEZONE
+    });
+  } catch (error) {
+    console.error('Error verificando base de datos:', error);
+    res.status(500).json({ error: 'Error verificando base de datos', details: error.message });
   }
 });
 

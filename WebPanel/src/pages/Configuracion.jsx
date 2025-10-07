@@ -76,19 +76,17 @@ export default function Configuracion() {
         setError(null);
 
         if (!navigator.geolocation) {
-            setError('Tu navegador no soporta geolocalización');
+            setError('Tu navegador no soporta geolocalización. Por favor, ingresa las coordenadas manualmente.');
             setLoading(false);
             return;
         }
 
-        // Verificar si estamos en HTTP (no seguro)
-        if (window.location.protocol === 'http:') {
-            setError('⚠️ La geolocalización automática requiere HTTPS. Por favor, ingresa las coordenadas manualmente.');
-            setLoading(false);
-            // Abrir Google Maps en nueva pestaña para ayudar
-            window.open('https://www.google.com/maps', '_blank');
-            return;
-        }
+        // Configuración de opciones para geolocalización más precisa
+        const opciones = {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+        };
 
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -97,24 +95,27 @@ export default function Configuracion() {
                     latitud: position.coords.latitude.toFixed(8),
                     longitud: position.coords.longitude.toFixed(8)
                 }));
-                setMensaje('Ubicación actual obtenida correctamente');
+                setMensaje(`✅ Ubicación obtenida correctamente (precisión: ${Math.round(position.coords.accuracy)}m)`);
                 setLoading(false);
             },
             (err) => {
                 console.error('Error de geolocalización:', err);
-                let errorMsg = 'No se pudo obtener la ubicación. ';
+                let errorMsg = '';
+                
                 if (err.code === 1) {
-                    errorMsg += 'Por favor, ingresa las coordenadas manualmente usando Google Maps.';
+                    errorMsg = '❌ Acceso a ubicación denegado. Por favor, permite el acceso a la ubicación en tu navegador y vuelve a intentar.';
                 } else if (err.code === 2) {
-                    errorMsg += 'Ubicación no disponible. Ingresa las coordenadas manualmente.';
+                    errorMsg = '❌ Ubicación no disponible. Verifica que tengas GPS activado o conexión a internet.';
+                } else if (err.code === 3) {
+                    errorMsg = '⏱️ Tiempo de espera agotado. Intenta nuevamente o ingresa las coordenadas manualmente.';
                 } else {
-                    errorMsg += 'Error de tiempo de espera. Ingresa las coordenadas manualmente.';
+                    errorMsg = '❌ Error desconocido al obtener la ubicación. Ingresa las coordenadas manualmente.';
                 }
+                
                 setError(errorMsg);
                 setLoading(false);
-                // Abrir Google Maps en nueva pestaña para ayudar
-                window.open('https://www.google.com/maps', '_blank');
-            }
+            },
+            opciones
         );
     };
 
@@ -247,14 +248,16 @@ export default function Configuracion() {
                 {/* Instrucciones para obtener coordenadas */}
                 <Alert severity="info" sx={{ mb: 3 }}>
                     <Typography variant="subtitle2" gutterBottom>
-                        📍 ¿Cómo obtener las coordenadas?
+                        📍 ¿Cómo configurar la ubicación?
                     </Typography>
                     <Typography variant="body2" component="div">
-                        1. Abre <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', fontWeight: 'bold' }}>Google Maps</a><br />
-                        2. Busca la ubicación de tu empresa/restaurante<br />
-                        3. Haz clic derecho en el punto exacto → "¿Qué hay aquí?"<br />
-                        4. Copia las coordenadas que aparecen (ejemplo: -13.50587746, -72.00980836)<br />
-                        5. Pégalas en los campos de Latitud y Longitud a continuación
+                        <strong>Opción 1 (Recomendada):</strong> Usa el botón "Usar mi ubicación actual" para obtener automáticamente las coordenadas GPS.<br />
+                        <strong>Opción 2 (Manual):</strong> Si la ubicación automática no funciona:<br />
+                        • Abre <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', fontWeight: 'bold' }}>Google Maps</a> en otra pestaña<br />
+                        • Busca la ubicación de tu empresa/restaurante<br />
+                        • Haz clic derecho en el punto exacto → "¿Qué hay aquí?"<br />
+                        • Copia las coordenadas (ejemplo: -13.50587746, -72.00980836)<br />
+                        • Pégalas en los campos de Latitud y Longitud
                     </Typography>
                 </Alert>
 

@@ -10,7 +10,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import java.time.LocalDate
+import com.example.sistemadecalidad.utils.TimeUtils
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -19,9 +20,13 @@ fun LavadoFrutasScreen(
     preferencesManager: com.example.sistemadecalidad.data.local.PreferencesManager,
     onNavigateBack: () -> Unit
 ) {
-    // Estados para los campos del formulario
-    var mes by remember { mutableStateOf(LocalDate.now().monthValue) }
-    var anio by remember { mutableStateOf(LocalDate.now().year) }
+    // Estados para los campos del formulario - usando zona horaria de Perú
+    val currentPeruDate = TimeUtils.getCurrentPeruDate()
+    val peruCalendar = Calendar.getInstance(TimeUtils.getPeruTimeZone())
+    peruCalendar.time = currentPeruDate
+    
+    var mes by remember { mutableStateOf(peruCalendar.get(Calendar.MONTH) + 1) }
+    var anio by remember { mutableStateOf(peruCalendar.get(Calendar.YEAR)) }
     var productoQuimico by remember { mutableStateOf("Cloro") }
     var concentracionProducto by remember { mutableStateOf("") }
     var nombreFrutaVerdura by remember { mutableStateOf("") }

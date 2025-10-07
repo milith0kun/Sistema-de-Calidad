@@ -30,6 +30,7 @@ import com.example.sistemadecalidad.ui.screens.haccp.RecepcionAbarrotesScreen
 import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.ui.viewmodel.AuthViewModel
 import com.example.sistemadecalidad.ui.viewmodel.FichadoViewModel
+import com.example.sistemadecalidad.utils.LocationManager
 import com.google.gson.Gson
 
 /**
@@ -58,8 +59,9 @@ fun HaccpNavigation(
     val authRepository = AuthRepository(apiService)
     val fichadoRepository = FichadoRepository(apiService)
     val haccpRepository = com.example.sistemadecalidad.data.repository.HaccpRepository(apiService)
+    val locationManager = LocationManager(context)
     val authViewModel = AuthViewModel(authRepository, preferencesManager)
-    val fichadoViewModel = FichadoViewModel(fichadoRepository, preferencesManager)
+    val fichadoViewModel = FichadoViewModel(fichadoRepository, preferencesManager, locationManager)
     val haccpViewModel = com.example.sistemadecalidad.ui.viewmodel.HaccpViewModel(haccpRepository, preferencesManager)
     
     // Observar el estado de autenticación (solo para lectura, sin redirecciones automáticas)

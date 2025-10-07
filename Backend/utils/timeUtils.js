@@ -165,6 +165,73 @@ function getDateDaysAgo(days) {
     return formatDateForDB(peruDate);
 }
 
+/**
+ * Obtiene el inicio del día actual (00:00:00) en zona horaria de Perú
+ * @param {Date} date - Fecha específica (opcional, usa fecha actual si no se proporciona)
+ * @returns {string} Fecha en formato YYYY-MM-DD
+ */
+function getStartOfDay(date = getCurrentPeruDate()) {
+    return formatDateForDB(date);
+}
+
+/**
+ * Obtiene el final del día actual (23:59:59) en zona horaria de Perú
+ * @param {Date} date - Fecha específica (opcional, usa fecha actual si no se proporciona)
+ * @returns {string} Fecha en formato YYYY-MM-DD
+ */
+function getEndOfDay(date = getCurrentPeruDate()) {
+    return formatDateForDB(date);
+}
+
+/**
+ * Obtiene los parámetros para filtrar datos del día actual (00:00 a 00:00 del día siguiente)
+ * @param {Date} date - Fecha específica (opcional, usa fecha actual si no se proporciona)
+ * @returns {Object} Objeto con fecha_inicio y fecha_fin para consultas SQL
+ */
+function getDayRange(date = getCurrentPeruDate()) {
+    const fechaActual = formatDateForDB(date);
+    return {
+        fecha_inicio: fechaActual,
+        fecha_fin: fechaActual
+    };
+}
+
+/**
+ * Obtiene los parámetros para filtrar datos de un rango de fechas específico
+ * @param {string} fechaInicio - Fecha de inicio en formato YYYY-MM-DD
+ * @param {string} fechaFin - Fecha de fin en formato YYYY-MM-DD (opcional, usa fechaInicio si no se proporciona)
+ * @returns {Object} Objeto con fecha_inicio y fecha_fin para consultas SQL
+ */
+function getCustomDateRange(fechaInicio, fechaFin = null) {
+    return {
+        fecha_inicio: fechaInicio,
+        fecha_fin: fechaFin || fechaInicio
+    };
+}
+
+/**
+ * Verifica si una fecha está dentro del día actual (00:00 a 23:59)
+ * @param {string} fecha - Fecha en formato YYYY-MM-DD
+ * @returns {boolean} True si la fecha es del día actual
+ */
+function isToday(fecha) {
+    const hoy = formatDateForDB();
+    return fecha === hoy;
+}
+
+/**
+ * Genera condiciones SQL para filtrar por día específico
+ * @param {string} fecha - Fecha en formato YYYY-MM-DD (opcional, usa fecha actual si no se proporciona)
+ * @returns {Object} Objeto con query y params para usar en consultas SQL
+ */
+function getDayFilterSQL(fecha = null) {
+    const fechaFiltro = fecha || formatDateForDB();
+    return {
+        query: 'fecha = ?',
+        params: [fechaFiltro]
+    };
+}
+
 module.exports = {
     PERU_TIMEZONE,
     getCurrentPeruDate,
@@ -178,5 +245,12 @@ module.exports = {
     getStartOfWeek,
     getStartOfMonth,
     getStartOfYear,
-    getDateDaysAgo
+    getDateDaysAgo,
+    // Nuevas funciones para manejo de datos diarios
+    getStartOfDay,
+    getEndOfDay,
+    getDayRange,
+    getCustomDateRange,
+    isToday,
+    getDayFilterSQL
 };

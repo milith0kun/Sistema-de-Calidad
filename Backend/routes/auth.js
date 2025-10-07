@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { db } = require('../utils/database');
 const { authenticateToken } = require('../middleware/auth');
+const { config } = require('../config-app-universal');
 
 const router = express.Router();
 
@@ -52,8 +53,8 @@ router.post('/login', async (req, res) => {
                 email: user.email,
                 rol: user.rol
             },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
+            config.jwt.secret,
+            { expiresIn: config.jwt.expiresIn }
         );
 
         // Respuesta exitosa

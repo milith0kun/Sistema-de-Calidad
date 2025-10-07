@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.data.model.*
 import com.example.sistemadecalidad.data.repository.FichadoRepository
+import com.example.sistemadecalidad.utils.LocationManager
 // import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,7 +18,8 @@ import kotlinx.coroutines.launch
 // @HiltViewModel
 class FichadoViewModel /* @Inject constructor( */ (
     private val fichadoRepository: FichadoRepository,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val locationManager: LocationManager
 ) : ViewModel() {
     
     // Estado de la UI
@@ -261,7 +263,11 @@ class FichadoViewModel /* @Inject constructor( */ (
                                         radius = data.radioMetros,
                                         gpsEnabled = true // Siempre activado desde el backend
                                     )
-                                    android.util.Log.i("FichadoViewModel", "✅ Configuración GPS guardada localmente")
+                                    
+                                    // Recargar configuración en LocationManager para aplicar cambios inmediatamente
+                                    locationManager.reloadLocationConfig()
+                                    
+                                    android.util.Log.i("FichadoViewModel", "✅ Configuración GPS guardada localmente y recargada en LocationManager")
                                 } else {
                                     android.util.Log.w("FichadoViewModel", "Configuración GPS incompleta, usando valores por defecto")
                                 }

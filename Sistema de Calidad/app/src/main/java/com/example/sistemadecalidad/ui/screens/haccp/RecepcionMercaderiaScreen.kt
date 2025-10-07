@@ -13,9 +13,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.ui.viewmodel.HaccpViewModel
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
+import com.example.sistemadecalidad.utils.TimeUtils
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,8 +60,9 @@ fun RecepcionMercaderiaScreen(
     var showSuccessDialog by remember { mutableStateOf(false) }
     
     val scrollState = rememberScrollState()
-    val today = LocalDate.now()
-    val now = LocalTime.now()
+    val currentPeruDate = TimeUtils.getCurrentPeruDate()
+    val peruCalendar = Calendar.getInstance(TimeUtils.getPeruTimeZone())
+    peruCalendar.time = currentPeruDate
     
     // Cargar supervisores al iniciar
     LaunchedEffect(Unit) {
@@ -98,10 +98,10 @@ fun RecepcionMercaderiaScreen(
                     }
                     
                     haccpViewModel.registrarRecepcionFrutasVerduras(
-                        mes = today.monthValue,
-                        anio = today.year,
-                        fecha = today.format(DateTimeFormatter.ISO_DATE),
-                        hora = now.format(DateTimeFormatter.ofPattern("HH:mm")),
+                        mes = peruCalendar.get(Calendar.MONTH) + 1,
+                        anio = peruCalendar.get(Calendar.YEAR),
+                        fecha = TimeUtils.formatDateForBackend(currentPeruDate),
+                        hora = TimeUtils.formatTimeForBackend(currentPeruDate),
                         tipoControl = tipoControl,
                         nombreProveedor = nombreProveedor,
                         nombreProducto = nombreProducto,

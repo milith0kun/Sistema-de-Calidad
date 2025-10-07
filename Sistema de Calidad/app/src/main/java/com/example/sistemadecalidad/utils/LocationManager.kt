@@ -287,6 +287,14 @@ class LocationManager(private val context: Context) {
             startLocationTracking()
         }
     }
+    
+    /**
+     * Recargar configuración GPS desde PreferencesManager
+     * Útil cuando se actualiza la configuración desde el WebPanel
+     */
+    fun reloadLocationConfig() {
+        loadLocationConfig()
+    }
 }
 
 /**

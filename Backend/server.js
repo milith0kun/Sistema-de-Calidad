@@ -85,7 +85,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Middleware especial para bypass completo y compatibilidad total
 app.use((req, res, next) => {
-    console.log(`${getPeruTimestamp()} - ${req.method} ${req.path}`);
+    try {
+        console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    } catch (error) {
+        console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    }
     
     // Headers para máxima compatibilidad
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -114,6 +118,7 @@ app.use('/api/fichado', require('./routes/fichado'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/tiempo-real', require('./routes/tiempo-real'));
 app.use('/api/haccp', require('./routes/haccp'));
+app.use('/api/haccp-daily', require('./routes/haccp-daily')); // Nuevos endpoints para datos diarios
 app.use('/api/formularios-haccp', require('./routes/formularios-haccp'));
 app.use('/api/usuarios', require('./routes/usuarios'));
 app.use('/api/reportes', require('./routes/reportes'));
@@ -123,23 +128,31 @@ app.use('/api/configuracion', require('./routes/configuracion'));
 
 // Ruta de health check sin prefijo (para compatibilidad)
 app.get('/health', (req, res) => {
-    res.json({
-        status: 'OK',
-        timestamp: getPeruTimestamp(),
-        uptime: process.uptime(),
-        environment: process.env.NODE_ENV || 'development',
-        server: {
-            host: HOST,
-            port: PORT
-        },
-        database: {
-            connected: true
-        },
-        ngrok: {
-            enabled: true,
-            token_configured: !!NGROK_TOKEN
-        }
-    });
+    try {
+        res.json({
+            status: 'OK',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            environment: process.env.NODE_ENV || 'development',
+            server: {
+                host: HOST,
+                port: PORT
+            },
+            database: {
+                connected: true
+            },
+            ngrok: {
+                enabled: true,
+                token_configured: !!NGROK_TOKEN
+            }
+        });
+    } catch (error) {
+        console.error('Error en /health:', error);
+        res.status(500).json({
+            status: 'ERROR',
+            error: error.message
+        });
+    }
 });
 
 // Ruta principal con información del servidor
@@ -342,15 +355,16 @@ const startServer = async () => {
         iniciarCronJobs();
         console.log('✅ Cron jobs configurados correctamente');
 
-        // Iniciar servidor en HOST y PORT configurados
-        const server = app.listen(PORT, HOST, async () => {
+        // Iniciar servidor en HOST y PORT configurados - Forzar 0.0.0.0 para AWS
+        const LISTEN_HOST = '0.0.0.0'; // Forzar para acceso externo
+        const server = app.listen(PORT, LISTEN_HOST, async () => {
             const ENVIRONMENT = IS_AWS ? 'AWS' : 'LOCAL';
             const PUBLIC_URL = `http://${PUBLIC_IP}${PORT === 80 ? '' : ':' + PORT}`;
             
             console.log(`\n🚀 SERVIDOR HACCP WINO INICIADO! 🚀`);
             console.log('==========================================');
             console.log(`📍 Entorno: ${ENVIRONMENT}`);
-            console.log(`🏠 Servidor: ${HOST}:${PORT}`);
+            console.log(`🏠 Servidor: ${LISTEN_HOST}:${PORT}`);
             console.log(`🌐 IP Pública: ${PUBLIC_IP}`);
             console.log(`🌍 URL Acceso: ${PUBLIC_URL}`);
             console.log(`🏥 Node ENV: ${process.env.NODE_ENV || 'development'}`);

@@ -10,9 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
+import com.example.sistemadecalidad.utils.TimeUtils
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,8 +28,9 @@ fun ControlTemperaturaScreen(
     var accionCorrectiva by remember { mutableStateOf("") }
     
     val scrollState = rememberScrollState()
-    val today = LocalDate.now()
-    val now = LocalTime.now()
+    val currentPeruDate = TimeUtils.getCurrentPeruDate()
+    val peruCalendar = Calendar.getInstance(TimeUtils.getPeruTimeZone())
+    peruCalendar.time = currentPeruDate
     
     // Calcular conformidad automáticamente
     val tempReg = temperaturaRegistrada.toDoubleOrNull() ?: 0.0
@@ -53,11 +53,11 @@ fun ControlTemperaturaScreen(
             FloatingActionButton(
                 onClick = {
                     val data = ControlTemperaturaData(
-                        mes = today.monthValue,
-                        anio = today.year,
-                        dia = today.dayOfMonth,
-                        fecha = today.format(DateTimeFormatter.ISO_DATE),
-                        hora = now.format(DateTimeFormatter.ofPattern("HH:mm")),
+                        mes = peruCalendar.get(Calendar.MONTH) + 1,
+                        anio = peruCalendar.get(Calendar.YEAR),
+                        dia = peruCalendar.get(Calendar.DAY_OF_MONTH),
+                        fecha = TimeUtils.formatDateForBackend(currentPeruDate),
+                        hora = TimeUtils.formatTimeForBackend(currentPeruDate),
                         tipoAlimento = tipoAlimento,
                         nombreAlimento = nombreAlimento,
                         temperaturaRegistrada = tempReg,

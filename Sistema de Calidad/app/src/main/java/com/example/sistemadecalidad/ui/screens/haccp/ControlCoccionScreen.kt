@@ -11,9 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
+import com.example.sistemadecalidad.utils.TimeUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,8 +32,7 @@ fun ControlCoccionScreen(
     var showSuccessDialog by remember { mutableStateOf(false) }
     
     val scrollState = rememberScrollState()
-    val today = LocalDate.now()
-    val now = LocalTime.now()
+    val currentPeruDate = TimeUtils.getCurrentPeruDate()
     
     // Calcular conformidad automáticamente
     val temperatura = temperaturaCoccion.toDoubleOrNull() ?: 0.0

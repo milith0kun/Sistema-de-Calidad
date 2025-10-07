@@ -12,8 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import java.time.LocalDate
-import java.time.LocalTime
+import com.example.sistemadecalidad.utils.TimeUtils
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,9 +67,13 @@ fun LavadoManosScreen(
     preferencesManager: com.example.sistemadecalidad.data.local.PreferencesManager,
     onNavigateBack: () -> Unit
 ) {
-    // Estados para los campos del formulario
-    var mes by remember { mutableStateOf(LocalDate.now().monthValue) }
-    var anio by remember { mutableStateOf(LocalDate.now().year) }
+    // Estados para los campos del formulario - usando zona horaria de Perú
+    val currentPeruDate = TimeUtils.getCurrentPeruDate()
+    val peruCalendar = Calendar.getInstance(TimeUtils.getPeruTimeZone())
+    peruCalendar.time = currentPeruDate
+    
+    var mes by remember { mutableStateOf(peruCalendar.get(Calendar.MONTH) + 1) }
+    var anio by remember { mutableStateOf(peruCalendar.get(Calendar.YEAR)) }
     var areaEstacion by remember { mutableStateOf("COCINA") }
     var turno by remember { mutableStateOf("MAÑANA") }
     var procedimientoCorrecto by remember { mutableStateOf("C") } // C = Conforme, NC = No Conforme
@@ -132,8 +136,8 @@ fun LavadoManosScreen(
                     Text("EMPLEADO QUE SE LAVA LAS MANOS", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                     Text("Nombre: ${usuario?.nombreCompleto ?: "..."}")
                     Text("Cargo: ${usuario?.cargo ?: "..."}")
-                    Text("Fecha: ${LocalDate.now()}")
-                    Text("Hora: ${LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))}")
+                    Text("Fecha: ${TimeUtils.formatDateForDisplay(currentPeruDate)}")
+                    Text("Hora: ${TimeUtils.formatTimeForDisplay(currentPeruDate)}")
                 }
             }
             

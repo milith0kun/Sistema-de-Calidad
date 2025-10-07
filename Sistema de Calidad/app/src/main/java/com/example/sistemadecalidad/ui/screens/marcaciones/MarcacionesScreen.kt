@@ -31,6 +31,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.ui.viewmodel.FichadoViewModel
 import com.example.sistemadecalidad.utils.LocationManager
@@ -56,6 +59,7 @@ fun MarcacionesScreen(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
     val preferencesManager = remember { PreferencesManager(context, Gson()) }
+    val lifecycleOwner = LocalLifecycleOwner.current
     
     // Observar estados
     val fichadoUiState by fichadoViewModel.uiState.collectAsStateWithLifecycle()
@@ -118,6 +122,22 @@ fun MarcacionesScreen(
             )
         } else {
             locationManager.startLocationTracking()
+        }
+    }
+    
+    // Sincronización periódica y detección de lifecycle
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            // Sincronizar cuando la app vuelve del background
+            android.util.Log.d("MarcacionesScreen", "App resumed - Sincronizando configuración GPS")
+            fichadoViewModel.sincronizarConfiguracionGPS()
+            
+            // Sincronización periódica cada 5 minutos mientras la app está activa
+            while (true) {
+                delay(5 * 60 * 1000) // 5 minutos
+                android.util.Log.d("MarcacionesScreen", "Sincronización periódica - Actualizando configuración GPS")
+                fichadoViewModel.sincronizarConfiguracionGPS()
+            }
         }
     }
     
@@ -274,16 +294,18 @@ fun MarcacionesScreen(
             }
         }
         
-        // Botón de configuración de ubicación - ELIMINADO
-        // La configuración GPS ahora se realiza únicamente desde el WebPanel por Admins/Supervisores
-        // OutlinedButton(
-        //     onClick = onNavigateToLocationSettings,
-        //     modifier = Modifier.fillMaxWidth()
-        // ) {
-        //     Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
-        //     Spacer(modifier = Modifier.width(8.dp))
-        //     Text("Configurar Ubicación de Fichado")
-        // }
+        // Botón para sincronizar configuración GPS manualmente
+        OutlinedButton(
+            onClick = {
+                android.util.Log.d("MarcacionesScreen", "Sincronización manual solicitada")
+                fichadoViewModel.sincronizarConfiguracionGPS()
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Actualizar Configuración GPS")
+        }
         
         // Mapa visual de ubicación objetivo
         Card(
