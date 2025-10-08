@@ -323,22 +323,11 @@ const startServer = async () => {
         const gracefulShutdown = async () => {
             console.log('\n🛑 Cerrando servidor...');
             
-            // Cerrar túnel ngrok si existe
-            if (ngrokListener) {
-                try {
-                    console.log('🔌 Cerrando túnel ngrok...');
-                    await ngrokListener.close();
-                    console.log('✅ Ngrok cerrado');
-                } catch (error) {
-                    console.log('⚠️  Error cerrando ngrok:', error.message);
-                }
-            }
-            
             // Cerrar servidor HTTP
-            server.close(() => {
-                console.log('✅ Servidor cerrado correctamente');
-                process.exit(0);
-            });
+        server.close(() => {
+            console.log('✅ Servidor cerrado correctamente');
+            process.exit(0);
+        });
         };
 
         // Manejo de señales de cierre
