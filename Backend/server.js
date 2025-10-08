@@ -138,11 +138,7 @@ app.get('/health', (req, res) => {
             },
             database: {
                 connected: true
-            },
-            ngrok: {
-        enabled: false,
-        token_configured: false
-    }
+            }
         });
     } catch (error) {
         console.error('Error en /health:', error);
@@ -153,29 +149,7 @@ app.get('/health', (req, res) => {
     }
 });
 
-// Ruta principal con información del servidor
-app.get('/', (req, res) => {
-    res.json({
-        message: '🍷 Servidor HACCP Wino funcionando correctamente',
-        timestamp: getPeruTimestamp(),
-        server: {
-            host: HOST,
-            port: PORT,
-            environment: process.env.NODE_ENV || 'development'
-        },
-        endpoints: {
-            auth: '/auth/login, /auth/verify',
-            fichado: '/fichado/entrada, /fichado/salida, /fichado/historial',
-            dashboard: '/dashboard/hoy, /dashboard/resumen',
-            health: '/health'
-        },
-        instructions: {
-            mobile_apps: 'Usar la IP pública del servidor o el dominio configurado en Nginx (puerto 80)',
-            local_access: `http://localhost:${PORT}`,
-            configuration: 'Variables configuradas automáticamente para acceso directo (HOST=0.0.0.0)'
-        }
-    });
-});
+// Ruta raíz eliminada: no exponer información pública. Las rutas disponibles comienzan en /api/*
 
 // Middleware para manejo de errores
 app.use((err, req, res, next) => {
