@@ -172,7 +172,7 @@ const Login = () => {
 
               <Box textAlign="center" mt={2}>
                 <Typography variant="body2" color="text.secondary">
-                  Credenciales de prueba: admin@hotel.com / admin123
+                  Credenciales de prueba: admin@hotel.com / supervisor123
                 </Typography>
               </Box>
             </CardContent>

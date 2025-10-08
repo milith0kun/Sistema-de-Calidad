@@ -16,8 +16,8 @@ router.get('/supervisores/lista', authenticateToken, async (req, res) => {
         console.log('=== GET /api/usuarios/supervisores/lista ===');
         console.log('Usuario solicitante:', req.user);
 
-        // Solo devolver usuarios con rol SUPERVISOR activos (NO ADMIN)
-        // Los formularios HACCP deben ser llenados por empleados y supervisados por SUPERVISORES
+        // Solo devolver usuarios con rol supervisor activos
+        // Los formularios HACCP deben ser llenados por colaboradores y supervisados por supervisores
         const supervisores = await db.all(`
             SELECT 
                 id,
@@ -28,7 +28,7 @@ router.get('/supervisores/lista', authenticateToken, async (req, res) => {
                 area,
                 rol
             FROM usuarios
-            WHERE rol = 'SUPERVISOR' AND activo = 1
+            WHERE rol = 'supervisor' AND activo = 1
             ORDER BY nombre ASC
         `);
 
@@ -55,11 +55,11 @@ router.get('/', authenticateToken, async (req, res) => {
         console.log('=== GET /api/usuarios ===');
         console.log('Usuario solicitante:', req.user);
 
-        // Verificar que sea administrador
-        if (req.user.rol !== 'ADMIN') {
+        // Verificar que sea supervisor
+        if (req.user.rol !== 'supervisor') {
             return res.status(403).json({
                 success: false,
-                error: 'Acceso denegado. Se requieren permisos de administrador.'
+                error: 'Acceso denegado. Se requieren permisos de supervisor.'
             });
         }
 
@@ -142,11 +142,11 @@ router.post('/', authenticateToken, async (req, res) => {
     try {
         console.log('=== POST /api/usuarios ===');
         
-        // Verificar que sea administrador
-        if (req.user.rol !== 'ADMIN') {
+        // Verificar que sea supervisor
+        if (req.user.rol !== 'supervisor') {
             return res.status(403).json({
                 success: false,
-                error: 'Acceso denegado. Se requieren permisos de administrador.'
+                error: 'Acceso denegado. Se requieren permisos de supervisor.'
             });
         }
 
@@ -221,11 +221,11 @@ router.put('/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         
-        // Verificar que sea administrador
-        if (req.user.rol !== 'ADMIN') {
+        // Verificar que sea supervisor
+        if (req.user.rol !== 'supervisor') {
             return res.status(403).json({
                 success: false,
-                error: 'Acceso denegado. Se requieren permisos de administrador.'
+                error: 'Acceso denegado. Se requieren permisos de supervisor.'
             });
         }
 
@@ -341,15 +341,15 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Verificar que sea administrador
-        if (req.user.rol !== 'ADMIN') {
+        // Verificar que sea supervisor
+        if (req.user.rol !== 'supervisor') {
             return res.status(403).json({
                 success: false,
-                error: 'Acceso denegado. Se requieren permisos de administrador.'
+                error: 'Acceso denegado. Se requieren permisos de supervisor.'
             });
         }
 
-        // No permitir eliminar al propio usuario admin
+        // No permitir eliminar al propio usuario supervisor
         if (req.user.id === parseInt(id)) {
             return res.status(400).json({
                 success: false,

@@ -1339,7 +1339,7 @@ router.get('/supervisores', authenticateToken, (req, res) => {
                 rol
             FROM usuarios 
             WHERE activo = 1 
-              AND rol IN ('SUPERVISOR', 'ADMIN')
+              AND rol = 'supervisor'
         `;
 
         const params = [];

@@ -140,38 +140,38 @@ const insertDefaultUsers = async () => {
 
             try {
                 // Hash de las contraseñas
-                const adminPassword = await bcrypt.hash('admin123', 10);
-                const empleadoPassword = await bcrypt.hash('empleado123', 10);
+                const supervisorPassword = await bcrypt.hash('supervisor123', 10);
+                const colaboradorPassword = await bcrypt.hash('colaborador123', 10);
 
-                // Insertar usuario administrador
-                const insertAdmin = `
+                // Insertar usuario supervisor
+                const insertSupervisor = `
                     INSERT INTO usuarios (nombre, apellido, email, password, rol, cargo, area)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 `;
 
-                // Insertar usuario empleado
-                const insertEmpleado = `
+                // Insertar usuario colaborador
+                const insertColaborador = `
                     INSERT INTO usuarios (nombre, apellido, email, password, rol, cargo, area)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 `;
 
                 db.serialize(() => {
-                    db.run(insertAdmin, ['Administrador', 'Sistema', 'admin@hotel.com', adminPassword, 'ADMIN', 'Administrador', 'Administración'], (err) => {
+                    db.run(insertSupervisor, ['Supervisor', 'Sistema', 'supervisor@hotel.com', supervisorPassword, 'supervisor', 'Supervisor', 'Administración'], (err) => {
                         if (err) {
-                            console.error('Error insertando admin:', err.message);
+                            console.error('Error insertando supervisor:', err.message);
                             reject(err);
                             return;
                         }
-                        console.log('Usuario administrador creado');
+                        console.log('Usuario supervisor creado');
                     });
 
-                    db.run(insertEmpleado, ['Empleado', 'Prueba', 'empleado@hotel.com', empleadoPassword, 'EMPLEADO', 'Empleado', 'Operaciones'], (err) => {
+                    db.run(insertColaborador, ['Colaborador', 'Prueba', 'colaborador@hotel.com', colaboradorPassword, 'colaborador', 'Colaborador', 'Operaciones'], (err) => {
                         if (err) {
-                            console.error('Error insertando empleado:', err.message);
+                            console.error('Error insertando colaborador:', err.message);
                             reject(err);
                             return;
                         }
-                        console.log('Usuario empleado creado');
+                        console.log('Usuario colaborador creado');
                         resolve();
                     });
                 });

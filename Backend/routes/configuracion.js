@@ -7,14 +7,14 @@ const { db } = require('../utils/database');
 const { authenticateToken } = require('../middleware/auth');
 
 /**
- * Middleware para verificar que el usuario sea Admin o Supervisor
+ * Middleware para verificar que el usuario sea Supervisor
  */
 function requireAdminOrSupervisor(req, res, next) {
-    if (req.user.rol !== 'ADMIN' && req.user.rol !== 'SUPERVISOR') {
+    if (req.user.rol !== 'supervisor') {
         return res.status(403).json({
             success: false,
             error: 'ACCESO_DENEGADO',
-            message: 'Solo administradores y supervisores pueden acceder a la configuración'
+            message: 'Solo supervisores pueden acceder a la configuración'
         });
     }
     next();
@@ -205,13 +205,13 @@ router.get('/roles', authenticateToken, (req, res) => {
     res.json({
         success: true,
         data: {
-            roles_disponibles: ['ADMIN', 'SUPERVISOR', 'EMPLEADO'],
-            acceso_webpanel: ['ADMIN', 'SUPERVISOR'],
-            acceso_app_movil: ['ADMIN', 'SUPERVISOR', 'EMPLEADO'],
-            puede_configurar_gps: ['ADMIN', 'SUPERVISOR'],
-            puede_gestionar_usuarios: ['ADMIN'],
-            puede_ver_reportes: ['ADMIN', 'SUPERVISOR'],
-            puede_firmar_haccp: ['ADMIN', 'SUPERVISOR']
+            roles_disponibles: ['colaborador', 'supervisor'],
+            acceso_webpanel: ['supervisor'],
+            acceso_app_movil: ['colaborador', 'supervisor'],
+            puede_configurar_gps: ['supervisor'],
+            puede_gestionar_usuarios: ['supervisor'],
+            puede_ver_reportes: ['supervisor'],
+            puede_firmar_haccp: ['supervisor']
         }
     });
 });

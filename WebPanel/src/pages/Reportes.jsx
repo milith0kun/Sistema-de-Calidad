@@ -258,12 +258,14 @@ const Reportes = () => {
         throw new Error('El archivo descargado está vacío');
       }
       
-      // Crear URL temporal y descargar
+      // Crear URL temporal y descargar con atributos de seguridad
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
       a.download = `Formulario_HACCP_${tipo}_${mes.toString().padStart(2, '0')}_${anio}.xlsx`;
+      a.setAttribute('rel', 'noopener noreferrer');
+      a.setAttribute('target', '_self');
       
       // Agregar al DOM, hacer clic y limpiar
       document.body.appendChild(a);
@@ -315,12 +317,14 @@ const Reportes = () => {
         throw new Error('El archivo descargado está vacío');
       }
       
-      // Crear URL temporal y descargar
+      // Crear URL temporal y descargar con atributos de seguridad
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
       a.download = `Reporte_HACCP_${tipo}_${mes.toString().padStart(2, '0')}_${anio}.xlsx`;
+      a.setAttribute('rel', 'noopener noreferrer');
+      a.setAttribute('target', '_self');
       
       // Agregar al DOM, hacer clic y limpiar
       document.body.appendChild(a);

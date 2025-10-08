@@ -53,7 +53,7 @@ const Usuarios = () => {
     apellido: '',
     email: '',
     password: '',
-    rol: 'EMPLEADO',
+    rol: 'colaborador',
     cargo: '',
     area: '',
   });
@@ -106,7 +106,7 @@ const Usuarios = () => {
         apellido: '',
         email: '',
         password: '',
-        rol: 'EMPLEADO',
+        rol: 'colaborador',
         cargo: '',
         area: '',
       });
@@ -122,7 +122,7 @@ const Usuarios = () => {
       apellido: '',
       email: '',
       password: '',
-      rol: 'EMPLEADO',
+      rol: 'colaborador',
       cargo: '',
       area: '',
     });
@@ -246,13 +246,9 @@ const Usuarios = () => {
 
   const getRolColor = (rol) => {
     switch (rol) {
-      case 'ADMIN':
+      case 'supervisor':
         return 'error';
-      case 'SUPERVISOR':
-        return 'warning';
-      case 'COCINERO':
-        return 'info';
-      case 'EMPLEADO':
+      case 'colaborador':
         return 'default';
       default:
         return 'default';
@@ -435,10 +431,8 @@ const Usuarios = () => {
                   label="Rol"
                   onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
                 >
-                  <MenuItem value="ADMIN">Administrador</MenuItem>
-                  <MenuItem value="SUPERVISOR">Supervisor</MenuItem>
-                  <MenuItem value="COCINERO">Cocinero</MenuItem>
-                  <MenuItem value="EMPLEADO">Empleado</MenuItem>
+                  <MenuItem value="supervisor">Supervisor</MenuItem>
+                  <MenuItem value="colaborador">Colaborador</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
