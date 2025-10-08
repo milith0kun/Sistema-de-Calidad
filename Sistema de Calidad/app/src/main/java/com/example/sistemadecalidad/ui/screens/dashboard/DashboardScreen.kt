@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 // import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.sistemadecalidad.ui.components.TokenExpiredDialog
 import com.example.sistemadecalidad.ui.viewmodel.AuthViewModel
 import com.example.sistemadecalidad.ui.viewmodel.FichadoViewModel
 import com.example.sistemadecalidad.utils.TimeUtils
@@ -71,6 +72,16 @@ fun DashboardScreen(
     // Inicializar datos al cargar la pantalla
     LaunchedEffect(Unit) {
         fichadoViewModel.inicializarDatos()
+    }
+    
+    // Observar eventos de token expirado
+    LaunchedEffect(fichadoViewModel) {
+        fichadoViewModel.authStateManager.tokenExpiredEvent.collect { tokenExpiredTime ->
+            if (tokenExpiredTime != null) {
+                android.util.Log.d("DashboardScreen", "Token expirado detectado - Redirigiendo al login")
+                onLogout()
+            }
+        }
     }
     
     // Formatear fecha y hora actual en tiempo real usando zona horaria de Perú
@@ -459,5 +470,21 @@ fun DashboardScreen(
             }
         }
         }
+    }
+    
+    // Observar estado del diálogo de token expirado
+    val showTokenExpiredDialog by fichadoViewModel.authStateManager.showTokenExpiredDialog.collectAsStateWithLifecycle()
+    
+    // Mostrar diálogo de token expirado
+    if (showTokenExpiredDialog) {
+        TokenExpiredDialog(
+            onGoToLogin = {
+                fichadoViewModel.authStateManager.dismissTokenExpiredDialog()
+                onLogout()
+            },
+            onDismiss = {
+                fichadoViewModel.authStateManager.dismissTokenExpiredDialog()
+            }
+        )
     }
 }

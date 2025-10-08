@@ -25,8 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 // import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.sistemadecalidad.ui.viewmodel.FichadoViewModel
+import com.example.sistemadecalidad.ui.components.TokenExpiredDialog
 import com.example.sistemadecalidad.ui.viewmodel.AuthViewModel
+import com.example.sistemadecalidad.ui.viewmodel.FichadoViewModel
 import com.example.sistemadecalidad.utils.TimeUtils
 import java.text.SimpleDateFormat
 import java.util.*
@@ -67,6 +68,16 @@ fun HistorialScreen(
     // Inicializar datos al cargar la pantalla
     LaunchedEffect(Unit) {
         fichadoViewModel.obtenerHistorial()
+    }
+    
+    // Observar eventos de token expirado
+    LaunchedEffect(fichadoViewModel) {
+        fichadoViewModel.authStateManager.tokenExpiredEvent.collect { tokenExpiredTime ->
+            if (tokenExpiredTime != null) {
+                android.util.Log.d("HistorialScreen", "Token expirado detectado - Redirigiendo al login")
+                onLogout()
+            }
+        }
     }
     
     // Convertir los registros del backend al formato de visualización
@@ -299,6 +310,22 @@ fun HistorialScreen(
             }
         } // Cierre de if-else
         } // Cierre de Column
+        
+        // Observar estado del diálogo de token expirado
+        val showTokenExpiredDialog by fichadoViewModel.authStateManager.showTokenExpiredDialog.collectAsStateWithLifecycle()
+        
+        // Mostrar diálogo de token expirado
+        if (showTokenExpiredDialog) {
+            TokenExpiredDialog(
+                onGoToLogin = {
+                    fichadoViewModel.authStateManager.dismissTokenExpiredDialog()
+                    onLogout()
+                },
+                onDismiss = {
+                    fichadoViewModel.authStateManager.dismissTokenExpiredDialog()
+                }
+            )
+        }
     } // Cierre de Scaffold
 } // Cierre de HistorialScreen
 

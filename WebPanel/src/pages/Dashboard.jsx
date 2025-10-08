@@ -8,12 +8,17 @@ import {
   CircularProgress,
   Alert,
   Paper,
+  Button,
+  Chip,
 } from '@mui/material';
 import {
   People as PeopleIcon,
   Assignment as AssignmentIcon,
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
+  Refresh as RefreshIcon,
+  TrendingUp as TrendingUpIcon,
+  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import { dashboardService } from '../services/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
@@ -53,14 +58,28 @@ const Dashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [ultimaActualizacion, setUltimaActualizacion] = useState(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {
     loadDashboard();
   }, []);
 
+  // Auto-refresh cada 30 segundos
+  useEffect(() => {
+    if (!autoRefresh) return;
+    
+    const interval = setInterval(() => {
+      loadDashboard();
+    }, 30000); // 30 segundos
+
+    return () => clearInterval(interval);
+  }, [autoRefresh]);
+
   const loadDashboard = async () => {
     try {
       setLoading(true);
+      setError('');
       const response = await dashboardService.getAdmin();
       console.log('Dashboard response:', response);
       
@@ -68,23 +87,30 @@ const Dashboard = () => {
         // Validar y normalizar todos los arrays y datos
         const dashboardData = {
           ...response.data,
-          productos_rechazados_detalle: Array.isArray(response.data?.productos_rechazados_detalle) 
-            ? response.data.productos_rechazados_detalle 
-            : [],
-          productos_rechazados_semana: Array.isArray(response.data?.productos_rechazados_detalle)
-            ? response.data.productos_rechazados_detalle.length
-            : 0,
+          // Empleados presentes hoy
+          empleados_presentes_hoy: response.data?.empleados_presentes_hoy || 0,
           empleados_hoy: Array.isArray(response.data?.empleados_hoy)
             ? response.data.empleados_hoy
             : [],
+          // Controles HACCP
+          controles_haccp_hoy: response.data?.controles_haccp_hoy || 0,
+          // No conformidades
+          no_conformidades_mes: response.data?.no_conformidades_mes || 0,
           no_conformidades_por_tipo: Array.isArray(response.data?.no_conformidades_por_tipo)
             ? response.data.no_conformidades_por_tipo
             : [],
+          // Productos rechazados
+          productos_rechazados_detalle: Array.isArray(response.data?.productos_rechazados_detalle) 
+            ? response.data.productos_rechazados_detalle 
+            : [],
+          productos_rechazados_semana: response.data?.productos_rechazados_semana || 0,
+          // Asistencias
           asistencias_semana: Array.isArray(response.data?.asistencias_semana)
             ? response.data.asistencias_semana
             : []
         };
         setData(dashboardData);
+        setUltimaActualizacion(new Date());
       } else {
         setError(response?.error || 'Error cargando dashboard');
       }
@@ -110,18 +136,53 @@ const Dashboard = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom fontWeight="bold">
-        Dashboard
-      </Typography>
-      <Typography variant="body2" color="text.secondary" paragraph>
-        Resumen general del sistema
-      </Typography>
+      {/* Header con controles */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Box>
+          <Typography variant="h4" gutterBottom fontWeight="bold">
+            Dashboard
+          </Typography>
+          <Box display="flex" alignItems="center" gap={2}>
+            <Typography variant="body2" color="text.secondary">
+              Resumen general del sistema
+            </Typography>
+            {ultimaActualizacion && (
+              <Chip
+                icon={<ScheduleIcon />}
+                label={`Actualizado: ${ultimaActualizacion.toLocaleTimeString()}`}
+                size="small"
+                variant="outlined"
+              />
+            )}
+          </Box>
+        </Box>
+        <Box display="flex" gap={2}>
+          <Button
+            variant={autoRefresh ? "contained" : "outlined"}
+            color={autoRefresh ? "success" : "primary"}
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            startIcon={<TrendingUpIcon />}
+            size="small"
+          >
+            Auto-refresh {autoRefresh ? 'ON' : 'OFF'}
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={loadDashboard}
+            disabled={loading}
+            startIcon={<RefreshIcon />}
+            size="small"
+          >
+            Actualizar
+          </Button>
+        </Box>
+      </Box>
 
       <Grid container spacing={3} mb={4}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Empleados Presentes Hoy"
-            value={data?.asistencia_hoy?.presentes || 0}
+            value={data?.empleados_presentes_hoy || 0}
             icon={<PeopleIcon sx={{ fontSize: 30 }} />}
             color="#4caf50"
           />
@@ -129,7 +190,7 @@ const Dashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Controles HACCP Hoy"
-            value={data?.controles_hoy || 0}
+            value={data?.controles_haccp_hoy || 0}
             icon={<AssignmentIcon sx={{ fontSize: 30 }} />}
             color="#2196f3"
           />

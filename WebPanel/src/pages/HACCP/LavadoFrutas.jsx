@@ -15,8 +15,19 @@ import {
   Chip,
   CircularProgress,
   Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  ButtonGroup,
+  Autocomplete,
 } from '@mui/material';
-import { Download as DownloadIcon } from '@mui/icons-material';
+import { 
+  Download as DownloadIcon,
+  FileDownload as FileDownloadIcon,
+  FilterList as FilterListIcon,
+  Clear as ClearIcon,
+} from '@mui/icons-material';
 import { haccpService } from '../../services/api';
 import { exportarLavadoFrutas, exportarFormularioVacioLavadoFrutas } from '../../utils/exportExcel';
 import { format } from 'date-fns';
@@ -29,12 +40,44 @@ const LavadoFrutas = () => {
   const [anio, setAnio] = useState(new Date().getFullYear());
   const [productoQuimico, setProductoQuimico] = useState('');
   const [concentracion, setConcentracion] = useState('');
+  
+  // Estados para filtros avanzados
+  const [filtroTipo, setFiltroTipo] = useState('mes'); // 'dia', 'mes', 'anio'
+  const [fechaEspecifica, setFechaEspecifica] = useState('');
+  const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState('');
+  const [areaSeleccionada, setAreaSeleccionada] = useState('');
+  const [frutaSeleccionada, setFrutaSeleccionada] = useState('');
+  const [filtroConformidad, setFiltroConformidad] = useState(''); // '', 'C', 'NC'
+  
+  // Estados para opciones de filtros
+  const [empleados, setEmpleados] = useState([]);
+  const [areas, setAreas] = useState([]);
+  const [frutas, setFrutas] = useState([]);
 
   const cargarRegistros = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await haccpService.getLavadoFrutas(mes, anio);
+      
+      // Preparar parámetros según el tipo de filtro
+      let params = {};
+      
+      if (filtroTipo === 'dia' && fechaEspecifica) {
+        params.fecha = fechaEspecifica;
+      } else if (filtroTipo === 'mes') {
+        params.mes = mes;
+        params.anio = anio;
+      } else if (filtroTipo === 'anio') {
+        params.anio = anio;
+      }
+      
+      // Agregar filtros adicionales
+      if (empleadoSeleccionado) params.empleado_id = empleadoSeleccionado;
+      if (areaSeleccionada) params.area = areaSeleccionada;
+      if (frutaSeleccionada) params.fruta = frutaSeleccionada;
+      if (filtroConformidad) params.conformidad = filtroConformidad;
+      
+      const response = await haccpService.getLavadoFrutas(params.mes || null, params.anio || null, params);
       if (response && response.success) {
         setRegistros(Array.isArray(response.data) ? response.data : []);
       } else {
@@ -50,13 +93,42 @@ const LavadoFrutas = () => {
     }
   };
 
+  const cargarFiltros = async () => {
+    try {
+      // Cargar empleados
+      const empleadosResponse = await haccpService.getEmpleados();
+      if (empleadosResponse && empleadosResponse.success) {
+        setEmpleados(Array.isArray(empleadosResponse.data) ? empleadosResponse.data : []);
+      }
+
+      // Cargar áreas
+      const areasResponse = await haccpService.getAreas();
+      if (areasResponse && areasResponse.success) {
+        setAreas(Array.isArray(areasResponse.data) ? areasResponse.data : []);
+      }
+
+      // Cargar frutas/verduras
+      const frutasResponse = await haccpService.getFrutasVerduras();
+      if (frutasResponse && frutasResponse.success) {
+        setFrutas(Array.isArray(frutasResponse.data) ? frutasResponse.data : []);
+      }
+    } catch (err) {
+      console.error('Error al cargar filtros:', err);
+    }
+  };
+
+  useEffect(() => {
+    cargarFiltros();
+  }, []);
+
   useEffect(() => {
     cargarRegistros();
-  }, [mes, anio]);
+  }, [filtroTipo, fechaEspecifica, mes, anio, empleadoSeleccionado, areaSeleccionada, frutaSeleccionada, filtroConformidad]);
 
   const handleExportar = () => {
     if (registros.length === 0) {
-      setError('No hay registros para exportar');
+      // Si no hay registros, exportar plantilla vacía
+      handleExportarPlantilla();
       return;
     }
     exportarLavadoFrutas(registros, mes, anio, productoQuimico, concentracion);
@@ -64,6 +136,19 @@ const LavadoFrutas = () => {
 
   const handleExportarPlantilla = () => {
     exportarFormularioVacioLavadoFrutas(mes, anio, productoQuimico, concentracion);
+  };
+
+  const limpiarFiltros = () => {
+    setFiltroTipo('mes');
+    setFechaEspecifica('');
+    setEmpleadoSeleccionado('');
+    setAreaSeleccionada('');
+    setFrutaSeleccionada('');
+    setFiltroConformidad('');
+    setMes(new Date().getMonth() + 1);
+    setAnio(new Date().getFullYear());
+    setProductoQuimico('');
+    setConcentracion('');
   };
 
   const getConformidadColor = (conformidad) => {
@@ -83,19 +168,20 @@ const LavadoFrutas = () => {
         </Box>
         <Box display="flex" gap={2}>
           <Button
-            variant="contained"
-            startIcon={<DownloadIcon />}
-            onClick={handleExportar}
-            disabled={registros.length === 0}
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportarPlantilla}
+            disabled={loading}
           >
-            Exportar Datos
+            Plantilla Vacía
           </Button>
           <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={handleExportarPlantilla}
+            variant="contained"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportar}
+            disabled={loading}
           >
-            Exportar Plantilla
+            {registros.length === 0 ? 'Exportar Plantilla' : 'Exportar Datos'}
           </Button>
         </Box>
       </Box>
@@ -107,28 +193,153 @@ const LavadoFrutas = () => {
       )}
 
       <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <FilterListIcon />
+          Filtros de Búsqueda
+        </Typography>
+        
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={3}>
-            <TextField
-              label="Mes"
-              type="number"
-              value={mes}
-              onChange={(e) => setMes(Number(e.target.value))}
-              fullWidth
-              InputProps={{ inputProps: { min: 1, max: 12 } }}
+          {/* Selector de tipo de filtro */}
+          <Grid item xs={12} sm={6} md={3}>
+            <ButtonGroup fullWidth variant="outlined">
+              <Button
+                variant={filtroTipo === 'dia' ? 'contained' : 'outlined'}
+                onClick={() => setFiltroTipo('dia')}
+              >
+                Día
+              </Button>
+              <Button
+                variant={filtroTipo === 'mes' ? 'contained' : 'outlined'}
+                onClick={() => setFiltroTipo('mes')}
+              >
+                Mes
+              </Button>
+              <Button
+                variant={filtroTipo === 'anio' ? 'contained' : 'outlined'}
+                onClick={() => setFiltroTipo('anio')}
+              >
+                Año
+              </Button>
+            </ButtonGroup>
+          </Grid>
+
+          {/* Selector de fecha específica (solo para día) */}
+          {filtroTipo === 'dia' && (
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                label="Fecha Específica"
+                type="date"
+                value={fechaEspecifica}
+                onChange={(e) => setFechaEspecifica(e.target.value)}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+          )}
+
+          {/* Selectores de mes y año (para mes y año) */}
+          {(filtroTipo === 'mes' || filtroTipo === 'anio') && (
+            <>
+              {filtroTipo === 'mes' && (
+                <Grid item xs={12} sm={6} md={2}>
+                  <TextField
+                    label="Mes"
+                    type="number"
+                    value={mes}
+                    onChange={(e) => setMes(Number(e.target.value))}
+                    fullWidth
+                    InputProps={{ inputProps: { min: 1, max: 12 } }}
+                  />
+                </Grid>
+              )}
+              <Grid item xs={12} sm={6} md={2}>
+                <TextField
+                  label="Año"
+                  type="number"
+                  value={anio}
+                  onChange={(e) => setAnio(Number(e.target.value))}
+                  fullWidth
+                  InputProps={{ inputProps: { min: 2020, max: 2030 } }}
+                />
+              </Grid>
+            </>
+          )}
+
+          {/* Filtro por empleado */}
+          <Grid item xs={12} sm={6} md={2}>
+            <Autocomplete
+              options={empleados}
+              getOptionLabel={(option) => option.nombre || ''}
+              value={empleados.find(e => e.id === empleadoSeleccionado) || null}
+              onChange={(event, newValue) => {
+                setEmpleadoSeleccionado(newValue ? newValue.id : '');
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Empleado"
+                  placeholder="Todos los empleados"
+                />
+              )}
             />
           </Grid>
-          <Grid item xs={12} sm={3}>
-            <TextField
-              label="Año"
-              type="number"
-              value={anio}
-              onChange={(e) => setAnio(Number(e.target.value))}
-              fullWidth
-              InputProps={{ inputProps: { min: 2020, max: 2030 } }}
+
+          {/* Filtro por área */}
+          <Grid item xs={12} sm={6} md={2}>
+            <Autocomplete
+              options={areas}
+              getOptionLabel={(option) => option.nombre || ''}
+              value={areas.find(a => a.nombre === areaSeleccionada) || null}
+              onChange={(event, newValue) => {
+                setAreaSeleccionada(newValue ? newValue.nombre : '');
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Área"
+                  placeholder="Todas las áreas"
+                />
+              )}
             />
           </Grid>
-          <Grid item xs={12} sm={3}>
+
+          {/* Filtro por fruta/verdura */}
+          <Grid item xs={12} sm={6} md={2}>
+            <Autocomplete
+              options={frutas}
+              getOptionLabel={(option) => option.nombre || ''}
+              value={frutas.find(f => f.nombre === frutaSeleccionada) || null}
+              onChange={(event, newValue) => {
+                setFrutaSeleccionada(newValue ? newValue.nombre : '');
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Fruta/Verdura"
+                  placeholder="Todas las frutas"
+                />
+              )}
+            />
+          </Grid>
+
+          {/* Filtro por conformidad */}
+          <Grid item xs={12} sm={6} md={2}>
+            <FormControl fullWidth>
+              <InputLabel>Conformidad</InputLabel>
+              <Select
+                value={filtroConformidad}
+                onChange={(e) => setFiltroConformidad(e.target.value)}
+                label="Conformidad"
+              >
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="C">Conforme</MenuItem>
+                <MenuItem value="NC">No Conforme</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {/* Campos adicionales para exportación */}
+          <Grid item xs={12} sm={6} md={2}>
             <TextField
               label="Producto Químico"
               value={productoQuimico}
@@ -137,7 +348,8 @@ const LavadoFrutas = () => {
               placeholder="Ej: Cloro"
             />
           </Grid>
-          <Grid item xs={12} sm={3}>
+
+          <Grid item xs={12} sm={6} md={2}>
             <TextField
               label="Concentración"
               value={concentracion}
@@ -146,14 +358,29 @@ const LavadoFrutas = () => {
               placeholder="Ej: 200 ppm"
             />
           </Grid>
-          <Grid item xs={12}>
+
+          {/* Botones de acción */}
+          <Grid item xs={12} sm={6} md={1}>
             <Button
               variant="contained"
               onClick={cargarRegistros}
               disabled={loading}
-              sx={{ mr: 2 }}
+              startIcon={<FilterListIcon />}
+              fullWidth
             >
               Buscar
+            </Button>
+          </Grid>
+          
+          <Grid item xs={12} sm={6} md={1}>
+            <Button
+              variant="outlined"
+              onClick={limpiarFiltros}
+              disabled={loading}
+              startIcon={<ClearIcon />}
+              fullWidth
+            >
+              Limpiar
             </Button>
           </Grid>
         </Grid>

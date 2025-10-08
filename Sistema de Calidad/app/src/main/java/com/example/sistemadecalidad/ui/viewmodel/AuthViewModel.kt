@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.data.model.User
 import com.example.sistemadecalidad.data.repository.AuthRepository
+import com.example.sistemadecalidad.data.auth.AuthStateManager
+import com.example.sistemadecalidad.data.auth.AuthState
 // import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,7 +19,8 @@ import kotlinx.coroutines.launch
 // @HiltViewModel
 class AuthViewModel /* @Inject constructor( */ (
     private val authRepository: AuthRepository,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val authStateManager: AuthStateManager
 ) : ViewModel() {
     
     // Estado de la UI
@@ -104,6 +107,7 @@ class AuthViewModel /* @Inject constructor( */ (
                             
                             // Actualizar estado de autenticación
                             _isAuthenticated.value = true
+                            authStateManager.updateAuthState(AuthState.AUTHENTICATED)
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 isLoginSuccessful = true
@@ -181,6 +185,7 @@ class AuthViewModel /* @Inject constructor( */ (
             _isAuthenticated.value = false
             _currentUser.value = null
             _uiState.value = AuthUiState() // Reset UI state
+            authStateManager.updateAuthState(AuthState.UNAUTHENTICATED)
             
             // Luego limpiar DataStore (operación suspendible)
             preferencesManager.logout()

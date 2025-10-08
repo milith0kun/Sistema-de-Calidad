@@ -19,29 +19,68 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  ButtonGroup,
 } from '@mui/material';
-import { Download as DownloadIcon } from '@mui/icons-material';
+import { FileDownload as FileDownloadIcon, FilterList as FilterListIcon } from '@mui/icons-material';
 import { haccpService } from '../../services/api';
-import { exportarRecepcionMercaderia } from '../../utils/exportExcel';
+import { 
+  exportarRecepcionMercaderia, 
+  exportarFormularioVacioFrutasVerduras,
+  exportarFormularioVacioAbarrotes 
+} from '../../utils/exportExcel';
 import { format } from 'date-fns';
 
 const RecepcionMercaderia = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [filtroTipo, setFiltroTipo] = useState('mes'); // 'dia', 'mes', 'anio'
+  const [fechaEspecifica, setFechaEspecifica] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [mes, setMes] = useState(new Date().getMonth() + 1);
   const [anio, setAnio] = useState(new Date().getFullYear());
   const [tipo, setTipo] = useState('FRUTAS_VERDURAS');
 
   useEffect(() => {
     loadData();
-  }, [mes, anio, tipo]);
+  }, [filtroTipo, fechaEspecifica, mes, anio, tipo]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError('');
-      const response = await haccpService.getRecepcionMercaderia(mes, anio, tipo);
+      
+      let response;
+      if (filtroTipo === 'dia') {
+        // Extraer mes y año de la fecha específica
+        const fecha = new Date(fechaEspecifica);
+        const mesEspecifico = fecha.getMonth() + 1;
+        const anioEspecifico = fecha.getFullYear();
+        response = await haccpService.getRecepcionMercaderia(mesEspecifico, anioEspecifico, tipo);
+        
+        // Filtrar por día específico
+        if (response && response.success && Array.isArray(response.data)) {
+          const fechaFiltro = format(fecha, 'yyyy-MM-dd');
+          response.data = response.data.filter(item => {
+            const fechaItem = format(new Date(item.fecha), 'yyyy-MM-dd');
+            return fechaItem === fechaFiltro;
+          });
+        }
+      } else if (filtroTipo === 'mes') {
+        response = await haccpService.getRecepcionMercaderia(mes, anio, tipo);
+      } else if (filtroTipo === 'anio') {
+        // Para año completo, obtener todos los meses
+        response = { success: true, data: [] };
+        for (let m = 1; m <= 12; m++) {
+          try {
+            const mesResponse = await haccpService.getRecepcionMercaderia(m, anio, tipo);
+            if (mesResponse && mesResponse.success && Array.isArray(mesResponse.data)) {
+              response.data = [...response.data, ...mesResponse.data];
+            }
+          } catch (err) {
+            console.warn(`Error cargando mes ${m}:`, err);
+          }
+        }
+      }
       
       if (response && response.success) {
         setData(Array.isArray(response.data) ? response.data : []);
@@ -59,16 +98,44 @@ const RecepcionMercaderia = () => {
 
   const handleExportar = async () => {
     try {
-      if (data.length === 0) {
-        setError('No hay datos para exportar');
-        return;
-      }
       setError('');
       setLoading(true);
-      await exportarRecepcionMercaderia(data, mes, anio, tipo);
+      
+      if (data.length === 0) {
+        // Exportar plantilla vacía
+        await handleExportarPlantilla();
+        return;
+      }
+      
+      // Exportar con datos filtrados
+      const mesExport = filtroTipo === 'dia' ? new Date(fechaEspecifica).getMonth() + 1 : mes;
+      const anioExport = filtroTipo === 'dia' ? new Date(fechaEspecifica).getFullYear() : anio;
+      
+      await exportarRecepcionMercaderia(data, mesExport, anioExport, tipo);
     } catch (err) {
       console.error('Error al exportar:', err);
       setError(`Error al exportar archivo Excel: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportarPlantilla = async () => {
+    try {
+      setError('');
+      setLoading(true);
+      
+      const mesExport = filtroTipo === 'dia' ? new Date(fechaEspecifica).getMonth() + 1 : mes;
+      const anioExport = filtroTipo === 'dia' ? new Date(fechaEspecifica).getFullYear() : anio;
+      
+      if (tipo === 'FRUTAS_VERDURAS') {
+        await exportarFormularioVacioFrutasVerduras(mesExport, anioExport);
+      } else {
+        await exportarFormularioVacioAbarrotes(mesExport, anioExport);
+      }
+    } catch (err) {
+      console.error('Error al exportar plantilla:', err);
+      setError(`Error al exportar plantilla Excel: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -80,42 +147,96 @@ const RecepcionMercaderia = () => {
         <Typography variant="h4" fontWeight="bold">
           Recepción de Mercadería
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportar}
-          disabled={data.length === 0}
-        >
-          Exportar a Excel
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+             variant="outlined"
+             color="primary"
+             onClick={handleExportarPlantilla}
+             disabled={loading}
+             startIcon={<FileDownloadIcon />}
+           >
+             Plantilla Vacía
+           </Button>
+           <Button
+             variant="contained"
+             color="success"
+             onClick={handleExportar}
+             disabled={loading}
+             startIcon={<FileDownloadIcon />}
+           >
+             {data.length > 0 ? 'Exportar Datos' : 'Exportar Plantilla'}
+           </Button>
+        </Box>
       </Box>
 
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={3}>
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid item xs={12} md={2}>
             <FormControl fullWidth>
-              <InputLabel>Tipo</InputLabel>
+              <InputLabel>Tipo de Producto</InputLabel>
               <Select
                 value={tipo}
-                label="Tipo"
+                label="Tipo de Producto"
                 onChange={(e) => setTipo(e.target.value)}
               >
-                <MenuItem value="FRUTAS_VERDURAS">Frutas/Verduras</MenuItem>
                 <MenuItem value="ABARROTES">Abarrotes</MenuItem>
+                <MenuItem value="FRUTAS_VERDURAS">Frutas y Verduras</MenuItem>
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={3}>
-            <TextField
-              label="Mes"
-              type="number"
-              fullWidth
-              value={mes}
-              onChange={(e) => setMes(Number(e.target.value))}
-              inputProps={{ min: 1, max: 12 }}
-            />
+
+          <Grid item xs={12} md={2}>
+            <ButtonGroup variant="outlined" fullWidth>
+               <Button
+                 variant={filtroTipo === 'dia' ? 'contained' : 'outlined'}
+                 onClick={() => setFiltroTipo('dia')}
+                 startIcon={<FilterListIcon />}
+               >
+                 Día
+               </Button>
+              <Button
+                variant={filtroTipo === 'mes' ? 'contained' : 'outlined'}
+                onClick={() => setFiltroTipo('mes')}
+              >
+                Mes
+              </Button>
+              <Button
+                variant={filtroTipo === 'anio' ? 'contained' : 'outlined'}
+                onClick={() => setFiltroTipo('anio')}
+              >
+                Año
+              </Button>
+            </ButtonGroup>
           </Grid>
-          <Grid item xs={12} sm={3}>
+          
+          {filtroTipo === 'dia' && (
+            <Grid item xs={12} md={2}>
+              <TextField
+                type="date"
+                label="Fecha Específica"
+                value={fechaEspecifica}
+                onChange={(e) => setFechaEspecifica(e.target.value)}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+          )}
+          
+          {(filtroTipo === 'mes' || filtroTipo === 'anio') && (
+            <Grid item xs={12} md={2}>
+              <TextField
+                label="Mes"
+                type="number"
+                fullWidth
+                value={mes}
+                onChange={(e) => setMes(Number(e.target.value))}
+                inputProps={{ min: 1, max: 12 }}
+                disabled={filtroTipo === 'anio'}
+              />
+            </Grid>
+          )}
+          
+          <Grid item xs={12} md={2}>
             <TextField
               label="Año"
               type="number"
@@ -124,8 +245,15 @@ const RecepcionMercaderia = () => {
               onChange={(e) => setAnio(Number(e.target.value))}
             />
           </Grid>
-          <Grid item xs={12} sm={3}>
-            <Button variant="contained" fullWidth onClick={loadData}>
+          
+          <Grid item xs={12} md={2}>
+            <Button
+              variant="contained"
+              onClick={loadData}
+              disabled={loading}
+              fullWidth
+              sx={{ height: '56px' }}
+            >
               Buscar
             </Button>
           </Grid>

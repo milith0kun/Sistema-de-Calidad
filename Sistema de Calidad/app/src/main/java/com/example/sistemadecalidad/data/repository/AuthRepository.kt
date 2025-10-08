@@ -73,6 +73,33 @@ class AuthRepository /* @Inject constructor */ (
     }
     
     /**
+     * Renovar token JWT
+     */
+    suspend fun refreshToken(token: String): Flow<Result<LoginResponse>> = flow {
+        try {
+            val bearerToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
+            val response = apiService.refreshToken(bearerToken)
+            
+            if (response.isSuccessful) {
+                val refreshResponse = response.body()
+                if (refreshResponse != null) {
+                    if (refreshResponse.success && refreshResponse.token != null) {
+                        emit(Result.success(refreshResponse))
+                    } else {
+                        emit(Result.failure(Exception(refreshResponse.error ?: "Error al renovar token")))
+                    }
+                } else {
+                    emit(Result.failure(Exception("Respuesta vacía del servidor")))
+                }
+            } else {
+                emit(Result.failure(Exception("Error al renovar token: ${response.code()} - ${response.message()}")))
+            }
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+    
+    /**
      * Verificar conectividad con el servidor
      */
     suspend fun checkServerHealth(): Flow<Result<Boolean>> = flow {

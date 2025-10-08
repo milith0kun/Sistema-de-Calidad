@@ -27,6 +27,13 @@ interface ApiService {
     @GET("auth/verify")
     suspend fun verifyToken(@Header("Authorization") token: String): Response<LoginResponse>
     
+    /**
+     * Renovar token JWT
+     * POST /auth/refresh
+     */
+    @POST("auth/refresh")
+    suspend fun refreshToken(@Header("Authorization") token: String): Response<LoginResponse>
+    
     // ========== FICHADO ==========
     
     /**

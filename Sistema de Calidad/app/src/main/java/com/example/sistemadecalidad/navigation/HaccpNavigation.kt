@@ -49,9 +49,6 @@ fun HaccpNavigation(
     val networkModule = NetworkModule
     val apiService = networkModule.provideApiService(
         networkModule.provideRetrofit(
-            networkModule.provideOkHttpClient(
-                networkModule.provideHttpLoggingInterceptor()
-            ),
             networkModule.provideGson(),
             context
         )
@@ -60,8 +57,9 @@ fun HaccpNavigation(
     val fichadoRepository = FichadoRepository(apiService)
     val haccpRepository = com.example.sistemadecalidad.data.repository.HaccpRepository(apiService)
     val locationManager = LocationManager(context)
-    val authViewModel = AuthViewModel(authRepository, preferencesManager)
-    val fichadoViewModel = FichadoViewModel(fichadoRepository, preferencesManager, locationManager)
+    val authStateManager = networkModule.configureAuthStateManager(context, authRepository)
+    val authViewModel = AuthViewModel(authRepository, preferencesManager, authStateManager)
+    val fichadoViewModel = FichadoViewModel(fichadoRepository, preferencesManager, locationManager, authStateManager)
     val haccpViewModel = com.example.sistemadecalidad.ui.viewmodel.HaccpViewModel(haccpRepository, preferencesManager)
     
     // Observar el estado de autenticación (solo para lectura, sin redirecciones automáticas)
@@ -138,6 +136,11 @@ fun HaccpNavigation(
                 },
                 onNavigateToHaccp = {
                     navController.navigate(NavigationDestinations.HACCP_MENU)
+                },
+                onLogout = {
+                    navController.navigate(NavigationDestinations.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
                 // onNavigateToLocationSettings eliminado - configuración GPS solo desde WebPanel
             )

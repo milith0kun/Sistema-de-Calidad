@@ -17,6 +17,9 @@ import java.util.concurrent.TimeUnit
 // import javax.inject.Singleton
 import kotlinx.coroutines.runBlocking
 import android.util.Log
+import com.example.sistemadecalidad.data.local.PreferencesManager
+import com.example.sistemadecalidad.data.auth.AuthStateManager
+import com.example.sistemadecalidad.data.repository.AuthRepository
 
 /**
  * Módulo de red con detección automática de servidor
@@ -86,10 +89,19 @@ object NetworkModule {
     // @Provides
     // @Singleton
     fun provideOkHttpClient(
-        loggingInterceptor: HttpLoggingInterceptor
+        loggingInterceptor: HttpLoggingInterceptor,
+        context: Context
     ): OkHttpClient {
+        val gson = provideGson()
+        val preferencesManager = PreferencesManager(context, gson)
+        // Crear AuthStateManager temporal sin AuthRepository para evitar dependencia circular
+        val authStateManager = createTemporaryAuthStateManager(context, preferencesManager)
+        val authInterceptor = AuthInterceptor(context, preferencesManager, authStateManager)
+        
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
+            // Interceptor de autenticación (debe ir ANTES del interceptor de headers)
+            .addInterceptor(authInterceptor)
             // Interceptor para agregar headers requeridos automáticamente
             .addInterceptor { chain ->
                 val originalRequest = chain.request()
@@ -125,7 +137,6 @@ object NetworkModule {
     // @Provides
     // @Singleton
     fun provideRetrofit(
-        okHttpClient: OkHttpClient,
         gson: Gson,
         context: Context
     ): Retrofit {
@@ -133,6 +144,10 @@ object NetworkModule {
         runBlocking {
             detectAndSetBestUrl(context)
         }
+        
+        // Crear interceptores y cliente HTTP
+        val loggingInterceptor = provideHttpLoggingInterceptor()
+        val okHttpClient = provideOkHttpClient(loggingInterceptor, context)
         
         Log.d(TAG, "🚀 Retrofit configurado con URL: $currentBaseUrl")
         
@@ -151,5 +166,29 @@ object NetworkModule {
     // @Singleton
     fun provideApiService(retrofit: Retrofit): ApiService {
         return retrofit.create(ApiService::class.java)
+    }
+    
+    /**
+     * Crea un AuthStateManager temporal sin AuthRepository para evitar dependencia circular
+     */
+    private fun createTemporaryAuthStateManager(context: Context, preferencesManager: PreferencesManager): AuthStateManager {
+        // Crear un AuthRepository temporal con un ApiService básico
+        val tempRetrofit = Retrofit.Builder()
+            .baseUrl(currentBaseUrl)
+            .addConverterFactory(GsonConverterFactory.create(provideGson()))
+            .build()
+        val tempApiService = tempRetrofit.create(ApiService::class.java)
+        val tempAuthRepository = AuthRepository(tempApiService)
+        
+        return AuthStateManager.getInstance(context, preferencesManager, tempAuthRepository)
+    }
+    
+    /**
+     * Configura el AuthStateManager completo con el AuthRepository final
+     */
+    fun configureAuthStateManager(context: Context, authRepository: AuthRepository): AuthStateManager {
+        val gson = provideGson()
+        val preferencesManager = PreferencesManager(context, gson)
+        return AuthStateManager.getInstance(context, preferencesManager, authRepository)
     }
 }

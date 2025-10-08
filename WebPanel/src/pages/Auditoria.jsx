@@ -21,8 +21,20 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Autocomplete,
+  TablePagination,
+  ButtonGroup,
 } from '@mui/material';
-import { Visibility as VisibilityIcon } from '@mui/icons-material';
+import { 
+  Visibility as VisibilityIcon,
+  FileDownload as FileDownloadIcon,
+  FilterList as FilterListIcon,
+  Clear as ClearIcon,
+} from '@mui/icons-material';
 import { auditoriaService } from '../services/api';
 import { format } from 'date-fns';
 
@@ -34,34 +46,121 @@ const Auditoria = () => {
   const [fechaHasta, setFechaHasta] = useState('');
   const [selectedLog, setSelectedLog] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
+  
+  // Nuevos estados para filtros avanzados
+  const [filtroAccion, setFiltroAccion] = useState('');
+  const [filtroTabla, setFiltroTabla] = useState('');
+  const [filtroUsuario, setFiltroUsuario] = useState('');
+  const [usuarios, setUsuarios] = useState([]);
+  const [acciones, setAcciones] = useState([]);
+  const [tablas, setTablas] = useState([]);
+  
+  // Estados para paginación
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [totalLogs, setTotalLogs] = useState(0);
 
-  const cargarLogs = async () => {
+  const cargarLogs = async (resetPage = true) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await auditoriaService.getLogs(fechaDesde, fechaHasta);
       
-      // Extraer el array 'data' de la respuesta {success: true, data: []}
-      const logsData = response?.data && Array.isArray(response.data) ? response.data : [];
-      setLogs(logsData);
+      const params = {
+        page: resetPage ? 0 : page,
+        limit: rowsPerPage
+      };
+      
+      if (fechaDesde) params.fecha_desde = fechaDesde;
+      if (fechaHasta) params.fecha_hasta = fechaHasta;
+      if (filtroAccion) params.accion = filtroAccion;
+      if (filtroTabla) params.tabla = filtroTabla;
+      if (filtroUsuario) params.usuario = filtroUsuario;
+      
+      const response = await auditoriaService.getLogs(params);
+      
+      if (response.success) {
+        setLogs(response.data?.logs || []);
+        setTotalLogs(response.data?.total || 0);
+        if (resetPage) setPage(0);
+      } else {
+        setError(response.error || 'Error al cargar los logs');
+      }
     } catch (err) {
-      setError('Error al cargar logs de auditoría');
-      console.error(err);
-      setLogs([]); // Asegurar que siempre sea un array
+      setError('Error de conexión al servidor');
+      console.error('Error cargando logs:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Cargar logs del último mes por defecto
+    // Establecer fechas por defecto (último mes)
     const hoy = new Date();
-    const hace30dias = new Date(hoy);
-    hace30dias.setDate(hoy.getDate() - 30);
+    const hace30Dias = new Date();
+    hace30Dias.setDate(hoy.getDate() - 30);
     
-    setFechaDesde(hace30dias.toISOString().split('T')[0]);
     setFechaHasta(hoy.toISOString().split('T')[0]);
+    setFechaDesde(hace30Dias.toISOString().split('T')[0]);
+    
+    cargarFiltros();
+    cargarLogs();
   }, []);
+
+  // Cargar cuando cambie la página
+  useEffect(() => {
+    if (fechaDesde && fechaHasta) {
+      cargarLogs(false);
+    }
+  }, [page, rowsPerPage]);
+
+  const cargarFiltros = async () => {
+    try {
+      const response = await auditoriaService.getFiltros();
+      if (response.success) {
+        setUsuarios(response.data?.usuarios || []);
+        setAcciones(response.data?.acciones || []);
+        setTablas(response.data?.tablas || []);
+      }
+    } catch (err) {
+      console.error('Error cargando filtros:', err);
+    }
+  };
+
+  const limpiarFiltros = () => {
+    setFiltroAccion('');
+    setFiltroTabla('');
+    setFiltroUsuario('');
+    cargarLogs();
+  };
+
+  const exportarLogs = async () => {
+    try {
+      const params = {};
+      if (fechaDesde) params.fecha_desde = fechaDesde;
+      if (fechaHasta) params.fecha_hasta = fechaHasta;
+      if (filtroAccion) params.accion = filtroAccion;
+      if (filtroTabla) params.tabla = filtroTabla;
+      if (filtroUsuario) params.usuario = filtroUsuario;
+      
+      const response = await auditoriaService.exportarLogs(params);
+      
+      if (response.success) {
+        // Crear y descargar archivo
+        const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `auditoria_${fechaDesde}_${fechaHasta}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+    } catch (err) {
+      setError('Error al exportar logs');
+      console.error('Error exportando:', err);
+    }
+  };
 
   useEffect(() => {
     if (fechaDesde && fechaHasta) {
@@ -90,15 +189,35 @@ const Auditoria = () => {
     setSelectedLog(null);
   };
 
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   return (
     <Box>
-      <Box mb={3}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Auditoría del Sistema
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Registro completo de todas las acciones realizadas en el sistema
-        </Typography>
+      {/* Header con controles */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Box>
+          <Typography variant="h4" gutterBottom fontWeight="bold">
+            Auditoría del Sistema
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Registro completo de todas las acciones realizadas en el sistema
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<FileDownloadIcon />}
+          onClick={exportarLogs}
+          disabled={loading || logs.length === 0}
+        >
+          Exportar Excel
+        </Button>
       </Box>
 
       {error && (
@@ -108,8 +227,13 @@ const Auditoria = () => {
       )}
 
       <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" gutterBottom startIcon={<FilterListIcon />}>
+          Filtros de Búsqueda
+        </Typography>
+        
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={5}>
+          {/* Filtros de fecha */}
+          <Grid item xs={12} sm={6} md={3}>
             <TextField
               label="Fecha Desde"
               type="date"
@@ -119,7 +243,7 @@ const Auditoria = () => {
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={12} sm={5}>
+          <Grid item xs={12} sm={6} md={3}>
             <TextField
               label="Fecha Hasta"
               type="date"
@@ -129,15 +253,75 @@ const Auditoria = () => {
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={12} sm={2}>
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={cargarLogs}
-              disabled={loading}
-            >
-              Buscar
-            </Button>
+          
+          {/* Filtros avanzados */}
+          <Grid item xs={12} sm={6} md={2}>
+            <FormControl fullWidth>
+              <InputLabel>Acción</InputLabel>
+              <Select
+                value={filtroAccion}
+                onChange={(e) => setFiltroAccion(e.target.value)}
+                label="Acción"
+              >
+                <MenuItem value="">Todas</MenuItem>
+                {acciones.map((accion) => (
+                  <MenuItem key={accion} value={accion}>
+                    {accion}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          
+          <Grid item xs={12} sm={6} md={2}>
+            <FormControl fullWidth>
+              <InputLabel>Tabla</InputLabel>
+              <Select
+                value={filtroTabla}
+                onChange={(e) => setFiltroTabla(e.target.value)}
+                label="Tabla"
+              >
+                <MenuItem value="">Todas</MenuItem>
+                {tablas.map((tabla) => (
+                  <MenuItem key={tabla} value={tabla}>
+                    {tabla}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          
+          <Grid item xs={12} sm={12} md={2}>
+            <Autocomplete
+              options={usuarios}
+              getOptionLabel={(option) => option.nombre || option.email || ''}
+              value={usuarios.find(u => u.id === filtroUsuario) || null}
+              onChange={(event, newValue) => setFiltroUsuario(newValue?.id || '')}
+              renderInput={(params) => (
+                <TextField {...params} label="Usuario" fullWidth />
+              )}
+            />
+          </Grid>
+          
+          {/* Botones de acción */}
+          <Grid item xs={12}>
+            <ButtonGroup variant="contained" sx={{ mt: 2 }}>
+              <Button
+                onClick={() => cargarLogs()}
+                disabled={loading}
+                startIcon={<FilterListIcon />}
+              >
+                Buscar
+              </Button>
+              <Button
+                onClick={limpiarFiltros}
+                disabled={loading}
+                startIcon={<ClearIcon />}
+                color="secondary"
+              >
+                Limpiar
+              </Button>
+            </ButtonGroup>
           </Grid>
         </Grid>
       </Paper>
@@ -208,6 +392,21 @@ const Auditoria = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Paginación */}
+      <TablePagination
+        component="div"
+        count={totalLogs}
+        page={page}
+        onPageChange={handleChangePage}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        rowsPerPageOptions={[10, 25, 50, 100]}
+        labelRowsPerPage="Filas por página:"
+        labelDisplayedRows={({ from, to, count }) => 
+          `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+        }
+      />
 
       {/* Dialog para ver detalles del log */}
       <Dialog

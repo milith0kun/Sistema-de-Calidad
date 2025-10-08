@@ -35,6 +35,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.sistemadecalidad.data.local.PreferencesManager
+import com.example.sistemadecalidad.ui.components.TokenExpiredDialog
 import com.example.sistemadecalidad.ui.viewmodel.FichadoViewModel
 import com.example.sistemadecalidad.utils.LocationManager
 import com.example.sistemadecalidad.utils.TimeUtils
@@ -53,7 +54,8 @@ fun MarcacionesScreen(
     fichadoViewModel: FichadoViewModel, // = hiltViewModel()
     onNavigateToDashboard: () -> Unit = {},
     onNavigateToHistorial: () -> Unit = {},
-    onNavigateToHaccp: () -> Unit = {}
+    onNavigateToHaccp: () -> Unit = {},
+    onLogout: () -> Unit = {}
     // onNavigateToLocationSettings eliminado - configuración GPS solo desde WebPanel
 ) {
     val context = LocalContext.current
@@ -152,6 +154,16 @@ fun MarcacionesScreen(
         }
     }
     
+    // Observar eventos de token expirado
+    LaunchedEffect(fichadoViewModel) {
+        fichadoViewModel.authStateManager.tokenExpiredEvent.collect { tokenExpiredTime ->
+            if (tokenExpiredTime != null) {
+                android.util.Log.d("MarcacionesScreen", "Token expirado detectado - Redirigiendo al login")
+                onLogout()
+            }
+        }
+    }
+    
     // Limpiar recursos al salir
     DisposableEffect(Unit) {
         onDispose {
@@ -159,14 +171,22 @@ fun MarcacionesScreen(
         }
     }
     
-    // Mostrar mensaje de éxito
+    // Mostrar mensaje de éxito y actualizar estado
     LaunchedEffect(fichadoUiState.isEntradaExitosa, fichadoUiState.isSalidaExitosa) {
         if (fichadoUiState.isEntradaExitosa || fichadoUiState.isSalidaExitosa) {
+            android.util.Log.d("MarcacionesScreen", "Fichado exitoso detectado - Actualizando datos")
+            
+            // Primer delay para asegurar que el ViewModel haya actualizado
+            delay(1500)
+            
             // Recargar datos después de una marcación exitosa
+            android.util.Log.d("MarcacionesScreen", "Recargando dashboard y historial")
             fichadoViewModel.obtenerDashboardHoy()
-            fichadoViewModel.obtenerHistorial() // Recargar historial también
-            // Limpiar estados de éxito después de un tiempo
-            kotlinx.coroutines.delay(2000)
+            fichadoViewModel.obtenerHistorial()
+            
+            // Segundo delay antes de limpiar estados
+            delay(2000)
+            android.util.Log.d("MarcacionesScreen", "Limpiando estados de éxito")
             fichadoViewModel.resetSuccessStates()
         }
     }
@@ -448,10 +468,33 @@ fun MarcacionesScreen(
         // Estado actual
         val estadoFichado = dashboardHoy?.data?.estadoFichado
         val estadoActual = when {
-            estadoFichado == null -> "SIN_MARCAR"
-            estadoFichado.tieneSalida -> "COMPLETADO"
-            estadoFichado.tieneEntrada -> "TRABAJANDO"
-            else -> "SIN_MARCAR"
+            estadoFichado == null -> {
+                android.util.Log.d("MarcacionesScreen", "Estado: SIN_MARCAR (estadoFichado es null)")
+                "SIN_MARCAR"
+            }
+            estadoFichado.tieneSalida -> {
+                android.util.Log.d("MarcacionesScreen", "Estado: COMPLETADO (tiene salida)")
+                "COMPLETADO"
+            }
+            estadoFichado.tieneEntrada -> {
+                android.util.Log.d("MarcacionesScreen", "Estado: TRABAJANDO (tiene entrada, sin salida)")
+                "TRABAJANDO"
+            }
+            else -> {
+                android.util.Log.d("MarcacionesScreen", "Estado: SIN_MARCAR (sin entrada ni salida)")
+                "SIN_MARCAR"
+            }
+        }
+        
+        android.util.Log.d("MarcacionesScreen", "=== ESTADO DETALLADO ===")
+        android.util.Log.d("MarcacionesScreen", "dashboardHoy: ${dashboardHoy != null}")
+        android.util.Log.d("MarcacionesScreen", "estadoFichado: $estadoFichado")
+        android.util.Log.d("MarcacionesScreen", "estadoActual calculado: '$estadoActual'")
+        if (estadoFichado != null) {
+            android.util.Log.d("MarcacionesScreen", "tieneEntrada: ${estadoFichado.tieneEntrada}")
+            android.util.Log.d("MarcacionesScreen", "tieneSalida: ${estadoFichado.tieneSalida}")
+            android.util.Log.d("MarcacionesScreen", "horaEntrada: ${estadoFichado.horaEntrada}")
+            android.util.Log.d("MarcacionesScreen", "horaSalida: ${estadoFichado.horaSalida}")
         }
         
         Card(
@@ -831,5 +874,21 @@ fun MarcacionesScreen(
             }
         }
         }
+    }
+    
+    // Observar estado del diálogo de token expirado
+    val showTokenExpiredDialog by fichadoViewModel.authStateManager.showTokenExpiredDialog.collectAsStateWithLifecycle()
+    
+    // Mostrar diálogo de token expirado
+    if (showTokenExpiredDialog) {
+        TokenExpiredDialog(
+            onGoToLogin = {
+                fichadoViewModel.authStateManager.dismissTokenExpiredDialog()
+                onLogout()
+            },
+            onDismiss = {
+                fichadoViewModel.authStateManager.dismissTokenExpiredDialog()
+            }
+        )
     }
 }

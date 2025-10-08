@@ -1804,7 +1804,13 @@ export const exportarTemperaturaCamaras = async (datos, mes, anio) => {
 // FUNCIONES LEGACY (mantener compatibilidad)
 // =====================================================
 
-export const exportarRecepcionMercaderia = exportarRecepcionFrutasVerduras;
+export const exportarRecepcionMercaderia = async (datos, mes, anio, tipo = 'FRUTAS_VERDURAS') => {
+  if (tipo === 'ABARROTES') {
+    return await exportarRecepcionAbarrotes(datos, mes, anio);
+  } else {
+    return await exportarRecepcionFrutasVerduras(datos, mes, anio);
+  }
+};
 export const exportarAsistencias = async (datos, mes, anio) => {
   try {
     const workbook = new ExcelJS.Workbook();

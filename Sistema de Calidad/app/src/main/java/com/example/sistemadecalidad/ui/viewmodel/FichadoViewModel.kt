@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.data.model.*
 import com.example.sistemadecalidad.data.repository.FichadoRepository
+import com.example.sistemadecalidad.data.auth.AuthStateManager
 import com.example.sistemadecalidad.utils.LocationManager
 // import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -19,7 +20,8 @@ import kotlinx.coroutines.launch
 class FichadoViewModel /* @Inject constructor( */ (
     private val fichadoRepository: FichadoRepository,
     private val preferencesManager: PreferencesManager,
-    private val locationManager: LocationManager
+    private val locationManager: LocationManager,
+    val authStateManager: AuthStateManager // Hacer público para acceso desde las pantallas
 ) : ViewModel() {
     
     // Estado de la UI
@@ -37,6 +39,40 @@ class FichadoViewModel /* @Inject constructor( */ (
     // Resumen para analítica
     private val _resumen = MutableStateFlow<ResumenResponse?>(null)
     val resumen: StateFlow<ResumenResponse?> = _resumen.asStateFlow()
+    
+    init {
+        // Observar eventos de token expirado
+        observeTokenExpiredEvents()
+    }
+    
+    /**
+     * Observa eventos de token expirado y maneja logout automático
+     */
+    private fun observeTokenExpiredEvents() {
+        viewModelScope.launch {
+            authStateManager.tokenExpiredEvent.collect { timestamp ->
+                if (timestamp != null) {
+                    android.util.Log.w("FichadoViewModel", "🚫 Token expirado detectado - actualizando UI")
+                    
+                    // Actualizar UI para mostrar que la sesión expiró
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
+                        isEntradaExitosa = false,
+                        isSalidaExitosa = false
+                    )
+                    
+                    // Limpiar datos locales
+                    _dashboardHoy.value = null
+                    _historial.value = emptyList()
+                    _resumen.value = null
+                    
+                    // Marcar evento como manejado
+                    authStateManager.clearTokenExpiredEvent()
+                }
+            }
+        }
+    }
     
     /**
      * Obtener token del usuario actual
@@ -79,8 +115,13 @@ class FichadoViewModel /* @Inject constructor( */ (
                                 isEntradaExitosa = true,
                                 ultimaHoraEntrada = response.hora
                             )
-                            // Actualizar dashboard después de registrar entrada
-                            obtenerDashboardHoy()
+                            // Actualizar dashboard después de registrar entrada con un pequeño delay
+                            // para asegurar que el backend haya procesado completamente
+                            viewModelScope.launch {
+                                kotlinx.coroutines.delay(1000) // 1 segundo de delay
+                                android.util.Log.d("FichadoViewModel", "Actualizando dashboard después de entrada exitosa")
+                                obtenerDashboardHoy()
+                            }
                         },
                         onFailure = { exception ->
                             android.util.Log.e("FichadoViewModel", "Error al registrar entrada: ${exception.message}")
@@ -136,8 +177,13 @@ class FichadoViewModel /* @Inject constructor( */ (
                                 ultimaHoraSalida = response.hora,
                                 horasTrabajadas = response.horasTrabajadas
                             )
-                            // Actualizar dashboard después de registrar salida
-                            obtenerDashboardHoy()
+                            // Actualizar dashboard después de registrar salida con un pequeño delay
+                            // para asegurar que el backend haya procesado completamente
+                            viewModelScope.launch {
+                                kotlinx.coroutines.delay(1000) // 1 segundo de delay
+                                android.util.Log.d("FichadoViewModel", "Actualizando dashboard después de salida exitosa")
+                                obtenerDashboardHoy()
+                            }
                         },
                         onFailure = { exception ->
                             _uiState.value = _uiState.value.copy(
