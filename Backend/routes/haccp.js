@@ -133,7 +133,7 @@ router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
         // Determinar conformidad general basada en los controles
         let conformidad_general = 'CONFORME';
         if (tipo_control === 'FRUTAS_VERDURAS') {
-            if (estado_producto === 'PESIMO' || conformidad_integridad_producto === 'PESIMO') {
+            if (estado_producto === 'Pésimo' || conformidad_integridad_producto === 'Pésimo') {
                 conformidad_general = 'NO_CONFORME';
             }
         } else if (tipo_control === 'ABARROTES') {
@@ -296,9 +296,14 @@ router.post('/recepcion-abarrotes', authenticateToken, async (req, res) => {
                 observaciones, accion_correctiva
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
+        // Convertir valores de evaluación a SI/NO
+        const evaluacionVencimientoSiNo = (evaluacionVencimiento === 'Excelente' || evaluacionVencimiento === 'Regular') ? 'SI' : 'NO';
+        const conformidadEmpaqueSiNo = (conformidadEmpaque === 'Excelente' || conformidadEmpaque === 'Regular') ? 'SI' : 'NO';
+        const registroSanitarioSiNo = registroSanitarioVigente === true ? 'SI' : 'NO';
+
         // Determinar conformidad general para abarrotes
         let conformidad_general = 'CONFORME';
-        if (registroSanitarioVigente === 'NO' || evaluacionVencimiento === 'NO' || conformidadEmpaque === 'NO') {
+        if (registroSanitarioSiNo === 'NO' || evaluacionVencimientoSiNo === 'NO' || conformidadEmpaqueSiNo === 'NO') {
             conformidad_general = 'NO_CONFORME';
         }
 
@@ -307,9 +312,9 @@ router.post('/recepcion-abarrotes', authenticateToken, async (req, res) => {
             null, nombreProveedor,  // proveedor_id NULL, solo nombre
             null, nombreProducto,   // producto_id NULL, solo nombre
             cantidadSolicitada || null,
-            registroSanitarioVigente === 'SI' ? 'SI' : 'NO', 
-            evaluacionVencimiento === 'SI' ? 'SI' : 'NO', 
-            conformidadEmpaque === 'SI' ? 'SI' : 'NO',
+            registroSanitarioSiNo, 
+            evaluacionVencimientoSiNo, 
+            conformidadEmpaqueSiNo,
             conformidad_general,
             responsableRegistro.id, responsableRegistroNombre,
             supervisor.id, responsableSupervisionNombre,

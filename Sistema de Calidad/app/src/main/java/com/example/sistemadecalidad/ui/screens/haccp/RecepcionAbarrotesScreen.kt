@@ -56,8 +56,8 @@ fun RecepcionAbarrotesScreen(
     // Verificaciones sanitarias
     var registroSanitarioVigente by remember { mutableStateOf(true) }
     
-    // Fecha de vencimiento
-    var fechaVencimiento by remember { mutableStateOf("Excelente") } // Excelente, Regular, Pésimo
+    // Evaluación de vencimiento
+    var evaluacionVencimiento by remember { mutableStateOf("Excelente") } // Excelente, Regular, Pésimo
     
     // Conformidad empaque
     var conformidadEmpaque by remember { mutableStateOf("Excelente") } // Excelente, Regular, Pésimo
@@ -207,15 +207,15 @@ fun RecepcionAbarrotesScreen(
                 }
             }
             
-            // Fecha de Vencimiento
+            // Evaluación de Vencimiento
             Card {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("FECHA DE VENCIMIENTO DEL PRODUCTO", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                    Text("EVALUACIÓN DE FECHA DE VENCIMIENTO", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                     
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(
-                            selected = fechaVencimiento == "Excelente",
-                            onClick = { fechaVencimiento = "Excelente" },
+                            selected = evaluacionVencimiento == "Excelente",
+                            onClick = { evaluacionVencimiento = "Excelente" },
                             label = { Text("Excelente: Vencimiento mayor a 6 meses") },
                             modifier = Modifier.fillMaxWidth(),
                             colors = FilterChipDefaults.filterChipColors(
@@ -223,8 +223,8 @@ fun RecepcionAbarrotesScreen(
                             )
                         )
                         FilterChip(
-                            selected = fechaVencimiento == "Regular",
-                            onClick = { fechaVencimiento = "Regular" },
+                            selected = evaluacionVencimiento == "Regular",
+                            onClick = { evaluacionVencimiento = "Regular" },
                             label = { Text("Regular: Vencimiento entre 1-6 meses") },
                             modifier = Modifier.fillMaxWidth(),
                             colors = FilterChipDefaults.filterChipColors(
@@ -232,8 +232,8 @@ fun RecepcionAbarrotesScreen(
                             )
                         )
                         FilterChip(
-                            selected = fechaVencimiento == "Pésimo",
-                            onClick = { fechaVencimiento = "Pésimo" },
+                            selected = evaluacionVencimiento == "Pésimo",
+                            onClick = { evaluacionVencimiento = "Pésimo" },
                             label = { Text("Pésimo: Vencimiento menor a 1 mes") },
                             modifier = Modifier.fillMaxWidth(),
                             colors = FilterChipDefaults.filterChipColors(
@@ -550,7 +550,7 @@ fun RecepcionAbarrotesScreen(
                         nombreProducto = nombreProducto,
                         cantidadSolicitada = cantidadSolicitada,
                         registroSanitarioVigente = registroSanitarioVigente,
-                        evaluacionVencimiento = fechaVencimiento,
+                        evaluacionVencimiento = evaluacionVencimiento,
                         conformidadEmpaque = conformidadEmpaque,
                         uniformeCompleto = uniformeCStr,
                         transporteAdecuado = transporteStr,
