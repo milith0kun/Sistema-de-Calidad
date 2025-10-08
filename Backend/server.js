@@ -72,7 +72,7 @@ const HOST = process.env.HOST || config.server.host || '0.0.0.0';
 const corsOptions = {
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'bypass-tunnel-reminder', 'X-Bypass-Tunnel-Reminder', 'User-Agent', 'X-Requested-With', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'User-Agent', 'X-Requested-With', 'Accept'],
     credentials: true
 };
 
