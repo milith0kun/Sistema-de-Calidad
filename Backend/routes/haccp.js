@@ -43,6 +43,22 @@ router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
         console.log('Responsable del registro:', responsableRegistro.nombre, responsableRegistro.apellido);
         console.log('ID del supervisor:', supervisor_id);
 
+        // Buscar proveedor_id basado en nombre_proveedor si no se proporcionó
+        let finalProveedorId = proveedor_id;
+        if (!finalProveedorId && nombre_proveedor) {
+            console.log('Buscando proveedor_id para:', nombre_proveedor);
+            const proveedor = await db.get(
+                'SELECT id FROM proveedores WHERE nombre_completo = ? AND activo = 1',
+                [nombre_proveedor]
+            );
+            if (proveedor) {
+                finalProveedorId = proveedor.id;
+                console.log('Proveedor encontrado:', nombre_proveedor, '-> ID:', finalProveedorId);
+            } else {
+                console.log('Proveedor no encontrado en BD:', nombre_proveedor);
+            }
+        }
+
         // Obtener información del supervisor si se proporcionó
         let supervisor = null;
         if (supervisor_id) {
@@ -82,7 +98,7 @@ router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
 
         const result = await db.run(query, [
             mes, anio, fecha, hora, tipo_control,
-            proveedor_id || null, nombre_proveedor,
+            finalProveedorId || null, nombre_proveedor,
             producto_id || null, nombre_producto,
             cantidad_solicitada, peso_unidad_recibido, unidad_medida,
             estado_producto, conformidad_integridad_producto,

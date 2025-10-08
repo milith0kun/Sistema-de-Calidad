@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+
 import android.util.Log
 
 /**
@@ -516,18 +517,45 @@ class HaccpViewModel(
                     )
                     Log.d(TAG, "✅ Recepción de frutas/verduras registrada")
                 }.onFailure { error ->
+                    val errorMessage = when {
+                        error.message?.contains("network", ignoreCase = true) == true -> 
+                            "Error de conexión. Verifique su conexión a internet."
+                        error.message?.contains("timeout", ignoreCase = true) == true -> 
+                            "Tiempo de espera agotado. Intente nuevamente."
+                        error.message?.contains("unauthorized", ignoreCase = true) == true -> 
+                            "Sesión expirada. Por favor inicie sesión nuevamente."
+                        error.message?.contains("validation", ignoreCase = true) == true -> 
+                            "Datos inválidos. Verifique la información ingresada."
+                        error.message?.contains("server", ignoreCase = true) == true -> 
+                            "Error del servidor. Intente más tarde."
+                        error.message?.isNotBlank() == true -> error.message
+                        else -> "Error al guardar el registro. Intente nuevamente."
+                    }
+                    
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = error.message ?: "Error guardando registro"
+                        error = errorMessage
                     )
-                    Log.e(TAG, "❌ Error en recepción de frutas/verduras", error)
+                    Log.e(TAG, "❌ Error en recepción de frutas/verduras: $errorMessage", error)
                 }
             } catch (e: Exception) {
+                val exceptionMessage = when (e) {
+                    is java.net.UnknownHostException -> 
+                        "Sin conexión a internet. Verifique su conexión."
+                    is java.net.SocketTimeoutException -> 
+                        "Tiempo de espera agotado. Intente nuevamente."
+                    is java.net.ConnectException -> 
+                        "No se puede conectar al servidor. Verifique su conexión."
+                    is IllegalArgumentException -> 
+                        "Error en el formato de datos. Contacte al administrador."
+                    else -> e.message ?: "Error inesperado. Intente nuevamente."
+                }
+                
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Error inesperado"
+                    error = exceptionMessage
                 )
-                Log.e(TAG, "❌ Excepción en recepción de frutas/verduras", e)
+                Log.e(TAG, "❌ Excepción en recepción de frutas/verduras: $exceptionMessage", e)
             }
         }
     }

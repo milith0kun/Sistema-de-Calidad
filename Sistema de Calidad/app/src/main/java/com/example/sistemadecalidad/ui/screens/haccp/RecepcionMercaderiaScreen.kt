@@ -13,6 +13,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.ui.viewmodel.HaccpViewModel
+import com.example.sistemadecalidad.ui.components.ValidatedTextField
+import com.example.sistemadecalidad.ui.components.FieldValidators
+import com.example.sistemadecalidad.ui.components.ErrorMessage
+import com.example.sistemadecalidad.ui.components.SuccessMessage
+import com.example.sistemadecalidad.ui.components.LoadingMessage
 import com.example.sistemadecalidad.utils.TimeUtils
 import java.util.Calendar
 
@@ -90,10 +95,76 @@ fun RecepcionMercaderiaScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    val pesoDouble = pesoRecibido.toDoubleOrNull()
+                    // Validaciones mejoradas
+                    val errors = mutableMapOf<String, String>()
                     
-                    if (nombreProveedor.isBlank() || nombreProducto.isBlank() || pesoDouble == null || pesoDouble <= 0) {
-                        // Validation failed - could show error here
+                    // Validar campos obligatorios
+                    if (nombreProveedor.isBlank()) {
+                        errors["proveedor"] = "El nombre del proveedor es obligatorio"
+                    }
+                    
+                    if (nombreProducto.isBlank()) {
+                        errors["producto"] = "El nombre del producto es obligatorio"
+                    }
+                    
+                    // Validar peso
+                    val pesoDouble = pesoRecibido.toDoubleOrNull()
+                    when {
+                        pesoRecibido.isBlank() -> errors["peso"] = "El peso es obligatorio"
+                        pesoDouble == null -> errors["peso"] = "El peso debe ser un número válido"
+                        pesoDouble <= 0 -> errors["peso"] = "El peso debe ser mayor a 0"
+                        pesoDouble > 1000 -> errors["peso"] = "El peso no puede ser mayor a 1000 kg"
+                    }
+                    
+                    // Validar cantidad solicitada si no está vacía
+                    if (cantidadSolicitada.isNotBlank()) {
+                        val cantidadDouble = cantidadSolicitada.toDoubleOrNull()
+                        if (cantidadDouble == null || cantidadDouble <= 0) {
+                            errors["cantidad"] = "La cantidad debe ser un número válido mayor a 0"
+                        }
+                    }
+                    
+                    // Validar campos de evaluación para frutas y verduras
+                    if (tipoControl == "FRUTAS_VERDURAS") {
+                        if (estadoProducto.isBlank()) {
+                            errors["estado"] = "El estado del producto es obligatorio"
+                        }
+                        if (conformidadIntegridad.isBlank()) {
+                            errors["conformidad"] = "La conformidad de integridad es obligatoria"
+                        }
+                    }
+                    
+                    // Validar campos de evaluación para abarrotes
+                    if (tipoControl == "ABARROTES") {
+                        if (evaluacionVencimiento.isBlank()) {
+                            errors["vencimiento"] = "La evaluación de vencimiento es obligatoria"
+                        }
+                        if (conformidadEmpaque.isBlank()) {
+                            errors["empaque"] = "La conformidad del empaque es obligatoria"
+                        }
+                    }
+                    
+                    // Validar campos comunes
+                    if (uniformeCompleto.isBlank()) {
+                        errors["uniforme"] = "La evaluación del uniforme es obligatoria"
+                    }
+                    if (transporteAdecuado.isBlank()) {
+                        errors["transporte"] = "La evaluación del transporte es obligatoria"
+                    }
+                    if (puntualidad.isBlank()) {
+                        errors["puntualidad"] = "La evaluación de puntualidad es obligatoria"
+                    }
+                    
+                    // Si hay errores, mostrar mensaje y no enviar
+                    if (errors.isNotEmpty()) {
+                        val errorMessage = "Por favor corrija los siguientes errores:\n" + 
+                            errors.values.joinToString("\n• ", "• ")
+                        // Aquí podrías mostrar un diálogo de error o usar el sistema de errores del ViewModel
+                        return@FloatingActionButton
+                    }
+                    
+                    // Verificar que pesoDouble no sea null antes de proceder
+                    if (pesoDouble == null) {
                         return@FloatingActionButton
                     }
                     
@@ -135,6 +206,25 @@ fun RecepcionMercaderiaScreen(
                 .padding(16.dp)
                 .verticalScroll(scrollState)
         ) {
+            // Mostrar mensajes de estado
+            if (uiState.isLoading) {
+                LoadingMessage("Guardando registro...")
+            }
+            
+            uiState.error?.let { errorMessage ->
+                ErrorMessage(
+                    message = errorMessage,
+                    onDismiss = { haccpViewModel.clearMessages() }
+                )
+            }
+            
+            uiState.successMessage?.let { successMessage ->
+                SuccessMessage(
+                    message = successMessage,
+                    onDismiss = { haccpViewModel.clearMessages() }
+                )
+            }
+            
             Text(
                 text = "Información de Recepción",
                 style = MaterialTheme.typography.titleLarge
@@ -165,19 +255,23 @@ fun RecepcionMercaderiaScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             // Datos del Proveedor y Producto
-            OutlinedTextField(
+            ValidatedTextField(
                 value = nombreProveedor,
                 onValueChange = { nombreProveedor = it },
-                label = { Text("Proveedor") },
+                label = "Proveedor",
+                isRequired = true,
+                validator = FieldValidators.required("Proveedor"),
                 modifier = Modifier.fillMaxWidth()
             )
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            OutlinedTextField(
+            ValidatedTextField(
                 value = nombreProducto,
                 onValueChange = { nombreProducto = it },
-                label = { Text("Producto") },
+                label = "Producto",
+                isRequired = true,
+                validator = FieldValidators.required("Producto"),
                 modifier = Modifier.fillMaxWidth()
             )
             
@@ -187,16 +281,30 @@ fun RecepcionMercaderiaScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedTextField(
+                ValidatedTextField(
                     value = cantidadSolicitada,
                     onValueChange = { cantidadSolicitada = it },
-                    label = { Text("Cantidad Solicitada") },
+                    label = "Cantidad Solicitada",
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    validator = { value ->
+                        if (value.isNotBlank()) {
+                            val number = value.toDoubleOrNull()
+                            when {
+                                number == null -> "Debe ser un número válido"
+                                number <= 0 -> "Debe ser mayor a 0"
+                                else -> null
+                            }
+                        } else null
+                    },
                     modifier = Modifier.weight(1f)
                 )
-                OutlinedTextField(
+                ValidatedTextField(
                     value = pesoRecibido,
                     onValueChange = { pesoRecibido = it },
-                    label = { Text("Peso Recibido *") },
+                    label = "Peso Recibido",
+                    isRequired = true,
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    validator = FieldValidators.positiveNumber("Peso Recibido", 1000.0),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -367,22 +475,26 @@ fun RecepcionMercaderiaScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             // Observaciones
-            OutlinedTextField(
+            ValidatedTextField(
                 value = observaciones,
                 onValueChange = { observaciones = it },
-                label = { Text("Observaciones") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3
+                label = "Observaciones",
+                maxLines = 3,
+                validator = FieldValidators.maxLength("Observaciones", 500),
+                placeholder = "Ingrese observaciones adicionales (opcional)",
+                modifier = Modifier.fillMaxWidth()
             )
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            OutlinedTextField(
+            ValidatedTextField(
                 value = accionCorrectiva,
                 onValueChange = { accionCorrectiva = it },
-                label = { Text("Acción Correctiva") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 2
+                label = "Acción Correctiva",
+                maxLines = 2,
+                validator = FieldValidators.maxLength("Acción Correctiva", 300),
+                placeholder = "Describa las acciones correctivas tomadas (opcional)",
+                modifier = Modifier.fillMaxWidth()
             )
             
             Spacer(modifier = Modifier.height(8.dp))
@@ -402,43 +514,13 @@ fun RecepcionMercaderiaScreen(
         }
     }
     
-    // Error Dialog
-    if (uiState.error != null) {
-        val errorMessage = uiState.error
-        AlertDialog(
-            onDismissRequest = { haccpViewModel.clearMessages() },
-            title = { Text("Error") },
-            text = { Text(errorMessage ?: "Error desconocido") },
-            confirmButton = {
-                TextButton(onClick = { haccpViewModel.clearMessages() }) {
-                    Text("Aceptar")
-                }
-            }
-        )
-    }
-    
-    // Success Dialog
-    if (showSuccessDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                showSuccessDialog = false
-                haccpViewModel.clearMessages()
-                onNavigateBack()
-            },
-            title = { Text("✓ Registro Exitoso") },
-            text = { Text(uiState.successMessage ?: "Recepción de mercadería registrada correctamente") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showSuccessDialog = false
-                        haccpViewModel.clearMessages()
-                        onNavigateBack()
-                    }
-                ) {
-                    Text("Aceptar")
-                }
-            }
-        )
+    // Navegar de vuelta automáticamente después del éxito
+    LaunchedEffect(uiState.successMessage) {
+        if (uiState.successMessage != null) {
+            kotlinx.coroutines.delay(2000) // Esperar 2 segundos para que el usuario vea el mensaje
+            haccpViewModel.clearMessages()
+            onNavigateBack()
+        }
     }
 }
 

@@ -194,6 +194,15 @@ interface ApiService {
         @Query("turno") turno: String? = null
     ): Response<EmpleadosResponse>
     
+    /**
+     * Obtener lista de proveedores
+     * GET /haccp/proveedores
+     */
+    @GET("haccp/proveedores")
+    suspend fun obtenerProveedores(
+        @Header("Authorization") token: String
+    ): Response<ProveedoresResponse>
+    
     // ========== CONFIGURACIÓN ==========
     
     /**
@@ -427,6 +436,9 @@ data class RecepcionFrutasVerdurasRequest(
     @SerializedName("tipo_control")
     val tipoControl: String, // "FRUTAS_VERDURAS"
     
+    @SerializedName("proveedor_id")
+    val proveedorId: Int?,
+    
     @SerializedName("nombre_proveedor")
     val nombreProveedor: String,
     
@@ -602,4 +614,32 @@ data class ConfiguracionGPSData(
     
     @SerializedName("updated_at")
     val updatedAt: String?
+)
+
+/**
+ * Respuesta para la lista de proveedores
+ */
+data class ProveedoresResponse(
+    @SerializedName("success")
+    val success: Boolean,
+    
+    @SerializedName("data")
+    val data: List<Proveedor>?,
+    
+    @SerializedName("error")
+    val error: String?
+)
+
+/**
+ * Modelo para un proveedor
+ */
+data class Proveedor(
+    @SerializedName("id")
+    val id: Int,
+    
+    @SerializedName("nombre_completo")
+    val nombreCompleto: String,
+    
+    @SerializedName("tipo_productos")
+    val tipoProductos: String?
 )

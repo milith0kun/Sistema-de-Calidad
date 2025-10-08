@@ -364,12 +364,25 @@ class HaccpRepository(
     ): Result<HaccpResponse> = withContext(Dispatchers.IO) {
         try {
             val bearerToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
+            
+            // Obtener el proveedor_id basado en el nombre del proveedor
+            var proveedorId: Int? = null
+            val proveedoresResult = obtenerProveedores(token)
+            if (proveedoresResult.isSuccess) {
+                val proveedores = proveedoresResult.getOrNull()
+                proveedorId = proveedores?.find { it.nombreCompleto == nombreProveedor }?.id
+                Log.d(TAG, "Proveedor encontrado: $nombreProveedor -> ID: $proveedorId")
+            } else {
+                Log.w(TAG, "No se pudieron obtener proveedores, continuando sin proveedor_id")
+            }
+            
             val request = RecepcionFrutasVerdurasRequest(
                 mes = mes,
                 anio = anio,
                 fecha = fecha,
                 hora = hora,
                 tipoControl = tipoControl,
+                proveedorId = proveedorId,
                 nombreProveedor = nombreProveedor,
                 nombreProducto = nombreProducto,
                 cantidadSolicitada = cantidadSolicitada,
@@ -436,6 +449,36 @@ class HaccpRepository(
             }
         } catch (e: Exception) {
             Log.e(TAG, "❌ Excepción obteniendo empleados", e)
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Obtener lista de proveedores
+     */
+    suspend fun obtenerProveedores(token: String): Result<List<Proveedor>> = withContext(Dispatchers.IO) {
+        try {
+            val bearerToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
+            
+            Log.d(TAG, "Obteniendo lista de proveedores")
+            val response = apiService.obtenerProveedores(bearerToken)
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.success && body.data != null) {
+                    Log.d(TAG, "✅ ${body.data.size} proveedores obtenidos")
+                    Result.success(body.data)
+                } else {
+                    Log.e(TAG, "❌ Error obteniendo proveedores: ${body.error}")
+                    Result.failure(Exception(body.error ?: "Error desconocido"))
+                }
+            } else {
+                val errorMsg = "Error HTTP ${response.code()}: ${response.message()}"
+                Log.e(TAG, errorMsg)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Excepción obteniendo proveedores", e)
             Result.failure(e)
         }
     }
