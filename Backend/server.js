@@ -63,8 +63,8 @@ async function detectAvailablePort() {
 let PORT = process.env.EXTERNAL_PORT || process.env.PORT || 3000;
 const HOST = process.env.HOST || config.server.host || '0.0.0.0';
 
-// Token de ngrok desde variables de entorno
-const NGROK_TOKEN = process.env.NGROK_TOKEN || '33UMqXLZCDRstqQg8xwAKRz0jBM_6XopkVsFYV1DidpXhNn1';
+// Token de ngrok desde variables de entorno (opcional en desarrollo). Nunca hardcodear.
+const NGROK_TOKEN = process.env.NGROK_TOKEN;
 
 // Dominio estático de ngrok (opcional - requiere plan de pago)
 // Si no se especifica, ngrok generará una URL aleatoria diferente cada vez
@@ -300,7 +300,7 @@ async function initializeNgrok() {
         console.log('================================================');
         console.log(`🔗 URL Pública: ${url}`);
         console.log(`🏠 Puerto Local: ${PORT}`);
-        console.log(`🔑 Token: ${NGROK_TOKEN.substring(0, 10)}...`);
+        // console.log(`🔑 Token: ${NGROK_TOKEN.substring(0, 10)}...`); // No imprimir secretos en logs
         if (NGROK_DOMAIN) {
             console.log(`📌 Dominio: ${NGROK_DOMAIN} (estático)`);
         } else {
@@ -333,8 +333,14 @@ const startServer = async () => {
     try {
         console.log('🔄 Inicializando servidor HACCP Wino...');
         
-        // Detectar IP pública y entorno automáticamente
-        PUBLIC_IP = await detectPublicIP();
+        // Detectar entorno AWS e IP pública
+        const envInfo = await detectEnvironment();
+        IS_AWS = envInfo.isAWS;
+        if (IS_AWS && envInfo.ip) {
+            PUBLIC_IP = envInfo.ip;
+        } else {
+            PUBLIC_IP = await detectPublicIP();
+        }
         
         // Detectar puerto disponible automáticamente
         if (!process.env.PORT) {

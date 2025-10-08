@@ -30,8 +30,8 @@ object NetworkModule {
     private const val TAG = "NetworkModule"
     
     // URL por defecto: AWS Production (SIEMPRE)
-    private const val DEFAULT_BASE_URL = "http://ec2-18-188-209-94.us-east-2.compute.amazonaws.com/api/"
-    private const val EMULATOR_URL = "http://10.0.2.2:3000/"    // Solo para emulador
+    private const val DEFAULT_BASE_URL = "http://18.118.212.247/api/"
+    private const val EMULATOR_URL = "http://10.0.2.2:3000/api/"    // Solo para emulador
     
     // URL actual (por defecto AWS)
     @Volatile

@@ -18,15 +18,12 @@ object NetworkConfig {
     private const val KEY_SERVER_URL = "server_url"
     private const val KEY_ENVIRONMENT = "environment"
     
-    // Entornos predefinidos con sus URLs - Optimizado para producción
     val ENVIRONMENTS = mapOf(
-        "aws_production" to "http://ec2-18-188-209-94.us-east-2.compute.amazonaws.com/api/", // AWS Producción (PRINCIPAL - SIEMPRE)
-        "local_ngrok" to "https://kickless-anamaria-nonwaxing.ngrok-free.dev/api/", // Servidor local con ngrok
-        "emulator" to "http://10.0.2.2:3000/" // Solo para desarrollo en emulador
+        "aws_production" to "http://18.118.212.247/api/" // AWS Producción (ÚNICO entorno)
     )
     
-    // URL por defecto para pruebas (servidor local con ngrok)
-    const val DEFAULT_BASE_URL = "https://kickless-anamaria-nonwaxing.ngrok-free.dev/api/"
+    // URL por defecto: AWS Producción
+    const val DEFAULT_BASE_URL = "http://18.118.212.247/api/"
     
     // Endpoints principales del backend HACCP según especificaciones
     object Endpoints {
@@ -141,10 +138,11 @@ object NetworkConfig {
                 }
             }
             else -> {
-                // Configuración por defecto: Servidor local para pruebas
-                NetworkModule.setCustomBaseUrl(DEFAULT_BASE_URL)
-                setEnvironment(context, "local_ngrok")
-                Log.d("NetworkConfig", "Using default local server: $DEFAULT_BASE_URL")
+                // Configuración por defecto: AWS Producción
+                val awsUrl = ENVIRONMENTS["aws_production"] ?: DEFAULT_BASE_URL
+                NetworkModule.setCustomBaseUrl(awsUrl)
+                setEnvironment(context, "aws_production")
+                Log.d("NetworkConfig", "Usando servidor AWS por defecto: $awsUrl")
             }
         }
     }
@@ -201,35 +199,10 @@ object NetworkConfig {
     
     /**
      * Detección automática del entorno según la conectividad
-     * Usa datos móviles para URLs públicas, WiFi para red local
+     * Simplificado: siempre AWS
      */
     fun autoDetectEnvironment(context: Context): String {
-        try {
-            val detector = AutoNetworkDetector(context)
-            val connectionType = detector.getConnectionType()
-            
-            return when (connectionType) {
-                ConnectionType.WIFI -> {
-                    Log.d("NetworkConfig", "🔗 WiFi detectado - usando localhost")
-                    "localhost" // Localhost para WiFi según backend
-                }
-                ConnectionType.CELLULAR -> {
-                    Log.d("NetworkConfig", "📱 Datos móviles detectados - usando túnel público")
-                    "public_tunnel" // URL pública para datos móviles
-                }
-                ConnectionType.ETHERNET -> {
-                    Log.d("NetworkConfig", "🔌 Ethernet detectado - usando localhost")
-                    "localhost" // Localhost para ethernet según backend
-                }
-                else -> {
-                    Log.d("NetworkConfig", "❓ Conexión desconocida - usando localhost por defecto")
-                    "localhost" // Por defecto según backend
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("NetworkConfig", "Error detectando entorno: ${e.message}")
-            return "local_network" // Fallback seguro
-        }
+        return "aws_production"
     }
     
     /**
@@ -294,9 +267,6 @@ object NetworkConfig {
       * URLs de respaldo para información (solo lectura)
       */
      val FALLBACK_URLS = listOf(
-         "http://localhost:3000/",
-         "http://10.0.2.2:3000/", 
-         "http://127.0.0.1:3000/",
-         "http://192.168.1.98:3000/"
-     )
+        DEFAULT_BASE_URL
+    )
 }

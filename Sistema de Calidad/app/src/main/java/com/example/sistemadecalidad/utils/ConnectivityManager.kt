@@ -120,12 +120,11 @@ class ConnectivityManager(
      * Prueba múltiples configuraciones de red para encontrar la mejor
      */
     suspend fun findBestConfiguration(): Flow<NetworkTestResult> = flow {
-        val environments = listOf("localhost", "local_network", "ngrok")
+        val environments = listOf("aws_production") // Solo producción AWS
         
         for (environment in environments) {
             emit(NetworkTestResult.Testing(environment))
             
-            // Cambiar temporalmente la configuración
             val originalUrl = NetworkConfig.getCurrentUrl()
             NetworkConfig.setEnvironment(context, environment)
             
@@ -144,7 +143,6 @@ class ConnectivityManager(
                 emit(NetworkTestResult.Failed(environment, e.message ?: "Error"))
             }
             
-            // Restaurar configuración original si falló
             NetworkConfig.setCustomUrl(context, originalUrl)
         }
         

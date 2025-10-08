@@ -23,7 +23,7 @@ class AutoNetworkDetector(private val context: Context) {
         private const val SERVER_PORT = "3000"
         
         // AWS Producción - ÚNICA URL válida
-        private const val AWS_PRODUCTION_URL = "http://ec2-18-188-209-94.us-east-2.compute.amazonaws.com/api/"
+        private const val AWS_PRODUCTION_URL = "http://18.118.212.247/api/"
     }
     
     private val httpClient = OkHttpClient.Builder()
@@ -71,7 +71,7 @@ class AutoNetworkDetector(private val context: Context) {
     private suspend fun testServerConnection(url: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder()
-                .url(url)
+                .url(url + "health") // Probar endpoint de salud bajo /api
                 .get()
                 .build()
             
