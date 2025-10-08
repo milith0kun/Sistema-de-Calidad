@@ -109,9 +109,10 @@ router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
             } else {
                 console.log('Producto no encontrado en BD:', nombre_producto);
                 // Crear producto temporal
+                const categoriaId = tipo_control === 'FRUTAS_VERDURAS' ? 1 : 3; // 1=Frutas Frescas, 3=Granos y Cereales
                 const result = await db.run(
-                    'INSERT INTO productos (nombre, categoria, activo) VALUES (?, ?, 1)',
-                    [nombre_producto, tipo_control === 'FRUTAS_VERDURAS' ? 'Frutas y Verduras' : 'Abarrotes']
+                    'INSERT INTO productos (nombre, categoria_id, activo) VALUES (?, ?, 1)',
+                    [nombre_producto, categoriaId]
                 );
                 finalProductoId = result.lastID;
                 console.log('Creado producto temporal ID:', finalProductoId);
@@ -130,8 +131,8 @@ router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
             } else {
                 // Crear un producto por defecto si no existe ninguno
                 const result = await db.run(
-                    'INSERT INTO productos (nombre, categoria, activo) VALUES (?, ?, 1)',
-                    ['Producto Genérico', 'General']
+                    'INSERT INTO productos (nombre, categoria_id, activo) VALUES (?, ?, 1)',
+                    ['Producto Genérico', 3] // 3=Granos y Cereales como categoría general
                 );
                 finalProductoId = result.lastID;
                 console.log('Creado producto por defecto ID:', finalProductoId);
@@ -334,8 +335,8 @@ router.post('/recepcion-abarrotes', authenticateToken, async (req, res) => {
                 console.log('Producto no encontrado en BD:', nombreProducto);
                 // Crear producto temporal
                 const result = await db.run(
-                    'INSERT INTO productos (nombre, categoria, activo) VALUES (?, ?, 1)',
-                    [nombreProducto, 'Abarrotes']
+                    'INSERT INTO productos (nombre, categoria_id, activo) VALUES (?, ?, 1)',
+                    [nombreProducto, 3] // 3=Granos y Cereales para abarrotes
                 );
                 finalProductoId = result.lastID;
                 console.log('Creado producto temporal ID:', finalProductoId);
@@ -354,8 +355,8 @@ router.post('/recepcion-abarrotes', authenticateToken, async (req, res) => {
             } else {
                 // Crear un producto por defecto si no existe ninguno
                 const result = await db.run(
-                    'INSERT INTO productos (nombre, categoria, activo) VALUES (?, ?, 1)',
-                    ['Producto Genérico', 'General']
+                    'INSERT INTO productos (nombre, categoria_id, activo) VALUES (?, ?, 1)',
+                    ['Producto Genérico', 3] // 3=Granos y Cereales como categoría general
                 );
                 finalProductoId = result.lastID;
                 console.log('Creado producto por defecto ID:', finalProductoId);
