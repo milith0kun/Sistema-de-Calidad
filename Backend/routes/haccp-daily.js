@@ -35,7 +35,7 @@ router.get('/today', authenticateToken, async (req, res) => {
 
         // Obtener datos de cada tabla para la fecha especificada
         const recepcionMercaderia = await db.all(`
-            SELECT * FROM control_recepcion_mercaderia 
+            SELECT * FROM control_recepcion_mercaderia_temp 
             WHERE DATE(timestamp_creacion) = ?
             ORDER BY timestamp_creacion DESC
         `, [fechaConsulta]);
@@ -125,7 +125,7 @@ router.get('/recepcion-mercaderia', authenticateToken, async (req, res) => {
         const { fecha, tipo_control } = req.query;
         const fechaConsulta = fecha || formatDateForDB();
         
-        let query = `SELECT * FROM control_recepcion_mercaderia WHERE fecha = ?`;
+        let query = `SELECT * FROM control_recepcion_mercaderia_temp WHERE fecha = ?`;
         let params = [fechaConsulta];
 
         if (tipo_control) {
@@ -289,7 +289,7 @@ router.get('/resumen', authenticateToken, async (req, res) => {
         
         // Contar registros por tabla
         const conteos = await Promise.all([
-            db.get(`SELECT COUNT(*) as count FROM control_recepcion_mercaderia WHERE fecha = ?`, [fechaConsulta]),
+            db.get(`SELECT COUNT(*) as count FROM control_recepcion_mercaderia_temp WHERE fecha = ?`, [fechaConsulta]),
             db.get(`SELECT COUNT(*) as count FROM control_coccion WHERE fecha = ?`, [fechaConsulta]),
             db.get(`SELECT COUNT(*) as count FROM control_lavado_desinfeccion_frutas WHERE fecha = ?`, [fechaConsulta]),
             db.get(`SELECT COUNT(*) as count FROM control_lavado_manos WHERE fecha = ?`, [fechaConsulta]),
@@ -351,7 +351,7 @@ router.get('/usuarios', async (req, res) => {
 router.get('/estructura-tablas', async (req, res) => {
     try {
         const tablas = [
-            'control_recepcion_mercaderia',
+            'control_recepcion_mercaderia_temp',
             'control_coccion', 
             'control_lavado_desinfeccion_frutas',
             'control_lavado_manos',
@@ -407,7 +407,7 @@ router.get('/today-test', async (req, res) => {
         
         // 1. Recepción de Mercadería
         const recepcionMercaderia = await db.all(
-            `SELECT * FROM control_recepcion_mercaderia WHERE ${dayFilter.query} ORDER BY timestamp_creacion DESC`,
+            `SELECT * FROM control_recepcion_mercaderia_temp WHERE ${dayFilter.query} ORDER BY timestamp_creacion DESC`,
             dayFilter.params
         );
 
@@ -497,7 +497,7 @@ router.get('/test', async (req, res) => {
         
         // Obtener un conteo simple de registros del día actual
         const recepcionCount = await db.get(
-            `SELECT COUNT(*) as count FROM control_recepcion_mercaderia WHERE ${dayFilter.query}`,
+            `SELECT COUNT(*) as count FROM control_recepcion_mercaderia_temp WHERE ${dayFilter.query}`,
             dayFilter.params
         );
 

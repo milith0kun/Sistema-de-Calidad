@@ -349,7 +349,7 @@ router.get('/reporte/abarrotes/:mes/:anio', async (req, res) => {
         prod.nombre as nombre_producto,
         u1.nombre as responsable_registro_nombre,
         u2.nombre as responsable_supervision_nombre
-      FROM control_recepcion_mercaderia crm
+      FROM control_recepcion_mercaderia_temp crm
       LEFT JOIN proveedores p ON crm.proveedor_id = p.id
       LEFT JOIN productos prod ON crm.producto_id = prod.id
       LEFT JOIN usuarios u1 ON crm.responsable_registro_id = u1.id
@@ -396,7 +396,7 @@ router.get('/reporte/frutas-verduras/:mes/:anio', async (req, res) => {
         prod.nombre as nombre_producto,
         u1.nombre as responsable_registro_nombre,
         u2.nombre as responsable_supervision_nombre
-      FROM control_recepcion_mercaderia crm
+      FROM control_recepcion_mercaderia_temp crm
       LEFT JOIN proveedores p ON crm.proveedor_id = p.id
       LEFT JOIN productos prod ON crm.producto_id = prod.id
       LEFT JOIN usuarios u1 ON crm.responsable_registro_id = u1.id
@@ -448,7 +448,7 @@ router.get('/test-db', async (req, res) => {
     const allTables = await db.all("SELECT name FROM sqlite_master WHERE type='table'");
     
     // Verificar tablas específicas requeridas
-    const requiredTables = ['control_recepcion_mercaderia', 'proveedores', 'productos', 'usuarios'];
+    const requiredTables = ['control_recepcion_mercaderia_temp', 'proveedores', 'productos', 'usuarios'];
     const tableInfo = {};
     
     for (const tableName of requiredTables) {

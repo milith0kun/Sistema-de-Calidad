@@ -118,19 +118,29 @@ router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
             : responsableRegistroNombre; // Fallback si no hay supervisor
 
         const query = `
-            INSERT INTO control_recepcion_mercaderia (
+            INSERT INTO control_recepcion_mercaderia_temp (
                 mes, anio, fecha, hora, tipo_control,
                 proveedor_id, nombre_proveedor, producto_id, nombre_producto,
                 cantidad_solicitada, peso_unidad_recibido, unidad_medida,
                 estado_producto, conformidad_integridad_producto,
-                registro_sanitario_vigente, fecha_vencimiento_producto,
-                evaluacion_vencimiento, conformidad_empaque_primario,
-                uniforme_completo, transporte_adecuado, puntualidad,
+                registro_sanitario_vigente, fecha_vencimiento_vigente, empaque_integro,
+                conformidad_general,
                 responsable_registro_id, responsable_registro_nombre,
                 responsable_supervision_id, responsable_supervision_nombre,
-                observaciones, accion_correctiva, producto_rechazado
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
+                observaciones, accion_correctiva
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+        // Determinar conformidad general basada en los controles
+        let conformidad_general = 'CONFORME';
+        if (tipo_control === 'FRUTAS_VERDURAS') {
+            if (estado_producto === 'PESIMO' || conformidad_integridad_producto === 'PESIMO') {
+                conformidad_general = 'NO_CONFORME';
+            }
+        } else if (tipo_control === 'ABARROTES') {
+            if (registro_sanitario_vigente === 'NO' || fecha_vencimiento_producto === 'NO' || conformidad_empaque_primario === 'NO') {
+                conformidad_general = 'NO_CONFORME';
+            }
+        }
 
         const result = await db.run(query, [
             mes, anio, fecha, hora, tipo_control,
@@ -138,12 +148,11 @@ router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
             producto_id || null, nombre_producto,
             cantidad_solicitada, peso_unidad_recibido, unidad_medida,
             estado_producto, conformidad_integridad_producto,
-            registro_sanitario_vigente, fecha_vencimiento_producto,
-            evaluacion_vencimiento, conformidad_empaque_primario,
-            uniforme_completo, transporte_adecuado, puntualidad,
+            registro_sanitario_vigente, fecha_vencimiento_producto, conformidad_empaque_primario,
+            conformidad_general,
             responsableRegistro.id, responsableRegistroNombre,
             supervisor ? supervisor.id : responsableRegistro.id, responsableSupervisionNombre,
-            observaciones || null, accion_correctiva || null, producto_rechazado ? 1 : 0
+            observaciones || null, accion_correctiva || null
         ]);
 
         console.log('✅ Recepción de mercadería registrada exitosamente, ID:', result.lastID);
@@ -171,7 +180,7 @@ router.get('/recepcion-mercaderia', authenticateToken, async (req, res) => {
     try {
         const { tipo, tipo_control, mes, anio, fecha_inicio, fecha_fin, limite = 100 } = req.query;
 
-        let query = 'SELECT * FROM control_recepcion_mercaderia WHERE 1=1';
+        let query = 'SELECT * FROM control_recepcion_mercaderia_temp WHERE 1=1';
         const params = [];
 
         // Filtrar por tipo (tipo_control o tipo - ambos aceptados)
@@ -275,29 +284,36 @@ router.post('/recepcion-abarrotes', authenticateToken, async (req, res) => {
         // Por simplicidad, dejamos los IDs en NULL y solo guardamos nombres
         
         const query = `
-            INSERT INTO control_recepcion_mercaderia (
+            INSERT INTO control_recepcion_mercaderia_temp (
                 mes, anio, fecha, hora, tipo_control,
                 proveedor_id, nombre_proveedor, 
                 producto_id, nombre_producto,
-                cantidad_solicitada, peso_unidad_recibido, unidad_medida,
-                registro_sanitario_vigente, evaluacion_vencimiento, conformidad_empaque_primario,
-                uniforme_completo, transporte_adecuado, puntualidad,
+                cantidad_solicitada,
+                registro_sanitario_vigente, fecha_vencimiento_vigente, empaque_integro,
+                conformidad_general,
                 responsable_registro_id, responsable_registro_nombre,
                 responsable_supervision_id, responsable_supervision_nombre,
-                observaciones, accion_correctiva, producto_rechazado
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
+                observaciones, accion_correctiva
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+        // Determinar conformidad general para abarrotes
+        let conformidad_general = 'CONFORME';
+        if (registroSanitarioVigente === 'NO' || evaluacionVencimiento === 'NO' || conformidadEmpaque === 'NO') {
+            conformidad_general = 'NO_CONFORME';
+        }
 
         const result = await db.run(query, [
             mes, anio, fecha, hora, 'ABARROTES',
             null, nombreProveedor,  // proveedor_id NULL, solo nombre
             null, nombreProducto,   // producto_id NULL, solo nombre
-            cantidadSolicitada || null, null, null,  // peso_unidad_recibido y unidad_medida NULL para abarrotes
-            registroSanitarioVigente ? 1 : 0, evaluacionVencimiento, conformidadEmpaque,
-            uniformeCompleto, transporteAdecuado, puntualidad,
+            cantidadSolicitada || null,
+            registroSanitarioVigente === 'SI' ? 'SI' : 'NO', 
+            evaluacionVencimiento === 'SI' ? 'SI' : 'NO', 
+            conformidadEmpaque === 'SI' ? 'SI' : 'NO',
+            conformidad_general,
             responsableRegistro.id, responsableRegistroNombre,
             supervisor.id, responsableSupervisionNombre,
-            observaciones || null, accionCorrectiva || null, 0  // producto_rechazado = 0 por defecto
+            observaciones || null, accionCorrectiva || null
         ]);
 
         console.log('✅ Recepción de abarrotes registrada exitosamente, ID:', result.lastID);
