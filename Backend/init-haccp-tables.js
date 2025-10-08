@@ -139,6 +139,40 @@ const createHaccpTables = () => {
             )
         `;
 
+        // Tabla temporal para control de recepción de mercadería
+        const createRecepcionMercaderiaTempTable = `
+            CREATE TABLE IF NOT EXISTS control_recepcion_mercaderia_temp (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mes INTEGER NOT NULL,
+                anio INTEGER NOT NULL,
+                fecha DATE NOT NULL,
+                hora TIME NOT NULL,
+                tipo_control TEXT NOT NULL,
+                proveedor_id INTEGER,
+                nombre_proveedor TEXT NOT NULL,
+                producto_id INTEGER,
+                nombre_producto TEXT NOT NULL,
+                cantidad_solicitada REAL,
+                peso_unidad_recibido REAL,
+                unidad_medida TEXT,
+                estado_producto TEXT,
+                conformidad_integridad_producto TEXT,
+                registro_sanitario_vigente TEXT,
+                fecha_vencimiento_vigente TEXT,
+                empaque_integro TEXT,
+                conformidad_general TEXT,
+                responsable_registro_id INTEGER NOT NULL,
+                responsable_registro_nombre TEXT NOT NULL,
+                responsable_supervision_id INTEGER NOT NULL,
+                responsable_supervision_nombre TEXT NOT NULL,
+                observaciones TEXT,
+                accion_correctiva TEXT,
+                timestamp_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (responsable_registro_id) REFERENCES usuarios (id),
+                FOREIGN KEY (responsable_supervision_id) REFERENCES usuarios (id)
+            )
+        `;
+
         // Ejecutar creación de tablas
         dbRaw.serialize(() => {
             dbRaw.run(createRecepcionMercaderiaTable, (err) => {
@@ -193,6 +227,15 @@ const createHaccpTables = () => {
                     return;
                 }
                 console.log('✅ Tabla productos creada');
+            });
+
+            dbRaw.run(createRecepcionMercaderiaTempTable, (err) => {
+                if (err) {
+                    console.error('❌ Error creando tabla control_recepcion_mercaderia_temp:', err.message);
+                    reject(err);
+                    return;
+                }
+                console.log('✅ Tabla control_recepcion_mercaderia_temp creada');
                 
                 // Insertar datos de prueba
                 insertTestData().then(() => {
