@@ -184,12 +184,12 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
     'FECHA', 'HORA', 'NOMBRE DEL\nPROVEEDOR', 'NOMBRE DEL\nPRODUCTO',
     'CANTIDAD\nSOLICITADA\nPESO O UNIDAD', 'C/NC',
     'VIGENCIA\nREGISTRO\nSANITARIO', 
-    'FECHA\nVENCIMIENTO\nPRODUCTO',
-    'CONFORMIDAD\nEMPAQUE',
-    'UNIFORME\nCOMPLETO', 
-    'TRANSPORTE\nADECUADO', 
-    'PUNTUALIDAD',
+    'FECHA\nVENCIMIENTO\nVIGENTE',
+    'EMPAQUE\nÍNTEGRO',
+    'CONFORMIDAD\nINTEGRIDAD', 
+    'ESTADO\nPRODUCTO', 
     'RESPONSABLE\nREGISTRO',
+    'RESPONSABLE\nSUPERVISIÓN',
     'OBSERVACIONES', 
     'ACCIÓN\nCORRECTIVA'
   ];
@@ -223,17 +223,28 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
         switch (col) {
           case 1: cell.value = fila.fecha || ''; break;
           case 2: cell.value = fila.hora || ''; break;
-          case 3: cell.value = fila.proveedor || ''; break;
-          case 4: cell.value = fila.producto || ''; break;
-          case 5: cell.value = fila.cantidad || ''; break;
-          case 6: cell.value = fila.conforme || ''; break;
-          case 7: cell.value = fila.registro_sanitario || ''; break;
-          case 8: cell.value = fila.vencimiento || ''; break;
-          case 9: cell.value = fila.empaque || ''; break;
-          case 10: cell.value = fila.uniforme || ''; break;
-          case 11: cell.value = fila.transporte || ''; break;
-          case 12: cell.value = fila.puntualidad || ''; break;
-          case 13: cell.value = fila.responsable || ''; break;
+          case 3: cell.value = fila.nombre_proveedor || ''; break;
+          case 4: cell.value = fila.nombre_producto || ''; break;
+          case 5: 
+            // Formatear cantidad solicitada con peso/unidad recibido
+            const cantidad = fila.cantidad_solicitada || '';
+            const peso = fila.peso_unidad_recibido || '';
+            const unidad = fila.unidad_medida || '';
+            cell.value = cantidad ? `${cantidad}` : peso && unidad ? `${peso} ${unidad}` : peso || unidad || '';
+            break;
+          case 6: 
+            // Mapear conformidad_general a C/NC
+            cell.value = fila.conformidad_general === 'CONFORME' ? 'C' : 
+                        fila.conformidad_general === 'NO_CONFORME' ? 'NC' : 
+                        fila.conformidad_general || '';
+            break;
+          case 7: cell.value = fila.registro_sanitario_vigente || ''; break;
+          case 8: cell.value = fila.fecha_vencimiento_vigente || ''; break;
+          case 9: cell.value = fila.empaque_integro || ''; break;
+          case 10: cell.value = fila.conformidad_integridad_producto || ''; break;
+          case 11: cell.value = fila.estado_producto || ''; break;
+          case 12: cell.value = fila.responsable_registro_nombre || ''; break;
+          case 13: cell.value = fila.responsable_supervision_nombre || ''; break;
           case 14: cell.value = fila.observaciones || ''; break;
           case 15: cell.value = fila.accion_correctiva || ''; break;
         }
@@ -369,9 +380,9 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
     'PESO O UNIDAD\nRECIBIDO', 'C/NC',
     'ESTADO DEL\nPRODUCTO\n(F/R/M)', 
     'CONFORMIDAD\nINTEGRIDAD\nPRODUCTO',
-    'UNIFORME\nCOMPLETO',
-    'TRANSPORTE\nADECUADO', 
-    'PUNTUALIDAD',
+    'EMPAQUE\nÍNTEGRO',
+    'REGISTRO\nSANITARIO\nVIGENTE', 
+    'FECHA\nVENCIMIENTO\nVIGENTE',
     'RESPONSABLE\nREGISTRO',
     'RESPONSABLE\nSUPERVISIÓN',
     'OBSERVACIONES', 
@@ -407,17 +418,33 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
         switch (col) {
           case 1: cell.value = fila.fecha || ''; break;
           case 2: cell.value = fila.hora || ''; break;
-          case 3: cell.value = fila.proveedor || ''; break;
-          case 4: cell.value = fila.producto || ''; break;
-          case 5: cell.value = fila.peso_unidad || ''; break;
-          case 6: cell.value = fila.conforme || ''; break;
-          case 7: cell.value = fila.estado_producto || ''; break;
-          case 8: cell.value = fila.integridad || ''; break;
-          case 9: cell.value = fila.uniforme || ''; break;
-          case 10: cell.value = fila.transporte || ''; break;
-          case 11: cell.value = fila.puntualidad || ''; break;
-          case 12: cell.value = fila.responsable_registro || ''; break;
-          case 13: cell.value = fila.responsable_supervision || ''; break;
+          case 3: cell.value = fila.nombre_proveedor || ''; break;
+          case 4: cell.value = fila.nombre_producto || ''; break;
+          case 5: 
+            // Formatear peso/unidad con unidad de medida
+            const peso = fila.peso_unidad_recibido || '';
+            const unidad = fila.unidad_medida || '';
+            cell.value = peso && unidad ? `${peso} ${unidad}` : peso || unidad || '';
+            break;
+          case 6: 
+            // Mapear conformidad_general a C/NC
+            cell.value = fila.conformidad_general === 'CONFORME' ? 'C' : 
+                        fila.conformidad_general === 'NO_CONFORME' ? 'NC' : 
+                        fila.conformidad_general || '';
+            break;
+          case 7: 
+            // Mapear estado_producto a F/R/M
+            cell.value = fila.estado_producto === 'FRESCO' ? 'F' : 
+                        fila.estado_producto === 'REGULAR' ? 'R' : 
+                        fila.estado_producto === 'MALO' ? 'M' : 
+                        fila.estado_producto || '';
+            break;
+          case 8: cell.value = fila.conformidad_integridad_producto || ''; break;
+          case 9: cell.value = fila.empaque_integro || ''; break;
+          case 10: cell.value = fila.registro_sanitario_vigente || ''; break;
+          case 11: cell.value = fila.fecha_vencimiento_vigente || ''; break;
+          case 12: cell.value = fila.responsable_registro_nombre || ''; break;
+          case 13: cell.value = fila.responsable_supervision_nombre || ''; break;
           case 14: cell.value = fila.observaciones || ''; break;
           case 15: cell.value = fila.accion_correctiva || ''; break;
         }

@@ -224,26 +224,54 @@ const RecepcionMercaderia = () => {
           
           {(filtroTipo === 'mes' || filtroTipo === 'anio') && (
             <Grid item xs={12} md={2}>
-              <TextField
-                label="Mes"
-                type="number"
-                fullWidth
-                value={mes}
-                onChange={(e) => setMes(Number(e.target.value))}
-                inputProps={{ min: 1, max: 12 }}
-                disabled={filtroTipo === 'anio'}
-              />
+              <FormControl fullWidth disabled={filtroTipo === 'anio'}>
+                <InputLabel>Mes</InputLabel>
+                <Select
+                  value={mes}
+                  label="Mes"
+                  onChange={(e) => setMes(Number(e.target.value))}
+                >
+                  {[
+                    { value: 1, label: 'Enero' },
+                    { value: 2, label: 'Febrero' },
+                    { value: 3, label: 'Marzo' },
+                    { value: 4, label: 'Abril' },
+                    { value: 5, label: 'Mayo' },
+                    { value: 6, label: 'Junio' },
+                    { value: 7, label: 'Julio' },
+                    { value: 8, label: 'Agosto' },
+                    { value: 9, label: 'Septiembre' },
+                    { value: 10, label: 'Octubre' },
+                    { value: 11, label: 'Noviembre' },
+                    { value: 12, label: 'Diciembre' }
+                  ].map((month) => (
+                    <MenuItem key={month.value} value={month.value}>
+                      {month.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
           )}
           
           <Grid item xs={12} md={2}>
-            <TextField
-              label="Año"
-              type="number"
-              fullWidth
-              value={anio}
-              onChange={(e) => setAnio(Number(e.target.value))}
-            />
+            <FormControl fullWidth>
+              <InputLabel>Año</InputLabel>
+              <Select
+                value={anio}
+                label="Año"
+                onChange={(e) => setAnio(Number(e.target.value))}
+              >
+                {Array.from({ length: 10 }, (_, i) => {
+                  const year = new Date().getFullYear() - i;
+                  return (
+                    <MenuItem key={year} value={year}>
+                      {year}
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+            </FormControl>
           </Grid>
           
           <Grid item xs={12} md={2}>
@@ -271,21 +299,23 @@ const RecepcionMercaderia = () => {
           <Table size="small">
             <TableHead sx={{ bgcolor: '#f5f5f5' }}>
               <TableRow>
-                <TableCell><strong>Fecha</strong></TableCell>
-                <TableCell><strong>Proveedor</strong></TableCell>
-                <TableCell><strong>Producto</strong></TableCell>
-                <TableCell><strong>Cantidad</strong></TableCell>
-                <TableCell><strong>Conformidad</strong></TableCell>
-                <TableCell><strong>Rechazado</strong></TableCell>
-                <TableCell><strong>Responsable</strong></TableCell>
+                <TableCell sx={{ minWidth: 100 }}><strong>Fecha</strong></TableCell>
+                <TableCell sx={{ minWidth: 120 }}><strong>Hora</strong></TableCell>
+                <TableCell sx={{ minWidth: 150 }}><strong>Proveedor</strong></TableCell>
+                <TableCell sx={{ minWidth: 150 }}><strong>Producto</strong></TableCell>
+                <TableCell sx={{ minWidth: 100 }}><strong>Cantidad</strong></TableCell>
+                <TableCell sx={{ minWidth: 120 }}><strong>Estado</strong></TableCell>
+                <TableCell sx={{ minWidth: 120 }}><strong>Conformidad</strong></TableCell>
+                <TableCell sx={{ minWidth: 150 }}><strong>Responsable</strong></TableCell>
+                <TableCell sx={{ minWidth: 200 }}><strong>Observaciones</strong></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {data.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={9} align="center">
                     <Typography color="text.secondary" py={3}>
-                      No hay registros
+                      No hay registros para los filtros seleccionados
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -293,24 +323,36 @@ const RecepcionMercaderia = () => {
                 data.map((row, index) => (
                   <TableRow key={index} hover>
                     <TableCell>{format(new Date(row.fecha), 'dd/MM/yyyy')}</TableCell>
+                    <TableCell>{row.hora}</TableCell>
                     <TableCell>{row.nombre_proveedor}</TableCell>
                     <TableCell>{row.nombre_producto}</TableCell>
-                    <TableCell>{row.peso_unidad_recibido} {row.unidad_medida}</TableCell>
+                    <TableCell>
+                      {row.peso_unidad_recibido ? `${row.peso_unidad_recibido} ${row.unidad_medida}` : row.cantidad_solicitada || 'N/A'}
+                    </TableCell>
                     <TableCell>
                       <Chip
-                        label={row.estado_producto || row.conformidad_empaque_primario || 'N/A'}
+                        label={row.estado_producto || 'N/A'}
                         size="small"
-                        color={row.estado_producto === 'EXCELENTE' ? 'success' : 'warning'}
+                        color={
+                          row.estado_producto === 'EXCELENTE' ? 'success' : 
+                          row.estado_producto === 'REGULAR' ? 'warning' : 
+                          row.estado_producto === 'PESIMO' ? 'error' : 'default'
+                        }
                       />
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={row.producto_rechazado ? 'SÍ' : 'NO'}
+                        label={row.conformidad_general || (row.producto_rechazado ? 'NO_CONFORME' : 'CONFORME')}
                         size="small"
-                        color={row.producto_rechazado ? 'error' : 'success'}
+                        color={
+                          (row.conformidad_general === 'CONFORME' || !row.producto_rechazado) ? 'success' : 'error'
+                        }
                       />
                     </TableCell>
                     <TableCell>{row.responsable_registro_nombre}</TableCell>
+                    <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {row.observaciones || '-'}
+                    </TableCell>
                   </TableRow>
                 ))
               )}
