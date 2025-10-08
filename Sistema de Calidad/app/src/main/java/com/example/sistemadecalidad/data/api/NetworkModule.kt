@@ -31,19 +31,17 @@ object NetworkModule {
     
     // URL por defecto: AWS Production (SIEMPRE)
     private const val DEFAULT_BASE_URL = "http://18.118.212.247/api/"
-    private const val EMULATOR_URL = "http://10.0.2.2:3000/api/"    // Solo para emulador
-    
+
     // URL actual (por defecto AWS)
     @Volatile
     private var currentBaseUrl: String = DEFAULT_BASE_URL
-    
+
     /**
      * Detecta automáticamente la mejor URL del servidor
      */
     suspend fun detectAndSetBestUrl(context: Context) {
         try {
             Log.d(TAG, "🔍 Iniciando detección automática de servidor...")
-            
             val detector = AutoNetworkDetector(context)
             val detectedUrl = detector.detectBestServerUrl()
             
@@ -98,9 +96,6 @@ object NetworkModule {
                 val newRequest = originalRequest.newBuilder()
                     .header("Content-Type", "application/json")
                     .header("Accept", "application/json")
-                    // Headers específicos para túneles localtunnel
-                    .header("bypass-tunnel-reminder", "true")
-                    .header("x-bypass-tunnel-reminder", "true")
                     .header("User-Agent", "SistemaDeCalidad-Android/1.0")
                     .build()
                 chain.proceed(newRequest)
