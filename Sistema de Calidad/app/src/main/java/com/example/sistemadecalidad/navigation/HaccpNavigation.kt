@@ -16,7 +16,7 @@ import com.example.sistemadecalidad.ui.screens.dashboard.DashboardScreen
 import com.example.sistemadecalidad.ui.screens.historial.HistorialScreen
 import com.example.sistemadecalidad.ui.screens.login.LoginScreen
 import com.example.sistemadecalidad.ui.screens.marcaciones.MarcacionesScreen
-import com.example.sistemadecalidad.ui.screens.settings.NetworkSettingsScreen
+// import com.example.sistemadecalidad.ui.screens.settings.NetworkSettingsScreen // ELIMINADO
 // import com.example.sistemadecalidad.ui.screens.settings.LocationSettingsScreen // ELIMINADO - configuración GPS solo desde WebPanel
 import com.example.sistemadecalidad.ui.screens.about.AboutScreen
 import com.example.sistemadecalidad.ui.screens.welcome.WelcomeScreen
@@ -91,9 +91,6 @@ fun HaccpNavigation(
                     navController.navigate(NavigationDestinations.DASHBOARD) {
                         popUpTo(NavigationDestinations.LOGIN) { inclusive = true }
                     }
-                },
-                onNavigateToNetworkSettings = {
-                    navController.navigate(NavigationDestinations.NETWORK_SETTINGS)
                 },
                 viewModel = authViewModel
             )
@@ -175,14 +172,8 @@ fun HaccpNavigation(
             AnaliticaScreen(fichadoViewModel = fichadoViewModel)
         }
         
-        // Pantalla de configuración de red
-        composable(NavigationDestinations.NETWORK_SETTINGS) {
-            NetworkSettingsScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
+        // Pantalla de configuración de red - ELIMINADA
+        // La configuración de red ahora es automática
         
         // Menú principal de formularios HACCP
         composable(NavigationDestinations.HACCP_MENU) {

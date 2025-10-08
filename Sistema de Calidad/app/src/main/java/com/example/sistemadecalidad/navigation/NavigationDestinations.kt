@@ -10,7 +10,6 @@ object NavigationDestinations {
     const val MARCACIONES = "marcaciones"
     const val HISTORIAL = "historial"
     const val ANALITICA = "analitica"
-    const val NETWORK_SETTINGS = "network_settings"
     const val HACCP_MENU = "haccp_menu"
     const val ABOUT = "about"
     // const val LOCATION_SETTINGS = "location_settings" // ELIMINADO - configuración GPS solo desde WebPanel

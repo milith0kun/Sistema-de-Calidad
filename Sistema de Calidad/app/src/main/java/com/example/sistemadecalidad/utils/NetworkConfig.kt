@@ -92,26 +92,11 @@ object NetworkConfig {
     // Configuración GPS - SOLO VALORES DE FALLBACK
     // IMPORTANTE: La configuración GPS se gestiona ÚNICAMENTE desde el WebPanel
     // Estos valores solo se usan si el backend no responde o no tiene configuración guardada
-    // Los Admins/Supervisores deben configurar la ubicación desde http://18.188.209.94/configuracion
+    // Los Admins/Supervisores deben configurar la ubicación desde http://18.118.212.247/configuracion
     object GPSConfig {
         const val KITCHEN_LATITUDE = -12.0464  // Fallback: Lima, Perú
         const val KITCHEN_LONGITUDE = -77.0428  // Fallback: Lima, Perú
         const val GPS_RADIUS_METERS = 100.0    // Fallback: 100 metros
-    }
-    
-    // Credenciales por defecto según especificaciones del backend
-    object DefaultCredentials {
-        object Admin {
-            const val EMAIL = "admin@hotel.com"
-            const val PASSWORD = "admin123"
-            const val ROLE = "ADMIN"
-        }
-        
-        object Employee {
-            const val EMAIL = "empleado@hotel.com"
-            const val PASSWORD = "empleado123"
-            const val ROLE = "EMPLEADO"
-        }
     }
     
     /**
@@ -119,32 +104,14 @@ object NetworkConfig {
      * Por defecto usa AWS Production en dispositivos reales
      */
     fun initialize(context: Context) {
-        val prefs = getPreferences(context)
-        val savedEnvironment = prefs.getString(KEY_ENVIRONMENT, null)
-        val savedUrl = prefs.getString(KEY_SERVER_URL, null)
+        // Limpiar cualquier configuración obsoleta
+        clearSavedConfiguration(context)
         
-        when {
-            !savedUrl.isNullOrEmpty() -> {
-                // Usar URL personalizada guardada
-                NetworkModule.setCustomBaseUrl(savedUrl)
-                Log.d("NetworkConfig", "Using custom URL: $savedUrl")
-            }
-            !savedEnvironment.isNullOrEmpty() -> {
-                // Usar entorno guardado
-                val environmentUrl = ENVIRONMENTS[savedEnvironment]
-                if (environmentUrl != null) {
-                    NetworkModule.setCustomBaseUrl(environmentUrl)
-                    Log.d("NetworkConfig", "Using saved environment: $savedEnvironment -> $environmentUrl")
-                }
-            }
-            else -> {
-                // Configuración por defecto: AWS Producción
-                val awsUrl = ENVIRONMENTS["aws_production"] ?: DEFAULT_BASE_URL
-                NetworkModule.setCustomBaseUrl(awsUrl)
-                setEnvironment(context, "aws_production")
-                Log.d("NetworkConfig", "Usando servidor AWS por defecto: $awsUrl")
-            }
-        }
+        // Siempre usar la configuración por defecto actualizada: AWS Producción
+        val awsUrl = ENVIRONMENTS["aws_production"] ?: DEFAULT_BASE_URL
+        NetworkModule.setCustomBaseUrl(awsUrl)
+        setEnvironment(context, "aws_production")
+        Log.d("NetworkConfig", "Usando servidor AWS por defecto: $awsUrl")
     }
     
     /**

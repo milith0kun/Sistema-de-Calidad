@@ -14,10 +14,12 @@ object TimeUtils {
     
     /**
      * Obtiene la fecha actual en zona horaria de Perú
+     * Corregido para evitar conversiones innecesarias que causan diferencias de hora
      */
     fun getCurrentPeruDate(): Date {
-        val calendar = Calendar.getInstance(peruTimeZone)
-        return calendar.time
+        // Simplemente devolver la hora actual del sistema
+        // El sistema ya debería estar configurado en la zona horaria correcta
+        return Date()
     }
     
     /**
@@ -26,7 +28,7 @@ object TimeUtils {
      */
     fun formatDateForDisplay(date: Date = getCurrentPeruDate()): String {
         val formatter = SimpleDateFormat("EEEE, dd 'de' MMMM", Locale("es", "PE"))
-        formatter.timeZone = peruTimeZone
+        // Usar la zona horaria del sistema directamente
         return formatter.format(date)
     }
     
@@ -36,7 +38,7 @@ object TimeUtils {
      */
     fun formatTimeForDisplay(date: Date = getCurrentPeruDate()): String {
         val formatter = SimpleDateFormat("HH:mm:ss", Locale("es", "PE"))
-        formatter.timeZone = peruTimeZone
+        // Usar la zona horaria del sistema directamente
         return formatter.format(date)
     }
     
@@ -46,7 +48,7 @@ object TimeUtils {
      */
     fun formatDateForBackend(date: Date = getCurrentPeruDate()): String {
         val formatter = SimpleDateFormat("yyyy-MM-dd", Locale("es", "PE"))
-        formatter.timeZone = peruTimeZone
+        // Usar la zona horaria del sistema directamente
         return formatter.format(date)
     }
     
@@ -56,7 +58,7 @@ object TimeUtils {
      */
     fun formatTimeForBackend(date: Date = getCurrentPeruDate()): String {
         val formatter = SimpleDateFormat("HH:mm:ss", Locale("es", "PE"))
-        formatter.timeZone = peruTimeZone
+        // Usar la zona horaria del sistema directamente
         return formatter.format(date)
     }
     
@@ -66,7 +68,7 @@ object TimeUtils {
      */
     fun getPeruTimestamp(date: Date = getCurrentPeruDate()): String {
         val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale("es", "PE"))
-        formatter.timeZone = peruTimeZone
+        // Usar la zona horaria del sistema directamente
         return formatter.format(date)
     }
     

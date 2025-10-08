@@ -58,7 +58,16 @@ data class FichadoEntradaRequest(
     val longitud: Double? = null,
     
     @SerializedName("codigo_qr")
-    val codigoQr: String? = null
+    val codigoQr: String? = null,
+    
+    @SerializedName("fecha")
+    val fecha: String? = null,
+    
+    @SerializedName("hora")
+    val hora: String? = null,
+    
+    @SerializedName("timestamp")
+    val timestamp: String? = null
 )
 
 /**
@@ -72,7 +81,16 @@ data class FichadoSalidaRequest(
     val latitud: Double? = null,
     
     @SerializedName("longitud")
-    val longitud: Double? = null
+    val longitud: Double? = null,
+    
+    @SerializedName("fecha")
+    val fecha: String? = null,
+    
+    @SerializedName("hora")
+    val hora: String? = null,
+    
+    @SerializedName("timestamp")
+    val timestamp: String? = null
 )
 
 /**

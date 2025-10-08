@@ -9,12 +9,15 @@ const router = express.Router();
 // POST /api/fichado/entrada - Registrar entrada con validación GPS
 router.post('/entrada', authenticateToken, requireGPSValidation(true), (req, res) => {
     try {
-        const { metodo = 'GPS', latitud, longitud, codigo_qr, observaciones } = req.body;
+        const { metodo = 'GPS', latitud, longitud, codigo_qr, observaciones, fecha: fechaApp, hora: horaApp, timestamp } = req.body;
         const usuarioId = req.user.id;
         
-        // Usar zona horaria de Perú para consistencia
-        const fecha = formatDateForDB();
-        const horaEntrada = formatTimeForDB();
+        // Usar fecha/hora enviada por la aplicación (ya en zona horaria de Perú) o generar si no se envía
+        const fecha = fechaApp || formatDateForDB();
+        const horaEntrada = horaApp || formatTimeForDB();
+        
+        console.log(`📅 Datos recibidos - Fecha: ${fechaApp}, Hora: ${horaApp}, Timestamp: ${timestamp}`);
+        console.log(`📅 Datos a usar - Fecha: ${fecha}, Hora: ${horaEntrada}`);
 
         // Verificar si ya tiene entrada SIN SALIDA (no completada)
         db.get(
@@ -100,12 +103,15 @@ router.post('/entrada', authenticateToken, requireGPSValidation(true), (req, res
 // POST /api/fichado/salida - Registrar salida con validación GPS opcional
 router.post('/salida', authenticateToken, requireGPSValidation(false), (req, res) => {
     try {
-        const { latitud, longitud, observaciones } = req.body;
+        const { latitud, longitud, observaciones, fecha: fechaApp, hora: horaApp, timestamp } = req.body;
         const usuarioId = req.user.id;
         
-        // Usar zona horaria de Perú para consistencia
-        const fecha = formatDateForDB();
-        const horaSalida = formatTimeForDB();
+        // Usar fecha/hora enviada por la aplicación (ya en zona horaria de Perú) o generar si no se envía
+        const fecha = fechaApp || formatDateForDB();
+        const horaSalida = horaApp || formatTimeForDB();
+        
+        console.log(`📅 Datos recibidos - Fecha: ${fechaApp}, Hora: ${horaApp}, Timestamp: ${timestamp}`);
+        console.log(`📅 Datos a usar - Fecha: ${fecha}, Hora: ${horaSalida}`);
 
         // Buscar la ÚLTIMA entrada sin salida del día (para soportar múltiples turnos)
         db.get(

@@ -9,7 +9,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Settings
+
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CheckCircle
@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.sistemadecalidad.ui.viewmodel.AuthViewModel
 import com.example.sistemadecalidad.ui.viewmodel.FichadoViewModel
 import com.example.sistemadecalidad.utils.TimeUtils
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.delay
 
@@ -346,8 +347,20 @@ fun DashboardScreen(
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                                
+                                // Solo mostrar horas trabajadas si hay entrada Y salida
+                                val estadoFichado = dashboardHoy?.data?.estadoFichado
+                                val textoHoras = when {
+                                    estadoFichado == null -> "0:00"
+                                    estadoFichado.tieneSalida && estadoFichado.horasTrabajadas != null -> 
+                                        String.format("%.2f h", estadoFichado.horasTrabajadas)
+                                    estadoFichado.tieneEntrada && !estadoFichado.tieneSalida -> 
+                                        "Trabajando..."
+                                    else -> "0:00"
+                                }
+                                
                                 Text(
-                                    text = dashboardHoy?.data?.estadoFichado?.horasTrabajadas?.let { String.format("%.2f h", it) } ?: "0:00",
+                                    text = textoHoras,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -388,8 +401,19 @@ fun DashboardScreen(
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                                // Formatear la hora usando TimeUtils para mostrar en zona horaria de Lima
+                                val horaEntradaFormateada = dashboardHoy?.data?.estadoFichado?.horaEntrada?.let { entrada ->
+                                    try {
+                                        val sdf = java.text.SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+                                        val date = sdf.parse(entrada)
+                                        if (date != null) TimeUtils.formatTimeForDisplay(date) else entrada
+                                    } catch (e: Exception) {
+                                        entrada // Fallback al valor original si hay error
+                                    }
+                                } ?: "Sin registros"
+                                
                                 Text(
-                                    text = dashboardHoy?.data?.estadoFichado?.horaEntrada ?: "Sin registros",
+                                    text = horaEntradaFormateada,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface

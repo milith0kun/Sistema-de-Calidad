@@ -30,10 +30,8 @@ import com.example.sistemadecalidad.ui.viewmodel.AuthViewModel
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
-    onNavigateToNetworkSettings: () -> Unit = {},
     viewModel: AuthViewModel // = hiltViewModel()
 ) {
-    // Credenciales por defecto según especificaciones del backend
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) } // Toggle para mostrar/ocultar contraseña
@@ -228,27 +226,14 @@ fun LoginScreen(
                     containerColor = MaterialTheme.colorScheme.errorContainer
                 )
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "⚠️ Sin conexión al servidor",
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontWeight = FontWeight.Medium
-                    )
-                    
-                    TextButton(
-                        onClick = { viewModel.checkServerConnection() }
-                    ) {
-                        Text("Verificar conexión")
-                    }
-                }
+                Text(
+                    text = "⚠️ Verificando conexión al servidor...",
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(16.dp)
+                )
             }
         }
-        
-        // Botón de configuración de red eliminado: la app detecta automáticamente AWS y no requiere configuración manual
-        // (Se ha retirado el acceso directo a NetworkSettings desde el login para evitar confusiones)
         
         // Texto de ayuda
         TextButton(
@@ -257,7 +242,5 @@ fun LoginScreen(
         ) {
             Text("¿Olvidaste tu contraseña?")
         }
-        
-        // Tarjeta de credenciales por defecto eliminada para evitar mostrar credenciales en la pantalla de login
     }
 }

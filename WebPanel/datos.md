@@ -1,4 +1,4 @@
-ssh -i "Wino.pem" ubuntu@ec2-18-188-209-94.us-east-2.compute.amazonaws.com
+ssh -i "Wino.pem" ubuntu@18.118.212.247
 cd ~/SistemaWino
 git pull
 cd WebPanel

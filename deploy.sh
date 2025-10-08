@@ -54,7 +54,7 @@ echo "🌐 Desplegando en el servidor..."
 
 # Configurar estas variables según tu servidor
 SERVER_USER="ubuntu"
-SERVER_HOST="ec2-18-188-209-94.us-east-2.compute.amazonaws.com"
+SERVER_HOST="18.118.212.247"
 SERVER_PATH="/home/ubuntu/SistemaWino"
 SSH_KEY="./wino.pem"
 

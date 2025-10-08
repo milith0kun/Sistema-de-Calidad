@@ -7,7 +7,7 @@ package com.example.sistemadecalidad.utils
 object ProductionConfig {
     
     // CONFIGURACIÓN DEL SERVIDOR - CAMBIAR AQUÍ PARA DESPLIEGUE
-    const val SERVER_IP = "ec2-18-188-209-94.us-east-2.compute.amazonaws.com"  // Servidor AWS desplegado
+    const val SERVER_IP = "18.118.212.247"            // Servidor AWS desplegado (IP actualizada)
     const val SERVER_PORT = ""                         // Puerto 80 (incluido en dominio)
     const val USE_HTTPS = false                        // Servidor usa HTTP (puerto 80)
     

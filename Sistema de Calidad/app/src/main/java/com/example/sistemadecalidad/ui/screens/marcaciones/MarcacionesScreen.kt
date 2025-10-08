@@ -16,7 +16,7 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
+
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -61,9 +61,20 @@ fun MarcacionesScreen(
     val preferencesManager = remember { PreferencesManager(context, Gson()) }
     val lifecycleOwner = LocalLifecycleOwner.current
     
+    // Variable para hora actual en tiempo real
+    var currentTime by remember { mutableStateOf(Date()) }
+    
     // Observar estados
     val fichadoUiState by fichadoViewModel.uiState.collectAsStateWithLifecycle()
     val dashboardHoy by fichadoViewModel.dashboardHoy.collectAsStateWithLifecycle()
+    
+    // Actualizar hora cada segundo usando zona horaria de Perú
+    LaunchedEffect(Unit) {
+        while (true) {
+            currentTime = TimeUtils.getCurrentPeruDate()
+            delay(1000L)
+        }
+    }
     
     // Estados para configuración de ubicación
     var targetLatitude by remember { mutableStateOf(-12.046374) }
@@ -233,6 +244,33 @@ fun MarcacionesScreen(
             }
         }
         
+        // Hora actual en tiempo real
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Hora Actual",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    text = TimeUtils.formatTimeForDisplay(currentTime),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+        
         // Estado de ubicación GPS
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -294,18 +332,7 @@ fun MarcacionesScreen(
             }
         }
         
-        // Botón para sincronizar configuración GPS manualmente
-        OutlinedButton(
-            onClick = {
-                android.util.Log.d("MarcacionesScreen", "Sincronización manual solicitada")
-                fichadoViewModel.sincronizarConfiguracionGPS()
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Actualizar Configuración GPS")
-        }
+
         
         // Mapa visual de ubicación objetivo
         Card(
@@ -487,14 +514,22 @@ fun MarcacionesScreen(
                     )
                 }
                 
-                estadoFichado?.horasTrabajadas?.let { horas ->
-                    Text(
-                        text = "Horas trabajadas: ${String.format("%.2f", horas)}h",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                // Solo mostrar horas trabajadas si hay entrada Y salida
+                val textoHorasTrabajadas = when {
+                    estadoFichado == null -> "0:00h"
+                    estadoFichado.tieneSalida && estadoFichado.horasTrabajadas != null -> 
+                        "Horas trabajadas: ${String.format("%.2f", estadoFichado.horasTrabajadas)}h"
+                    estadoFichado.tieneEntrada && !estadoFichado.tieneSalida -> 
+                        "Estado: Trabajando..."
+                    else -> "Horas trabajadas: 0:00h"
                 }
+                
+                Text(
+                    text = textoHorasTrabajadas,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
         

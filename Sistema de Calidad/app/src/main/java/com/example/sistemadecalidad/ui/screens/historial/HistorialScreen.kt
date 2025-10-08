@@ -12,7 +12,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Settings
+
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -220,26 +220,6 @@ fun HistorialScreen(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
-                        DropdownMenuItem(
-                            text = { Text("Ajustes") },
-                            onClick = { 
-                                showMenu = false
-                                // TODO: Navegar a ajustes
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.Settings, contentDescription = null)
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Mi Perfil") },
-                            onClick = { 
-                                showMenu = false
-                                // TODO: Navegar a perfil
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.Person, contentDescription = null)
-                            }
-                        )
                         DropdownMenuItem(
                             text = { Text("Cerrar sesión") },
                             onClick = { 

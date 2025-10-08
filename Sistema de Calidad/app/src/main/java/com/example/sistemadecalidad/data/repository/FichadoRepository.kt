@@ -3,6 +3,7 @@ package com.example.sistemadecalidad.data.repository
 import com.example.sistemadecalidad.data.api.ApiService
 import com.example.sistemadecalidad.data.api.QRValidationResponse
 import com.example.sistemadecalidad.data.model.*
+import com.example.sistemadecalidad.utils.TimeUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 // import javax.inject.Inject
@@ -29,11 +30,21 @@ class FichadoRepository /* @Inject constructor */ (
     ): Flow<Result<FichadoResponse>> = flow {
         try {
             val bearerToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
+            
+            // Obtener fecha y hora actual en zona horaria de Lima, Perú
+            val fechaActual = TimeUtils.getCurrentPeruDate()
+            val fechaFormateada = TimeUtils.formatDateForBackend(fechaActual)
+            val horaFormateada = TimeUtils.formatTimeForBackend(fechaActual)
+            val timestampFormateado = TimeUtils.getPeruTimestamp(fechaActual)
+            
             val request = FichadoEntradaRequest(
                 metodo = metodo,
                 latitud = latitud,
                 longitud = longitud,
-                codigoQr = codigoQr
+                codigoQr = codigoQr,
+                fecha = fechaFormateada,
+                hora = horaFormateada,
+                timestamp = timestampFormateado
             )
             
             android.util.Log.d("FichadoRepository", "Enviando petición registrarEntrada")
@@ -77,10 +88,20 @@ class FichadoRepository /* @Inject constructor */ (
     ): Flow<Result<FichadoResponse>> = flow {
         try {
             val bearerToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
+            
+            // Obtener fecha y hora actual en zona horaria de Lima, Perú
+            val fechaActual = TimeUtils.getCurrentPeruDate()
+            val fechaFormateada = TimeUtils.formatDateForBackend(fechaActual)
+            val horaFormateada = TimeUtils.formatTimeForBackend(fechaActual)
+            val timestampFormateado = TimeUtils.getPeruTimestamp(fechaActual)
+            
             val request = FichadoSalidaRequest(
                 metodo = metodo,
                 latitud = latitud,
-                longitud = longitud
+                longitud = longitud,
+                fecha = fechaFormateada,
+                hora = horaFormateada,
+                timestamp = timestampFormateado
             )
             
             val response = apiService.registrarSalida(bearerToken, request)
