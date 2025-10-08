@@ -247,15 +247,8 @@ fun LoginScreen(
             }
         }
         
-        // Botón de configuración de red
-        OutlinedButton(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            onClick = onNavigateToNetworkSettings
-        ) {
-            Text("⚙️ Configurar Red")
-        }
+        // Botón de configuración de red eliminado: la app detecta automáticamente AWS y no requiere configuración manual
+        // (Se ha retirado el acceso directo a NetworkSettings desde el login para evitar confusiones)
         
         // Texto de ayuda
         TextButton(
@@ -265,33 +258,6 @@ fun LoginScreen(
             Text("¿Olvidaste tu contraseña?")
         }
         
-        // Información de credenciales por defecto (solo para desarrollo)
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "Credenciales por defecto:",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
-                Text(
-                    text = "Admin: admin@hotel.com / admin123",
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-                Text(
-                    text = "Empleado: empleado@hotel.com / empleado123",
-                    fontSize = 12.sp
-                )
-            }
-        }
+        // Tarjeta de credenciales por defecto eliminada para evitar mostrar credenciales en la pantalla de login
     }
 }
