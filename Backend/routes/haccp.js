@@ -1213,4 +1213,84 @@ router.get('/supervisores', authenticateToken, (req, res) => {
     }
 });
 
+// Ruta para obtener áreas únicas de usuarios
+router.get('/areas', authenticateToken, (req, res) => {
+    try {
+        console.log('📍 GET /haccp/areas - Obteniendo áreas únicas');
+
+        const query = `
+            SELECT DISTINCT area 
+            FROM usuarios 
+            WHERE area IS NOT NULL 
+            AND area != '' 
+            AND activo = 1
+            ORDER BY area ASC
+        `;
+
+        db.all(query, [], (err, rows) => {
+            if (err) {
+                console.error('❌ Error al obtener áreas:', err);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Error al obtener áreas'
+                });
+            }
+
+            // Convertir a array de strings para compatibilidad con frontend
+            const areas = rows.map(row => row.area);
+
+            console.log(`✅ Áreas obtenidas: ${areas.length} áreas encontradas`);
+            res.json({
+                success: true,
+                data: areas
+            });
+        });
+
+    } catch (error) {
+        console.error('Error al obtener áreas:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener áreas'
+        });
+    }
+});
+
+// Ruta para obtener productos de la categoría Abarrotes
+router.get('/productos-abarrotes', authenticateToken, (req, res) => {
+    try {
+        console.log('📍 GET /haccp/productos-abarrotes - Obteniendo productos de abarrotes');
+
+        const query = `
+            SELECT id, nombre, categoria, unidad_medida
+            FROM productos 
+            WHERE categoria = 'Abarrotes' 
+            AND activo = 1
+            ORDER BY nombre ASC
+        `;
+
+        db.all(query, [], (err, rows) => {
+            if (err) {
+                console.error('❌ Error al obtener productos de abarrotes:', err);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Error al obtener productos de abarrotes'
+                });
+            }
+
+            console.log(`✅ Productos de abarrotes obtenidos: ${rows.length} productos encontrados`);
+            res.json({
+                success: true,
+                data: rows
+            });
+        });
+
+    } catch (error) {
+        console.error('Error al obtener productos de abarrotes:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener productos de abarrotes'
+        });
+    }
+});
+
 module.exports = router;

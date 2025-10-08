@@ -154,6 +154,12 @@ export const haccpService = {
     const response = await api.get(url);
     return response.data;
   },
+
+  // Obtener áreas únicas
+  getAreas: async () => {
+    const response = await api.get('/haccp/areas');
+    return response.data;
+  },
 };
 
 // =====================================================
