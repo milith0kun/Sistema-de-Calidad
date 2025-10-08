@@ -95,6 +95,49 @@ router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
             }
         }
 
+        // Buscar producto_id basado en nombre_producto si no se proporcionó
+        let finalProductoId = producto_id;
+        if (!finalProductoId && nombre_producto) {
+            console.log('Buscando producto_id para:', nombre_producto);
+            const producto = await db.get(
+                'SELECT id FROM productos WHERE nombre = ? AND activo = 1',
+                [nombre_producto]
+            );
+            if (producto) {
+                finalProductoId = producto.id;
+                console.log('Producto encontrado:', nombre_producto, '-> ID:', finalProductoId);
+            } else {
+                console.log('Producto no encontrado en BD:', nombre_producto);
+                // Crear producto temporal
+                const result = await db.run(
+                    'INSERT INTO productos (nombre, categoria, activo) VALUES (?, ?, 1)',
+                    [nombre_producto, tipo_control === 'FRUTAS_VERDURAS' ? 'Frutas y Verduras' : 'Abarrotes']
+                );
+                finalProductoId = result.lastID;
+                console.log('Creado producto temporal ID:', finalProductoId);
+            }
+        }
+
+        // Si aún no hay producto_id, usar el primer producto disponible
+        if (!finalProductoId) {
+            console.log('No se proporcionó producto_id, buscando producto por defecto');
+            const productoDefault = await db.get(
+                'SELECT id FROM productos WHERE activo = 1 ORDER BY id LIMIT 1'
+            );
+            if (productoDefault) {
+                finalProductoId = productoDefault.id;
+                console.log('Producto por defecto encontrado ID:', finalProductoId);
+            } else {
+                // Crear un producto por defecto si no existe ninguno
+                const result = await db.run(
+                    'INSERT INTO productos (nombre, categoria, activo) VALUES (?, ?, 1)',
+                    ['Producto Genérico', 'General']
+                );
+                finalProductoId = result.lastID;
+                console.log('Creado producto por defecto ID:', finalProductoId);
+            }
+        }
+
         // Obtener información del supervisor si se proporcionó
         let supervisor = null;
         if (supervisor_id) {
@@ -145,7 +188,7 @@ router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
         const result = await db.run(query, [
             mes, anio, fecha, hora, tipo_control,
             finalProveedorId || null, nombre_proveedor,
-            producto_id || null, nombre_producto,
+            finalProductoId || null, nombre_producto,
             cantidad_solicitada, peso_unidad_recibido, unidad_medida,
             estado_producto, conformidad_integridad_producto,
             registro_sanitario_vigente, fecha_vencimiento_producto, conformidad_empaque_primario,
@@ -276,6 +319,49 @@ router.post('/recepcion-abarrotes', authenticateToken, async (req, res) => {
 
         console.log('Supervisor encontrado:', supervisor.nombre, supervisor.apellido);
 
+        // Buscar producto_id basado en nombreProducto
+        let finalProductoId = null;
+        if (nombreProducto) {
+            console.log('Buscando producto_id para:', nombreProducto);
+            const producto = await db.get(
+                'SELECT id FROM productos WHERE nombre = ? AND activo = 1',
+                [nombreProducto]
+            );
+            if (producto) {
+                finalProductoId = producto.id;
+                console.log('Producto encontrado:', nombreProducto, '-> ID:', finalProductoId);
+            } else {
+                console.log('Producto no encontrado en BD:', nombreProducto);
+                // Crear producto temporal
+                const result = await db.run(
+                    'INSERT INTO productos (nombre, categoria, activo) VALUES (?, ?, 1)',
+                    [nombreProducto, 'Abarrotes']
+                );
+                finalProductoId = result.lastID;
+                console.log('Creado producto temporal ID:', finalProductoId);
+            }
+        }
+
+        // Si aún no hay producto_id, usar el primer producto disponible
+        if (!finalProductoId) {
+            console.log('No se proporcionó nombreProducto, buscando producto por defecto');
+            const productoDefault = await db.get(
+                'SELECT id FROM productos WHERE activo = 1 ORDER BY id LIMIT 1'
+            );
+            if (productoDefault) {
+                finalProductoId = productoDefault.id;
+                console.log('Producto por defecto encontrado ID:', finalProductoId);
+            } else {
+                // Crear un producto por defecto si no existe ninguno
+                const result = await db.run(
+                    'INSERT INTO productos (nombre, categoria, activo) VALUES (?, ?, 1)',
+                    ['Producto Genérico', 'General']
+                );
+                finalProductoId = result.lastID;
+                console.log('Creado producto por defecto ID:', finalProductoId);
+            }
+        }
+
         // Nombres completos para histórico
         const responsableRegistroNombre = `${responsableRegistro.nombre} ${responsableRegistro.apellido || ''} - ${responsableRegistro.cargo || ''}`.trim();
         const responsableSupervisionNombre = `${supervisor.nombre} ${supervisor.apellido || ''} - ${supervisor.cargo || ''}`.trim();
@@ -310,7 +396,7 @@ router.post('/recepcion-abarrotes', authenticateToken, async (req, res) => {
         const result = await db.run(query, [
             mes, anio, fecha, hora, 'ABARROTES',
             null, nombreProveedor,  // proveedor_id NULL, solo nombre
-            null, nombreProducto,   // producto_id NULL, solo nombre
+            finalProductoId, nombreProducto,   // producto_id con valor válido
             cantidadSolicitada || null,
             registroSanitarioSiNo, 
             evaluacionVencimientoSiNo, 
