@@ -375,13 +375,13 @@ router.post('/recepcion-abarrotes', authenticateToken, async (req, res) => {
                 mes, anio, fecha, hora, tipo_control,
                 proveedor_id, nombre_proveedor, 
                 producto_id, nombre_producto,
-                cantidad_solicitada,
+                cantidad_solicitada, peso_unidad_recibido, unidad_medida,
                 registro_sanitario_vigente, fecha_vencimiento_vigente, empaque_integro,
                 conformidad_general,
                 responsable_registro_id, responsable_registro_nombre,
                 responsable_supervision_id, responsable_supervision_nombre,
                 observaciones, accion_correctiva
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         // Convertir valores de evaluación a SI/NO
         const evaluacionVencimientoSiNo = (evaluacionVencimiento === 'Excelente' || evaluacionVencimiento === 'Regular') ? 'SI' : 'NO';
@@ -399,6 +399,8 @@ router.post('/recepcion-abarrotes', authenticateToken, async (req, res) => {
             null, nombreProveedor,  // proveedor_id NULL, solo nombre
             finalProductoId, nombreProducto,   // producto_id con valor válido
             cantidadSolicitada || null,
+            1.0,  // peso_unidad_recibido por defecto
+            'unidad',  // unidad_medida por defecto
             registroSanitarioSiNo, 
             evaluacionVencimientoSiNo, 
             conformidadEmpaqueSiNo,
