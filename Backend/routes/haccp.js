@@ -56,6 +56,42 @@ router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
                 console.log('Proveedor encontrado:', nombre_proveedor, '-> ID:', finalProveedorId);
             } else {
                 console.log('Proveedor no encontrado en BD:', nombre_proveedor);
+                // Buscar un proveedor por defecto o crear uno temporal
+                const proveedorDefault = await db.get(
+                    'SELECT id FROM proveedores WHERE activo = 1 ORDER BY id LIMIT 1'
+                );
+                if (proveedorDefault) {
+                    finalProveedorId = proveedorDefault.id;
+                    console.log('Usando proveedor por defecto ID:', finalProveedorId);
+                } else {
+                    // Si no hay proveedores, crear uno temporal
+                    const result = await db.run(
+                        'INSERT INTO proveedores (nombre_completo, activo) VALUES (?, 1)',
+                        ['Proveedor Temporal']
+                    );
+                    finalProveedorId = result.lastID;
+                    console.log('Creado proveedor temporal ID:', finalProveedorId);
+                }
+            }
+        }
+
+        // Si aún no hay proveedor_id, usar el primer proveedor disponible
+        if (!finalProveedorId) {
+            console.log('No se proporcionó proveedor_id, buscando proveedor por defecto');
+            const proveedorDefault = await db.get(
+                'SELECT id FROM proveedores WHERE activo = 1 ORDER BY id LIMIT 1'
+            );
+            if (proveedorDefault) {
+                finalProveedorId = proveedorDefault.id;
+                console.log('Usando proveedor por defecto ID:', finalProveedorId);
+            } else {
+                // Si no hay proveedores, crear uno temporal
+                const result = await db.run(
+                    'INSERT INTO proveedores (nombre_completo, activo) VALUES (?, 1)',
+                    ['Proveedor Temporal']
+                );
+                finalProveedorId = result.lastID;
+                console.log('Creado proveedor temporal ID:', finalProveedorId);
             }
         }
 
