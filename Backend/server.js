@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const ngrok = require('@ngrok/ngrok');
 const axios = require('axios');
 const os = require('os');
 const { initializeDatabase } = require('./utils/database');
@@ -63,12 +62,11 @@ async function detectAvailablePort() {
 let PORT = process.env.EXTERNAL_PORT || process.env.PORT || 3000;
 const HOST = process.env.HOST || config.server.host || '0.0.0.0';
 
-// Token de ngrok desde variables de entorno (opcional en desarrollo). Nunca hardcodear.
-const NGROK_TOKEN = process.env.NGROK_TOKEN;
+// Token de ngrok desde variables de entorno (eliminado)
+// const NGROK_TOKEN = process.env.NGROK_TOKEN;
 
-// Dominio estático de ngrok (opcional - requiere plan de pago)
-// Si no se especifica, ngrok generará una URL aleatoria diferente cada vez
-const NGROK_DOMAIN = process.env.NGROK_DOMAIN || null;
+// Dominio estático de ngrok (eliminado)
+// const NGROK_DOMAIN = process.env.NGROK_DOMAIN || null;
 
 // Configuración de CORS flexible para máxima compatibilidad
 const corsOptions = {
@@ -142,9 +140,9 @@ app.get('/health', (req, res) => {
                 connected: true
             },
             ngrok: {
-                enabled: true,
-                token_configured: !!NGROK_TOKEN
-            }
+        enabled: false,
+        token_configured: false
+    }
         });
     } catch (error) {
         console.error('Error en /health:', error);
@@ -258,75 +256,11 @@ async function detectPublicIP() {
     }
 }
 
-// Variable global para almacenar el listener de ngrok
-let ngrokListener = null;
+// Variable global para almacenar el listener de ngrok (eliminado)
+// let ngrokListener = null;
 
-// Función para inicializar ngrok automáticamente
-async function initializeNgrok() {
-    try {
-        console.log('🔄 Configurando túnel ngrok...');
-        
-        // Desconectar cualquier túnel existente de ESTE proceso
-        if (ngrokListener) {
-            try {
-                console.log('🔌 Desconectando túnel anterior...');
-                await ngrokListener.close();
-                ngrokListener = null;
-            } catch (e) {
-                console.log('⚠️  No se pudo cerrar túnel anterior:', e.message);
-            }
-        }
-        
-        // Configuración del túnel - NO usar dominio para evitar conflictos
-        const forwardConfig = {
-            addr: PORT,
-            authtoken: NGROK_TOKEN
-        };
-        
-        // Si hay un dominio estático configurado, usarlo (solo con plan de pago)
-        if (NGROK_DOMAIN) {
-            forwardConfig.domain = NGROK_DOMAIN;
-            console.log(`📌 Usando dominio estático: ${NGROK_DOMAIN}`);
-        } else {
-            console.log('🔀 Generando URL aleatoria (sin dominio estático)');
-        }
-        
-        // Crear el túnel con el nuevo SDK de ngrok
-        ngrokListener = await ngrok.forward(forwardConfig);
-        
-        const url = ngrokListener.url();
-        
-        console.log('\n🌐 ¡NGROK CONFIGURADO EXITOSAMENTE! 🌐');
-        console.log('================================================');
-        console.log(`🔗 URL Pública: ${url}`);
-        console.log(`🏠 Puerto Local: ${PORT}`);
-        // console.log(`🔑 Token: ${NGROK_TOKEN.substring(0, 10)}...`); // No imprimir secretos en logs
-        if (NGROK_DOMAIN) {
-            console.log(`📌 Dominio: ${NGROK_DOMAIN} (estático)`);
-        } else {
-            console.log(`🔀 URL: Aleatoria (cambia en cada reinicio)`);
-        }
-        console.log('================================================\n');
-        
-        return url;
-    } catch (error) {
-        console.error('❌ Error configurando ngrok:', error.message);
-        
-        // Detectar errores específicos de ngrok
-        if (error.message.includes('tunnel session') || error.message.includes('account limit') || error.message.includes('already online')) {
-            console.log('\n⚠️  ADVERTENCIA: Ya tienes un túnel ngrok activo en otro proyecto');
-            console.log('📝 SOLUCIONES:');
-            console.log('   1. Cierra el otro proyecto que usa ngrok');
-            console.log('   2. Usa un token diferente (crea uno gratis en: https://dashboard.ngrok.com)');
-            console.log('   3. Actualiza a un plan de pago para múltiples túneles simultáneos');
-            console.log(`   4. Accede directamente con: http://${PUBLIC_IP}:${PORT}\n`);
-        }
-        
-        console.log('⚠️  El servidor funcionará sin ngrok');
-        console.log(`🌐 Acceso directo: http://${PUBLIC_IP}:${PORT}\n`);
-        return null;
-    }
-}
+// Función para inicializar ngrok automáticamente (eliminada)
+// async function initializeNgrok() { /* eliminado */ }
 
 // Función principal para inicializar el servidor
 const startServer = async () => {
@@ -377,37 +311,12 @@ const startServer = async () => {
             console.log(`📋 Health: ${PUBLIC_URL}/health`);
             console.log('==========================================\n');
             
-            // Configurar ngrok automáticamente (solo en LOCAL)
-            if (NGROK_TOKEN && !IS_AWS) {
-                try {
-                    const publicUrl = await initializeNgrok();
-                    if (publicUrl) {
-                        console.log('✅ TÚNEL NGROK CONFIGURADO ✅');
-                        console.log('==========================================');
-                        console.log(`🌍 URL Ngrok: ${publicUrl}`);
-                        console.log(`🏠 URL Local: http://localhost:${PORT}`);
-                        console.log('==========================================\n');
-                        console.log('📱 Usa la URL de ngrok para acceso externo\n');
-                    } else {
-                        console.log('⚠️  NGROK NO DISPONIBLE (probablemente ya está en uso)');
-                        console.log('==========================================');
-                        console.log(`🌐 Acceso: ${PUBLIC_URL}`);
-                        console.log(`🏠 Local: http://localhost:${PORT}`);
-                        console.log('==========================================\n');
-                    }
-                } catch (ngrokError) {
-                    console.error('❌ Error iniciando ngrok:', ngrokError.message);
-                    console.log('==========================================');
-                    console.log(`🌐 Acceso: ${PUBLIC_URL}`);
-                    console.log(`🏠 Local: http://localhost:${PORT}`);
-                    console.log('==========================================\n');
-                }
-            } else if (IS_AWS) {
-                console.log('📡 Servidor AWS - Acceso directo por IP');
-                console.log('==========================================');
-                console.log(`🌐 URL Pública: ${PUBLIC_URL}`);
-                console.log('==========================================\n');
-            }
+            // Ngrok eliminado: siempre acceso directo
+            console.log('📡 Acceso directo por IP');
+            console.log('==========================================');
+            console.log(`🌐 URL Pública: ${PUBLIC_URL}`);
+            console.log(`🏠 Local: http://localhost:${PORT}`);
+            console.log('==========================================\n');
         });
 
         // Configurar cierre elegante
