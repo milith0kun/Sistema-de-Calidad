@@ -170,9 +170,9 @@ app.get('/', (req, res) => {
             health: '/health'
         },
         instructions: {
-            mobile_apps: 'Usar la URL de ngrok para conectar desde dispositivos móviles',
+            mobile_apps: 'Usar la IP pública del servidor o el dominio configurado en Nginx (puerto 80)',
             local_access: `http://localhost:${PORT}`,
-            configuration: 'Variables configuradas automáticamente con ngrok'
+            configuration: 'Variables configuradas automáticamente para acceso directo (HOST=0.0.0.0)'
         }
     });
 });
