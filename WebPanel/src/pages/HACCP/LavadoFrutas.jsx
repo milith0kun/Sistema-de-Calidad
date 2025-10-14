@@ -41,16 +41,13 @@ const LavadoFrutas = () => {
   const [productoQuimico, setProductoQuimico] = useState('');
   const [concentracion, setConcentracion] = useState('');
   
-  // Estados para filtros avanzados
+  // Estados para filtros simplificados según especificaciones HACCP
   const [filtroTipo, setFiltroTipo] = useState('mes'); // 'dia', 'mes', 'anio'
   const [fechaEspecifica, setFechaEspecifica] = useState('');
-  const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState('');
   const [areaSeleccionada, setAreaSeleccionada] = useState('');
   const [frutaSeleccionada, setFrutaSeleccionada] = useState('');
-  const [filtroConformidad, setFiltroConformidad] = useState(''); // '', 'C', 'NC'
   
   // Estados para opciones de filtros
-  const [empleados, setEmpleados] = useState([]);
   const [areas, setAreas] = useState([]);
   const [frutas, setFrutas] = useState([]);
 
@@ -71,11 +68,9 @@ const LavadoFrutas = () => {
         params.anio = anio;
       }
       
-      // Agregar filtros adicionales
-      if (empleadoSeleccionado) params.empleado_id = empleadoSeleccionado;
+      // Agregar filtros adicionales (solo área y fruta según especificaciones)
       if (areaSeleccionada) params.area = areaSeleccionada;
       if (frutaSeleccionada) params.fruta = frutaSeleccionada;
-      if (filtroConformidad) params.conformidad = filtroConformidad;
       
       const response = await haccpService.getLavadoFrutas(params.mes || null, params.anio || null, params);
       if (response && response.success) {
@@ -95,12 +90,6 @@ const LavadoFrutas = () => {
 
   const cargarFiltros = async () => {
     try {
-      // Cargar empleados
-      const empleadosResponse = await haccpService.getEmpleados();
-      if (empleadosResponse && empleadosResponse.success) {
-        setEmpleados(Array.isArray(empleadosResponse.data) ? empleadosResponse.data : []);
-      }
-
       // Cargar áreas
       const areasResponse = await haccpService.getAreas();
       if (areasResponse && areasResponse.success) {
@@ -123,7 +112,7 @@ const LavadoFrutas = () => {
 
   useEffect(() => {
     cargarRegistros();
-  }, [filtroTipo, fechaEspecifica, mes, anio, empleadoSeleccionado, areaSeleccionada, frutaSeleccionada, filtroConformidad]);
+  }, [filtroTipo, fechaEspecifica, mes, anio, areaSeleccionada, frutaSeleccionada]);
 
   const handleExportar = () => {
     if (registros.length === 0) {
@@ -141,10 +130,8 @@ const LavadoFrutas = () => {
   const limpiarFiltros = () => {
     setFiltroTipo('mes');
     setFechaEspecifica('');
-    setEmpleadoSeleccionado('');
     setAreaSeleccionada('');
     setFrutaSeleccionada('');
-    setFiltroConformidad('');
     setMes(new Date().getMonth() + 1);
     setAnio(new Date().getFullYear());
     setProductoQuimico('');
@@ -265,25 +252,6 @@ const LavadoFrutas = () => {
             </>
           )}
 
-          {/* Filtro por empleado */}
-          <Grid item xs={12} sm={6} md={2}>
-            <Autocomplete
-              options={empleados}
-              getOptionLabel={(option) => option.nombre || ''}
-              value={empleados.find(e => e.id === empleadoSeleccionado) || null}
-              onChange={(event, newValue) => {
-                setEmpleadoSeleccionado(newValue ? newValue.id : '');
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Empleado"
-                  placeholder="Todos los empleados"
-                />
-              )}
-            />
-          </Grid>
-
           {/* Filtro por área */}
           <Grid item xs={12} sm={6} md={2}>
             <Autocomplete
@@ -320,22 +288,6 @@ const LavadoFrutas = () => {
                 />
               )}
             />
-          </Grid>
-
-          {/* Filtro por conformidad */}
-          <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth>
-              <InputLabel>Conformidad</InputLabel>
-              <Select
-                value={filtroConformidad}
-                onChange={(e) => setFiltroConformidad(e.target.value)}
-                label="Conformidad"
-              >
-                <MenuItem value="">Todos</MenuItem>
-                <MenuItem value="C">Conforme</MenuItem>
-                <MenuItem value="NC">No Conforme</MenuItem>
-              </Select>
-            </FormControl>
           </Grid>
 
           {/* Campos adicionales para exportación */}

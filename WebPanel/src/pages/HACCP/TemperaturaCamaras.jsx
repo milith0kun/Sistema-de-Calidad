@@ -39,12 +39,11 @@ const TemperaturaCamaras = () => {
   const [mes, setMes] = useState(new Date().getMonth() + 1);
   const [anio, setAnio] = useState(new Date().getFullYear());
   
-  // Estados para filtros avanzados
+  // Estados para filtros simplificados según especificaciones HACCP
   const [filtroTipo, setFiltroTipo] = useState('mes'); // 'dia', 'mes', 'anio'
   const [fechaEspecifica, setFechaEspecifica] = useState(new Date().toISOString().split('T')[0]);
   const [camaraSeleccionada, setCamaraSeleccionada] = useState('');
   const [camaras, setCamaras] = useState([]);
-  const [filtroConformidad, setFiltroConformidad] = useState(''); // '', 'C', 'NC'
 
   const cargarCamaras = async () => {
     try {
@@ -74,26 +73,14 @@ const TemperaturaCamaras = () => {
         params.anio = anio;
       }
       
-      // Agregar filtros adicionales
+      // Agregar filtros adicionales (solo cámara según especificaciones)
       if (camaraSeleccionada) {
         params.camara_id = camaraSeleccionada;
-      }
-      if (filtroConformidad) {
-        params.conformidad = filtroConformidad;
       }
       
       const response = await haccpService.getTemperaturaCamaras(params);
       if (response && response.success) {
         let data = Array.isArray(response.data) ? response.data : [];
-        
-        // Filtrar por conformidad si es necesario (filtro local adicional)
-        if (filtroConformidad) {
-          data = data.filter(registro => 
-            registro.conformidad_manana === filtroConformidad || 
-            registro.conformidad_tarde === filtroConformidad
-          );
-        }
-        
         setRegistros(data);
       } else {
         setRegistros([]);
@@ -114,7 +101,7 @@ const TemperaturaCamaras = () => {
 
   useEffect(() => {
     cargarRegistros();
-  }, [filtroTipo, fechaEspecifica, mes, anio, camaraSeleccionada, filtroConformidad]);
+  }, [filtroTipo, fechaEspecifica, mes, anio, camaraSeleccionada]);
 
   const handleExportar = async () => {
     try {
@@ -162,7 +149,6 @@ const TemperaturaCamaras = () => {
     setFiltroTipo('mes');
     setFechaEspecifica(new Date().toISOString().split('T')[0]);
     setCamaraSeleccionada('');
-    setFiltroConformidad('');
     setMes(new Date().getMonth() + 1);
     setAnio(new Date().getFullYear());
   };
@@ -300,21 +286,7 @@ const TemperaturaCamaras = () => {
             />
           </Grid>
 
-          {/* Filtro por conformidad */}
-          <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth>
-              <InputLabel>Conformidad</InputLabel>
-              <Select
-                value={filtroConformidad}
-                onChange={(e) => setFiltroConformidad(e.target.value)}
-                label="Conformidad"
-              >
-                <MenuItem value="">Todas</MenuItem>
-                <MenuItem value="C">Conforme</MenuItem>
-                <MenuItem value="NC">No Conforme</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
+
 
           {/* Botones de acción */}
           <Grid item xs={12} sm={6} md={2}>

@@ -51,7 +51,7 @@ const RecepcionAbarrotes = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
-  // Estados para filtros avanzados
+  // Estados para filtros simplificados según especificaciones HACCP
   const [showFilters, setShowFilters] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState('mes'); // 'dia', 'mes', 'anio'
   const [fechaEspecifica, setFechaEspecifica] = useState('');
@@ -59,8 +59,6 @@ const RecepcionAbarrotes = () => {
   const [anio, setAnio] = useState(new Date().getFullYear());
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState('');
   const [productoSeleccionado, setProductoSeleccionado] = useState('');
-  const [supervisorFiltro, setSupervisorFiltro] = useState('');
-  const [filtroConformidad, setFiltroConformidad] = useState(''); // '', 'CONFORME', 'NO_CONFORME'
   
   // Estados para opciones de filtros
   const [proveedores, setProveedores] = useState([]);
@@ -91,7 +89,7 @@ const RecepcionAbarrotes = () => {
     if (!loading) {
       loadData();
     }
-  }, [filtroTipo, fechaEspecifica, mes, anio, proveedorSeleccionado, productoSeleccionado, supervisorFiltro, filtroConformidad]);
+  }, [filtroTipo, fechaEspecifica, mes, anio, proveedorSeleccionado, productoSeleccionado]);
 
   const loadData = async () => {
     try {
@@ -109,11 +107,9 @@ const RecepcionAbarrotes = () => {
         params.anio = anio;
       }
       
-      // Agregar filtros adicionales
+      // Agregar filtros adicionales (solo proveedor y producto según especificaciones)
       if (proveedorSeleccionado) params.proveedor = proveedorSeleccionado;
       if (productoSeleccionado) params.producto = productoSeleccionado;
-      if (supervisorFiltro) params.supervisor_id = supervisorFiltro;
-      if (filtroConformidad) params.conformidad = filtroConformidad;
       
       const [registrosRes, supervisoresRes, proveedoresRes, productosRes] = await Promise.all([
         haccpService.get('/haccp/recepcion-abarrotes', { params }),
@@ -166,8 +162,6 @@ const RecepcionAbarrotes = () => {
     setAnio(new Date().getFullYear());
     setProveedorSeleccionado('');
     setProductoSeleccionado('');
-    setSupervisorFiltro('');
-    setFiltroConformidad('');
   };
 
   const handleOpenDialog = (registro = null) => {
@@ -462,40 +456,7 @@ const RecepcionAbarrotes = () => {
               />
             </Grid>
 
-            {/* Supervisor */}
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Supervisor</InputLabel>
-                <Select
-                  value={supervisorFiltro}
-                  onChange={(e) => setSupervisorFiltro(e.target.value)}
-                  label="Supervisor"
-                >
-                  <MenuItem value="">Todos</MenuItem>
-                  {supervisores.map((supervisor) => (
-                    <MenuItem key={supervisor.id} value={supervisor.id}>
-                      {supervisor.nombre}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
 
-            {/* Conformidad */}
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Conformidad</InputLabel>
-                <Select
-                  value={filtroConformidad}
-                  onChange={(e) => setFiltroConformidad(e.target.value)}
-                  label="Conformidad"
-                >
-                  <MenuItem value="">Todos</MenuItem>
-                  <MenuItem value="C">Conforme</MenuItem>
-                  <MenuItem value="NC">No Conforme</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
 
             {/* Botones de acción */}
             <Grid item xs={12} md={3}>
