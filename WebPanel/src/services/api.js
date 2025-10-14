@@ -140,8 +140,24 @@ export const haccpService = {
   },
 
   // Lavado Manos
-  getLavadoManos: async (mes, anio) => {
-    const response = await api.get(`/haccp/lavado-manos?mes=${mes}&anio=${anio}`);
+  getLavadoManos: async (params = {}) => {
+    const queryParams = new URLSearchParams();
+    
+    // Agregar parámetros de fecha
+    if (params.mes) queryParams.append('mes', params.mes);
+    if (params.anio) queryParams.append('anio', params.anio);
+    if (params.fecha) queryParams.append('fecha_inicio', params.fecha);
+    if (params.fecha_inicio) queryParams.append('fecha_inicio', params.fecha_inicio);
+    if (params.fecha_fin) queryParams.append('fecha_fin', params.fecha_fin);
+    
+    // Agregar parámetro de área (mapear 'area' a 'area_estacion')
+    if (params.area) queryParams.append('area_estacion', params.area);
+    if (params.area_estacion) queryParams.append('area_estacion', params.area_estacion);
+    
+    // Agregar límite si se especifica
+    if (params.limite) queryParams.append('limite', params.limite);
+    
+    const response = await api.get(`/haccp/lavado-manos?${queryParams.toString()}`);
     return response.data;
   },
 

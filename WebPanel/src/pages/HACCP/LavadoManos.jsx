@@ -101,14 +101,31 @@ const LavadoManos = () => {
       const mesExport = filtroTipo === 'dia' ? new Date(fechaEspecifica).getMonth() + 1 : mes;
       const anioExport = filtroTipo === 'dia' ? new Date(fechaEspecifica).getFullYear() : anio;
       
-      if (registros.length === 0) {
+      // Obtener TODOS los registros sin filtrar por área para el Excel
+      let paramsExport = {};
+      
+      // Solo filtrar por fecha, NO por área
+      if (filtroTipo === 'dia') {
+        paramsExport.fecha = fechaEspecifica;
+      } else if (filtroTipo === 'mes') {
+        paramsExport.mes = mes;
+        paramsExport.anio = anio;
+      } else if (filtroTipo === 'anio') {
+        paramsExport.anio = anio;
+      }
+      
+      // Obtener todos los registros para el Excel (sin filtro de área)
+      const responseExport = await haccpService.getLavadoManos(paramsExport);
+      const registrosParaExcel = responseExport.data || [];
+      
+      if (registrosParaExcel.length === 0) {
         // Exportar plantilla vacía
         await handleExportarPlantilla();
         return;
       }
       
-      // Exportar con datos filtrados
-      await exportarLavadoManos(registros, mesExport, anioExport);
+      // Exportar con TODOS los datos (sin filtrar por área)
+      await exportarLavadoManos(registrosParaExcel, mesExport, anioExport);
     } catch (err) {
       console.error('Error al exportar:', err);
       setError(`Error al exportar archivo Excel: ${err.message}`);
@@ -307,7 +324,6 @@ const LavadoManos = () => {
               <TableCell><strong>Hora</strong></TableCell>
               <TableCell><strong>Turno</strong></TableCell>
               <TableCell><strong>Nombres y Apellido</strong></TableCell>
-              <TableCell><strong>Área o Estación</strong></TableCell>
               <TableCell><strong>Firma</strong></TableCell>
               <TableCell align="center"><strong>Procedimiento</strong></TableCell>
               <TableCell><strong>Acción Correctiva</strong></TableCell>
@@ -317,13 +333,13 @@ const LavadoManos = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={9} align="center" sx={{ py: 5 }}>
+                <TableCell colSpan={8} align="center" sx={{ py: 5 }}>
                   <CircularProgress />
                 </TableCell>
               </TableRow>
             ) : registros.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} align="center" sx={{ py: 5 }}>
+                <TableCell colSpan={8} align="center" sx={{ py: 5 }}>
                   <Typography color="text.secondary">
                     No hay registros para el período seleccionado
                   </Typography>
@@ -335,8 +351,7 @@ const LavadoManos = () => {
                   <TableCell>{format(new Date(row.fecha), 'dd/MM/yyyy')}</TableCell>
                   <TableCell>{row.hora}</TableCell>
                   <TableCell>{row.turno}</TableCell>
-                  <TableCell>{row.empleado_nombre}</TableCell>
-                  <TableCell>{row.area_estacion}</TableCell>
+                  <TableCell>{row.nombres_apellidos}</TableCell>
                   <TableCell>{row.firma}</TableCell>
                   <TableCell align="center">
                     <Chip
