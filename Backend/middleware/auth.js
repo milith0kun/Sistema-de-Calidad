@@ -58,13 +58,15 @@ const authenticateToken = async (req, res, next) => {
     }
 };
 
-// Middleware para verificar rol de supervisor
+// Middleware para verificar rol de supervisor/admin
 const requireAdmin = (req, res, next) => {
-    if (req.user.rol !== 'supervisor') {
+    // Aceptar tanto 'ADMIN' como 'supervisor' como roles válidos de administrador
+    const validAdminRoles = ['ADMIN', 'supervisor'];
+    if (!validAdminRoles.includes(req.user.rol)) {
         return res.status(403).json({
             success: false,
             error: 'Acceso denegado',
-            message: 'Se requieren permisos de supervisor'
+            message: 'Se requieren permisos de administrador'
         });
     }
     next();

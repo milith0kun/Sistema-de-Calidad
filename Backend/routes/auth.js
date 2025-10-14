@@ -9,8 +9,14 @@ const router = express.Router();
 
 // POST /api/auth/login - Iniciar sesión
 router.post('/login', async (req, res) => {
+    console.log('=== DEBUG LOGIN START ===');
+    console.log('Request body:', req.body);
+    console.log('Request headers:', req.headers);
+    
     try {
         const { email, password } = req.body;
+        console.log('Extracted email:', email);
+        console.log('Extracted password length:', password ? password.length : 'undefined');
 
         // Validar datos de entrada
         if (!email || !password) {
@@ -22,12 +28,24 @@ router.post('/login', async (req, res) => {
         }
 
         // Buscar usuario en la base de datos
+        console.log('Searching for user with email:', email);
         const user = await db.get(
             'SELECT * FROM usuarios WHERE email = ? AND activo = 1',
             [email]
         );
+        
+        console.log('User found:', user ? 'YES' : 'NO');
+        if (user) {
+            console.log('User details:', {
+                id: user.id,
+                email: user.email,
+                rol: user.rol,
+                hasPassword: !!user.password
+            });
+        }
 
         if (!user) {
+            console.log('User not found or inactive');
             return res.status(401).json({
                 success: false,
                 error: 'Credenciales inválidas',
@@ -36,9 +54,12 @@ router.post('/login', async (req, res) => {
         }
 
         // Verificar contraseña
+        console.log('Comparing password...');
         const passwordMatch = await bcrypt.compare(password, user.password);
+        console.log('Password match:', passwordMatch);
         
         if (!passwordMatch) {
+            console.log('Password does not match');
             return res.status(401).json({
                 success: false,
                 error: 'Credenciales inválidas',
@@ -46,6 +67,7 @@ router.post('/login', async (req, res) => {
             });
         }
 
+        console.log('Password matches, generating token...');
         // Generar token JWT
         const token = jwt.sign(
             {
@@ -56,8 +78,11 @@ router.post('/login', async (req, res) => {
             config.jwt.secret,
             { expiresIn: config.jwt.expiresIn }
         );
+        
+        console.log('Token generated successfully');
 
         // Respuesta exitosa
+        console.log('Sending successful response');
         res.json({
             success: true,
             message: 'Login exitoso',
