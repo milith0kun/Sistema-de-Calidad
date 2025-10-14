@@ -56,7 +56,7 @@ const Asistencias = () => {
   const loadUsuarios = async () => {
     try {
       // Obtener lista de usuarios únicos de las asistencias
-      const response = await fichadoService.getAsistencias(new Date().getMonth() + 1, new Date().getFullYear());
+      const response = await fichadoService.getHistorial(new Date().getMonth() + 1, new Date().getFullYear());
       if (response && response.success && Array.isArray(response.data)) {
         const usuariosUnicos = response.data.reduce((acc, item) => {
           const usuario = {
@@ -88,7 +88,7 @@ const Asistencias = () => {
         const fecha = new Date(fechaEspecifica);
         const mesEspecifico = fecha.getMonth() + 1;
         const anioEspecifico = fecha.getFullYear();
-        response = await fichadoService.getAsistencias(mesEspecifico, anioEspecifico);
+        response = await fichadoService.getHistorial(mesEspecifico, anioEspecifico);
         
         // Filtrar por día específico
         if (response && response.success && Array.isArray(response.data)) {
@@ -99,13 +99,13 @@ const Asistencias = () => {
           });
         }
       } else if (filtroTipo === 'mes') {
-        response = await fichadoService.getAsistencias(mes, anio);
+        response = await fichadoService.getHistorial(mes, anio);
       } else if (filtroTipo === 'anio') {
         // Para año completo, obtener todos los meses
         response = { success: true, data: [] };
         for (let m = 1; m <= 12; m++) {
           try {
-            const mesResponse = await fichadoService.getAsistencias(m, anio);
+            const mesResponse = await fichadoService.getHistorial(m, anio);
             if (mesResponse && mesResponse.success && Array.isArray(mesResponse.data)) {
               response.data = [...response.data, ...mesResponse.data];
             }

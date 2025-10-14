@@ -35,47 +35,34 @@ import { format } from 'date-fns';
 const LavadoManos = () => {
   const [registros, setRegistros] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
+  
+  // Filtros simplificados según especificaciones HACCP
   const [mes, setMes] = useState(new Date().getMonth() + 1);
   const [anio, setAnio] = useState(new Date().getFullYear());
+  const [filtroTipo, setFiltroTipo] = useState('mes');
+  const [fechaEspecifica, setFechaEspecifica] = useState(format(new Date(), 'yyyy-MM-dd'));
   
-  // Estados para filtros avanzados
-  const [filtroTipo, setFiltroTipo] = useState('mes'); // 'dia', 'mes', 'anio'
-  const [fechaEspecifica, setFechaEspecifica] = useState(new Date().toISOString().split('T')[0]);
-  const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState('');
-  const [empleados, setEmpleados] = useState([]);
+  // Solo filtro por área (Cocina y Salón)
   const [areaSeleccionada, setAreaSeleccionada] = useState('');
-  const [areas, setAreas] = useState([]);
-  const [filtroProcedimiento, setFiltroProcedimiento] = useState(''); // '', 'Sí', 'No'
+  
+  // Áreas fijas según especificaciones HACCP
+  const areas = [
+    { nombre: 'Cocina' },
+    { nombre: 'Salon' }
+  ];
 
-  const cargarFiltros = async () => {
-    try {
-      // Cargar empleados
-      const empleadosResponse = await haccpService.getEmpleados();
-      if (empleadosResponse && empleadosResponse.success) {
-        setEmpleados(Array.isArray(empleadosResponse.data) ? empleadosResponse.data : []);
-      }
-      
-      // Cargar áreas
-      const areasResponse = await haccpService.getAreas();
-      if (areasResponse && areasResponse.success) {
-        setAreas(Array.isArray(areasResponse.data) ? areasResponse.data : []);
-      }
-    } catch (err) {
-      console.error('Error al cargar filtros:', err);
-    }
-  };
-
+  // Función para cargar registros con filtros simplificados
   const cargarRegistros = async () => {
     try {
       setLoading(true);
-      setError(null);
+      setError('');
       
       let params = {};
       
-      // Configurar parámetros según el tipo de filtro
+      // Filtrado por fecha según tipo seleccionado
       if (filtroTipo === 'dia') {
-        params.fecha_especifica = fechaEspecifica;
+        params.fecha = fechaEspecifica;
       } else if (filtroTipo === 'mes') {
         params.mes = mes;
         params.anio = anio;
@@ -83,47 +70,28 @@ const LavadoManos = () => {
         params.anio = anio;
       }
       
-      // Agregar filtros adicionales
-      if (empleadoSeleccionado) {
-        params.empleado_id = empleadoSeleccionado;
-      }
+      // Filtrado por área si está seleccionada
       if (areaSeleccionada) {
         params.area = areaSeleccionada;
       }
-      if (filtroProcedimiento) {
-        params.procedimiento_correcto = filtroProcedimiento;
-      }
       
       const response = await haccpService.getLavadoManos(params);
-      if (response && response.success) {
-        let data = Array.isArray(response.data) ? response.data : [];
-        
-        // Filtrar por procedimiento si es necesario (filtro local adicional)
-        if (filtroProcedimiento) {
-          data = data.filter(registro => registro.procedimiento_correcto === filtroProcedimiento);
-        }
-        
-        setRegistros(data);
-      } else {
-        setRegistros([]);
-        setError(response?.error || 'Error al cargar registros');
-      }
-    } catch (err) {
-      setError('Error al cargar registros de lavado de manos');
-      setRegistros([]);
-      console.error(err);
+      setRegistros(response.data || []);
+    } catch (error) {
+      console.error('Error al cargar registros:', error);
+      setError('Error al cargar los registros de lavado de manos');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    cargarFiltros();
+    cargarRegistros();
   }, []);
 
   useEffect(() => {
     cargarRegistros();
-  }, [filtroTipo, fechaEspecifica, mes, anio, empleadoSeleccionado, areaSeleccionada, filtroProcedimiento]);
+  }, [filtroTipo, fechaEspecifica, mes, anio, areaSeleccionada]);
 
   const handleExportar = async () => {
     try {
@@ -168,13 +136,11 @@ const LavadoManos = () => {
   };
 
   const limpiarFiltros = () => {
-    setFiltroTipo('mes');
-    setFechaEspecifica(new Date().toISOString().split('T')[0]);
-    setEmpleadoSeleccionado('');
-    setAreaSeleccionada('');
-    setFiltroProcedimiento('');
     setMes(new Date().getMonth() + 1);
     setAnio(new Date().getFullYear());
+    setFiltroTipo('mes');
+    setFechaEspecifica(format(new Date(), 'yyyy-MM-dd'));
+    setAreaSeleccionada('');
   };
 
   const getProcedimientoColor = (correcto) => {
@@ -253,7 +219,7 @@ const LavadoManos = () => {
           {filtroTipo === 'dia' && (
             <Grid item xs={12} sm={6} md={3}>
               <TextField
-                label="Fecha Específica"
+                label="Fecha"
                 type="date"
                 value={fechaEspecifica}
                 onChange={(e) => setFechaEspecifica(e.target.value)}
@@ -291,83 +257,44 @@ const LavadoManos = () => {
             </>
           )}
 
-          {/* Filtro por empleado */}
-          <Grid item xs={12} sm={6} md={2}>
-            <Autocomplete
-              options={empleados}
-              getOptionLabel={(option) => option.nombre || ''}
-              value={empleados.find(e => e.id === empleadoSeleccionado) || null}
-              onChange={(event, newValue) => {
-                setEmpleadoSeleccionado(newValue ? newValue.id : '');
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Empleado"
-                  placeholder="Todos los empleados"
-                />
-              )}
-            />
-          </Grid>
-
-          {/* Filtro por área */}
-          <Grid item xs={12} sm={6} md={2}>
-            <Autocomplete
-              options={areas}
-              getOptionLabel={(option) => option.nombre || ''}
-              value={areas.find(a => a.nombre === areaSeleccionada) || null}
-              onChange={(event, newValue) => {
-                setAreaSeleccionada(newValue ? newValue.nombre : '');
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Área"
-                  placeholder="Todas las áreas"
-                />
-              )}
-            />
-          </Grid>
-
-          {/* Filtro por procedimiento */}
-          <Grid item xs={12} sm={6} md={2}>
+          {/* Filtro por área (solo Cocina y Salón) */}
+          <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth>
-              <InputLabel>Procedimiento</InputLabel>
+              <InputLabel>Área o Estación</InputLabel>
               <Select
-                value={filtroProcedimiento}
-                onChange={(e) => setFiltroProcedimiento(e.target.value)}
-                label="Procedimiento"
+                value={areaSeleccionada}
+                onChange={(e) => setAreaSeleccionada(e.target.value)}
+                label="Área o Estación"
               >
-                <MenuItem value="">Todos</MenuItem>
-                <MenuItem value="Sí">Correcto</MenuItem>
-                <MenuItem value="No">Incorrecto</MenuItem>
+                <MenuItem value="">Todas las áreas</MenuItem>
+                <MenuItem value="Cocina">Cocina</MenuItem>
+                <MenuItem value="Salon">Salón</MenuItem>
               </Select>
             </FormControl>
           </Grid>
 
           {/* Botones de acción */}
-          <Grid item xs={12} sm={6} md={1}>
-            <Button
-              variant="contained"
-              onClick={cargarRegistros}
-              disabled={loading}
-              startIcon={<FilterListIcon />}
-              fullWidth
-            >
-              Buscar
-            </Button>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={1}>
-            <Button
-              variant="outlined"
-              onClick={limpiarFiltros}
-              disabled={loading}
-              startIcon={<ClearIcon />}
-              fullWidth
-            >
-              Limpiar
-            </Button>
+          <Grid item xs={12} sm={6} md={3}>
+            <Box display="flex" gap={1}>
+              <Button
+                variant="contained"
+                onClick={cargarRegistros}
+                disabled={loading}
+                startIcon={<FilterListIcon />}
+                fullWidth
+              >
+                Buscar
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={limpiarFiltros}
+                disabled={loading}
+                startIcon={<ClearIcon />}
+                fullWidth
+              >
+                Limpiar
+              </Button>
+            </Box>
           </Grid>
         </Grid>
       </Paper>
@@ -378,11 +305,11 @@ const LavadoManos = () => {
             <TableRow>
               <TableCell><strong>Fecha</strong></TableCell>
               <TableCell><strong>Hora</strong></TableCell>
-              <TableCell><strong>Empleado</strong></TableCell>
-              <TableCell><strong>Área</strong></TableCell>
               <TableCell><strong>Turno</strong></TableCell>
+              <TableCell><strong>Nombres y Apellido</strong></TableCell>
+              <TableCell><strong>Área o Estación</strong></TableCell>
               <TableCell><strong>Firma</strong></TableCell>
-              <TableCell align="center"><strong>Procedimiento Correcto</strong></TableCell>
+              <TableCell align="center"><strong>Procedimiento</strong></TableCell>
               <TableCell><strong>Acción Correctiva</strong></TableCell>
               <TableCell><strong>Supervisor</strong></TableCell>
             </TableRow>
@@ -407,15 +334,16 @@ const LavadoManos = () => {
                 <TableRow key={index} hover>
                   <TableCell>{format(new Date(row.fecha), 'dd/MM/yyyy')}</TableCell>
                   <TableCell>{row.hora}</TableCell>
+                  <TableCell>{row.turno}</TableCell>
                   <TableCell>{row.empleado_nombre}</TableCell>
                   <TableCell>{row.area_estacion}</TableCell>
-                  <TableCell>{row.turno}</TableCell>
                   <TableCell>{row.firma}</TableCell>
                   <TableCell align="center">
                     <Chip
-                      label={row.procedimiento_correcto === 'Sí' ? 'SÍ' : 'NO'}
+                      label={row.procedimiento_correcto === 'Sí' ? 'C' : 'NC'}
                       color={getProcedimientoColor(row.procedimiento_correcto)}
                       size="small"
+                      sx={{ fontWeight: 'bold' }}
                     />
                   </TableCell>
                   <TableCell>{row.accion_correctiva || '-'}</TableCell>

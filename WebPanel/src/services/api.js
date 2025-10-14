@@ -28,11 +28,29 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.log('🔍 Interceptor de axios ejecutándose:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      isVerifyCall: error.config?.url?.includes('/auth/verify')
+    });
+    
+    // Solo hacer logout automático si NO es una verificación de token inicial
     if (error.response?.status === 401 || error.response?.status === 403) {
-      // Token expirado o inválido
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Verificar si es una llamada a /auth/verify (verificación inicial)
+      const isTokenVerification = error.config?.url?.includes('/auth/verify');
+      
+      if (!isTokenVerification) {
+        // Token expirado o inválido en operaciones normales
+        console.log('🚨 Error 401/403 en llamada NO-verify, ejecutando logout...');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      } else {
+        // Es una verificación inicial, solo log del error sin logout
+        console.warn('⚠️ Verificación inicial de token falló, pero manteniendo sesión');
+      }
+    } else {
+      console.log('ℹ️ Error no relacionado con autenticación:', error.response?.status);
     }
     return Promise.reject(error);
   }

@@ -663,13 +663,14 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
     fitToWidth: 1,
     fitToHeight: 0,
     margins: {
-      left: 0.5,
-      right: 0.5,
+      left: 0.4,
+      right: 0.4,
       top: 0.75,
       bottom: 0.75,
       header: 0.3,
       footer: 0.3
-    }
+    },
+    printArea: 'A1:I40'
   };
 
   // ============= PROTECCIÓN DE HOJA =============
@@ -926,14 +927,14 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
   const worksheet = workbook.addWorksheet('Lavado Manos');
   
   // ============= CONFIGURACIÓN DE COLUMNAS =============
-  // Anchos optimizados para A4 vertical (en unidades de Excel)
-  const columnWidths = [8, 8, 12, 20, 15, 10, 18, 15];
+  // Anchos optimizados para A4 vertical (en unidades de Excel) - 9 columnas ahora
+  const columnWidths = [8, 8, 12, 20, 12, 10, 18, 15, 15];
   columnWidths.forEach((width, index) => {
     worksheet.getColumn(index + 1).width = width;
   });
 
   // ============= FILA 1: REGISTRO HACCP =============
-  worksheet.mergeCells('A1:H1');
+  worksheet.mergeCells('A1:I1');
   const registroCell = worksheet.getCell('A1');
   registroCell.value = 'REGISTRO HACCP';
   registroCell.font = { name: 'Arial', size: 14, bold: true };
@@ -947,9 +948,9 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
   };
 
   // ============= FILA 2: TÍTULO ESPECÍFICO =============
-  worksheet.mergeCells('A2:H2');
+  worksheet.mergeCells('A2:I2');
   const tituloCell = worksheet.getCell('A2');
-  tituloCell.value = 'Control de Lavado y Desinfección de Manos';
+  tituloCell.value = 'CONTROL DE LAVADO Y DESINFECCIÓN DE MANOS';
   tituloCell.font = { name: 'Arial', size: 12, bold: true };
   tituloCell.alignment = { horizontal: 'center', vertical: 'middle' };
   tituloCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6E6' } };
@@ -961,9 +962,9 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
   };
 
   // ============= FILA 3: ÁREA O ESTACIÓN =============
-  worksheet.mergeCells('A3:H3');
+  worksheet.mergeCells('A3:I3');
   const areaCell = worksheet.getCell('A3');
-  areaCell.value = 'Área o Estación: Cocina y Salón';
+  areaCell.value = 'ÁREA O ESTACIÓN: Cocina y Salón';
   areaCell.font = { name: 'Arial', size: 10, bold: true };
   areaCell.alignment = { horizontal: 'center', vertical: 'middle' };
   areaCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
@@ -974,10 +975,27 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
     right: { style: 'thin', color: { argb: 'FF000000' } }
   };
 
-  // ============= FILA 4: MES =============
-  worksheet.mergeCells('A4:D4');
-  const mesCell = worksheet.getCell('A4');
-  mesCell.value = `Mes: ${mes || ''}`;
+  // ============= FILA 4: DATOS DEL PERÍODO =============
+  worksheet.mergeCells('A4:I4');
+  const periodoCell = worksheet.getCell('A4');
+  periodoCell.value = 'DATOS DEL PERÍODO';
+  periodoCell.font = { name: 'Arial', size: 10, bold: true };
+  periodoCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  periodoCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6E6' } };
+  periodoCell.border = {
+    top: { style: 'thin', color: { argb: 'FF000000' } },
+    left: { style: 'thin', color: { argb: 'FF000000' } },
+    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+    right: { style: 'thin', color: { argb: 'FF000000' } }
+  };
+
+  // ============= FILA 5: MES Y AÑO =============
+  worksheet.mergeCells('A5:D5');
+  const mesCell = worksheet.getCell('A5');
+  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const nombreMes = mes ? meses[mes - 1] : '';
+  mesCell.value = `MES: ${nombreMes}`;
   mesCell.font = { name: 'Arial', size: 10, bold: true };
   mesCell.alignment = { horizontal: 'center', vertical: 'middle' };
   mesCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
@@ -989,9 +1007,9 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
   };
 
   // AÑO
-  worksheet.mergeCells('E4:H4');
-  const anioCell = worksheet.getCell('E4');
-  anioCell.value = `Año: ${anio || ''}`;
+  worksheet.mergeCells('E5:I5');
+  const anioCell = worksheet.getCell('E5');
+  anioCell.value = `AÑO: ${anio || ''}`;
   anioCell.font = { name: 'Arial', size: 10, bold: true };
   anioCell.alignment = { horizontal: 'center', vertical: 'middle' };
   anioCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
@@ -1002,15 +1020,29 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
     right: { style: 'thin', color: { argb: 'FF000000' } }
   };
 
+  // ============= FILA 6: DATOS DE CONTROL =============
+  worksheet.mergeCells('A6:I6');
+  const controlCell = worksheet.getCell('A6');
+  controlCell.value = 'DATOS DE CONTROL';
+  controlCell.font = { name: 'Arial', size: 10, bold: true };
+  controlCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  controlCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6E6' } };
+  controlCell.border = {
+    top: { style: 'thin', color: { argb: 'FF000000' } },
+    left: { style: 'thin', color: { argb: 'FF000000' } },
+    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+    right: { style: 'thin', color: { argb: 'FF000000' } }
+  };
+
   // ============= ENCABEZADOS DE COLUMNAS =============
   const headers = [
-    'FECHA', 'HORA', 'TURNO', 'NOMBRES Y APELLIDO', 'FIRMA', 'C/NC', 'ACCIÓN CORRECTIVA', 'SUPERVISOR'
+    'FECHA', 'HORA', 'TURNO', 'NOMBRES Y APELLIDO', 'ÁREA O ESTACIÓN', 'FIRMA', 'C/NC', 'ACCIÓN CORRECTIVA', 'SUPERVISOR'
   ];
 
   headers.forEach((header, index) => {
-    const cell = worksheet.getCell(5, index + 1);
+    const cell = worksheet.getCell(7, index + 1);
     cell.value = header;
-    cell.font = { name: 'Arial', size: 10, bold: true };
+    cell.font = { name: 'Arial', size: 9, bold: true };
     cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
     cell.border = {
@@ -1022,17 +1054,17 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
   });
 
   // Altura de la fila de encabezados
-  worksheet.getRow(5).height = 35;
+  worksheet.getRow(7).height = 35;
 
   // ============= FILAS DE DATOS =============
-  // 31 filas de datos (filas 6-36) para A4 vertical
-  for (let row = 6; row <= 36; row++) {
-    for (let col = 1; col <= 8; col++) {
+  // 31 filas de datos (filas 8-38) para A4 vertical
+  for (let row = 8; row <= 38; row++) {
+    for (let col = 1; col <= 9; col++) {
       const cell = worksheet.getCell(row, col);
       
       // Si hay datos, llenar la celda
-      if (datos && datos[row - 6]) {
-        const fila = datos[row - 6];
+      if (datos && datos[row - 8]) {
+        const fila = datos[row - 8];
         switch (col) {
           case 1: 
             cell.value = fila.fecha ? format(new Date(fila.fecha), 'dd/MM/yyyy') : '';
@@ -1040,19 +1072,20 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
           case 2: cell.value = fila.hora || ''; break;
           case 3: cell.value = fila.turno || ''; break;
           case 4: cell.value = fila.empleado_nombre || ''; break;
-          case 5: cell.value = fila.firma || ''; break;
-          case 6: 
+          case 5: cell.value = fila.area_estacion || ''; break;
+          case 6: cell.value = fila.firma || ''; break;
+          case 7: 
             cell.value = fila.procedimiento_correcto === 'Sí' ? 'C' : (fila.procedimiento_correcto === 'No' ? 'NC' : '');
             break;
-          case 7: cell.value = fila.accion_correctiva || ''; break;
-          case 8: cell.value = fila.supervisor_nombre || ''; break;
+          case 8: cell.value = fila.accion_correctiva || ''; break;
+          case 9: cell.value = fila.supervisor_nombre || ''; break;
         }
       }
 
       // Aplicar estilos
-      cell.font = { name: 'Arial', size: 9 };
+      cell.font = { name: 'Arial', size: 8 };
       // Centrar columnas específicas
-      const columnasCentradas = [1, 2, 3, 5, 6];
+      const columnasCentradas = [1, 2, 3, 5, 6, 7];
       cell.alignment = { 
         horizontal: columnasCentradas.includes(col) ? 'center' : 'left', 
         vertical: 'middle',
@@ -1065,12 +1098,15 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
         right: { style: 'thin', color: { argb: 'FF000000' } }
       };
     }
+    
+    // Altura de las filas de datos
+    worksheet.getRow(row).height = 20;
   }
 
   // ============= LEYENDA =============
-  worksheet.mergeCells('A38:H38');
-  const leyendaCell = worksheet.getCell('A38');
-  leyendaCell.value = 'C = CONFORME: Procedimiento correcto | NC = NO CONFORME: Procedimiento incompleto, requiere repetir';
+  worksheet.mergeCells('A40:I40');
+  const leyendaCell = worksheet.getCell('A40');
+  leyendaCell.value = 'SIGNIFICADO: C = CONFORME: Procedimiento de lavado correcto | NC = NO CONFORME: Procedimiento incompleto, requiere repetir';
   leyendaCell.font = { name: 'Arial', size: 8, bold: true };
   leyendaCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
