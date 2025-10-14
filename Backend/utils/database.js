@@ -156,7 +156,7 @@ const insertDefaultUsers = async () => {
                 `;
 
                 db.serialize(() => {
-                    db.run(insertSupervisor, ['Supervisor', 'Sistema', 'supervisor@hotel.com', supervisorPassword, 'supervisor', 'Supervisor', 'Administración'], (err) => {
+                    db.run(insertSupervisor, ['Supervisor', 'Sistema', 'supervisor@hotel.com', supervisorPassword, 'ADMIN', 'Supervisor', 'Administración'], (err) => {
                         if (err) {
                             console.error('Error insertando supervisor:', err.message);
                             reject(err);
@@ -165,7 +165,7 @@ const insertDefaultUsers = async () => {
                         console.log('Usuario supervisor creado');
                     });
 
-                    db.run(insertColaborador, ['Colaborador', 'Prueba', 'colaborador@hotel.com', colaboradorPassword, 'colaborador', 'Colaborador', 'Operaciones'], (err) => {
+                    db.run(insertColaborador, ['Colaborador', 'Prueba', 'colaborador@hotel.com', colaboradorPassword, 'EMPLEADO', 'Colaborador', 'Operaciones'], (err) => {
                         if (err) {
                             console.error('Error insertando colaborador:', err.message);
                             reject(err);
