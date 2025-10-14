@@ -178,6 +178,12 @@ export const haccpService = {
     const response = await api.get('/haccp/areas');
     return response.data;
   },
+
+  // Obtener frutas/verduras
+  getFrutasVerduras: async () => {
+    const response = await api.get('/haccp/frutas-verduras');
+    return response.data;
+  },
 };
 
 // =====================================================

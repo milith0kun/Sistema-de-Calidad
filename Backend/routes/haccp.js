@@ -1455,4 +1455,42 @@ router.get('/productos-abarrotes', authenticateToken, (req, res) => {
     }
 });
 
+// Ruta para obtener frutas y verduras únicas
+router.get('/frutas-verduras', authenticateToken, (req, res) => {
+    try {
+        console.log('📍 GET /haccp/frutas-verduras - Obteniendo frutas y verduras');
+
+        const query = `
+            SELECT DISTINCT nombre_fruta_verdura as nombre
+            FROM control_lavado_desinfeccion_frutas 
+            WHERE nombre_fruta_verdura IS NOT NULL 
+            AND nombre_fruta_verdura != ''
+            ORDER BY nombre_fruta_verdura ASC
+        `;
+
+        db.all(query, [], (err, rows) => {
+            if (err) {
+                console.error('❌ Error al obtener frutas y verduras:', err);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Error al obtener frutas y verduras'
+                });
+            }
+
+            console.log(`✅ Frutas y verduras obtenidas: ${rows.length} elementos encontrados`);
+            res.json({
+                success: true,
+                data: rows
+            });
+        });
+
+    } catch (error) {
+        console.error('Error al obtener frutas y verduras:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener frutas y verduras'
+        });
+    }
+});
+
 module.exports = router;
