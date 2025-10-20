@@ -21,16 +21,21 @@ import {
   MenuItem,
   ButtonGroup,
   Autocomplete,
+  Card,
+  CardContent,
 } from '@mui/material';
 import { 
   Download as DownloadIcon,
   FileDownload as FileDownloadIcon,
   FilterList as FilterListIcon,
   Clear as ClearIcon,
+  Add as AddIcon,
+  GetApp as GetAppIcon,
 } from '@mui/icons-material';
 import { haccpService } from '../../services/api';
 import { exportarLavadoManos } from '../../utils/exportExcel';
 import { format } from 'date-fns';
+import FormularioLavadoManos from '../../components/FormularioLavadoManos';
 
 const LavadoManos = () => {
   const [registros, setRegistros] = useState([]);
@@ -43,16 +48,16 @@ const LavadoManos = () => {
   const [filtroTipo, setFiltroTipo] = useState('mes');
   const [fechaEspecifica, setFechaEspecifica] = useState(format(new Date(), 'yyyy-MM-dd'));
   
-  // Solo filtro por área (Cocina y Salón)
-  const [areaSeleccionada, setAreaSeleccionada] = useState('');
-  
-  // Áreas fijas según especificaciones HACCP
-  const areas = [
-    { nombre: 'Cocina' },
-    { nombre: 'Salon' }
-  ];
+  // Eliminado: filtro por área ya que todos los reportes son de "Salón y Cocina"
 
-  // Función para cargar registros con filtros simplificados
+  // Estados para el formulario
+  const [formularioAbierto, setFormularioAbierto] = useState(false);
+  const [empleados, setEmpleados] = useState([]);
+  const [supervisores, setSupervisores] = useState([]);
+  
+  // Eliminado: áreas fijas ya que no se necesita filtro
+
+  // Función para cargar registros sin filtro de área
   const cargarRegistros = async () => {
     try {
       setLoading(true);
@@ -70,10 +75,7 @@ const LavadoManos = () => {
         params.anio = anio;
       }
       
-      // Filtrado por área si está seleccionada
-      if (areaSeleccionada) {
-        params.area = areaSeleccionada;
-      }
+      // Eliminado: filtro por área ya que todos los datos son de "Salón y Cocina"
       
       const response = await haccpService.getLavadoManos(params);
       setRegistros(response.data || []);
@@ -91,7 +93,40 @@ const LavadoManos = () => {
 
   useEffect(() => {
     cargarRegistros();
-  }, [filtroTipo, fechaEspecifica, mes, anio, areaSeleccionada]);
+  }, [filtroTipo, fechaEspecifica, mes, anio]); // Eliminado: areaSeleccionada
+
+  // Cargar empleados y supervisores al montar el componente
+  useEffect(() => {
+    cargarEmpleados();
+    cargarSupervisores();
+  }, []);
+
+  // Función para cargar empleados
+  const cargarEmpleados = async () => {
+    try {
+      const response = await haccpService.getEmpleados();
+      setEmpleados(response.data || []);
+    } catch (error) {
+      console.error('Error al cargar empleados:', error);
+    }
+  };
+
+  // Función para cargar supervisores
+  const cargarSupervisores = async () => {
+    try {
+      const response = await haccpService.getSupervisores();
+      setSupervisores(response.data || []);
+    } catch (error) {
+      console.error('Error al cargar supervisores:', error);
+    }
+  };
+
+  // Manejar éxito del formulario
+  const handleFormularioExito = (nuevoRegistro) => {
+    // Recargar registros para mostrar el nuevo
+    cargarRegistros();
+    setFormularioAbierto(false);
+  };
 
   const handleExportar = async () => {
     try {
@@ -157,7 +192,7 @@ const LavadoManos = () => {
     setAnio(new Date().getFullYear());
     setFiltroTipo('mes');
     setFechaEspecifica(format(new Date(), 'yyyy-MM-dd'));
-    setAreaSeleccionada('');
+    // Eliminado: setAreaSeleccionada('');
   };
 
   const getProcedimientoColor = (correcto) => {
@@ -165,210 +200,454 @@ const LavadoManos = () => {
   };
 
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Lavado de Manos
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Registro de cumplimiento del procedimiento de lavado de manos del personal
-          </Typography>
-        </Box>
-        <Box display="flex" gap={1}>
-          <Button
-            variant="outlined"
-            startIcon={<FileDownloadIcon />}
-            onClick={handleExportarPlantilla}
-            disabled={loading}
-          >
-            Plantilla Vacía
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<FileDownloadIcon />}
-            onClick={handleExportar}
-            disabled={loading}
-          >
-            {registros.length > 0 ? 'Exportar Datos' : 'Exportar Plantilla'}
-          </Button>
-        </Box>
+    <Box sx={{ 
+      p: 3,
+      backgroundColor: '#f8f9fa',
+      minHeight: '100vh'
+    }}>
+      {/* Encabezado de la página */}
+      <Box sx={{ 
+        mb: 4,
+        pb: 2,
+        borderBottom: '2px solid',
+        borderColor: 'primary.main'
+      }}>
+        <Typography 
+          variant="h4" 
+          component="h1" 
+          sx={{ 
+            fontWeight: 600,
+            color: 'primary.main',
+            mb: 1
+          }}
+        >
+          Control de Lavado de Manos
+        </Typography>
+        <Typography 
+          variant="subtitle1" 
+          color="text.secondary"
+          sx={{ fontWeight: 400 }}
+        >
+          Registro y seguimiento de controles de higiene
+        </Typography>
       </Box>
 
+      {/* Botones de exportar */}
+      <Box sx={{ 
+        display: 'flex', 
+        gap: 2, 
+        mb: 3,
+        flexWrap: 'wrap'
+      }}>
+        <Button
+          variant="outlined"
+          startIcon={<FileDownloadIcon />}
+          onClick={handleExportarPlantilla}
+          disabled={loading}
+          sx={{
+            borderRadius: 1,
+            textTransform: 'none',
+            fontWeight: 500,
+            minHeight: 40
+          }}
+        >
+          Plantilla Vacía
+        </Button>
+        <Button
+          variant="contained"
+          startIcon={<DownloadIcon />}
+          onClick={handleExportar}
+          disabled={loading}
+          sx={{
+            borderRadius: 1,
+            textTransform: 'none',
+            fontWeight: 500,
+            minHeight: 40
+          }}
+        >
+          {registros.length === 0 ? 'Exportar Plantilla' : 'Exportar Datos'}
+        </Button>
+      </Box>
+
+      {/* Sección de controles */}
+      <Card sx={{ 
+        mb: 3,
+        borderRadius: 2,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        border: '1px solid',
+        borderColor: 'divider'
+      }}>
+        <CardContent sx={{ p: 3 }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              mb: 3,
+              fontWeight: 600,
+              color: 'text.primary',
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              pb: 1
+            }}
+          >
+            Filtros y Acciones
+          </Typography>
+          
+          <Grid container spacing={3} alignItems="flex-start">
+            {/* Selector de tipo de filtro */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
+                Período
+              </Typography>
+              <ButtonGroup 
+                fullWidth 
+                variant="outlined"
+                sx={{
+                  height: '56px',
+                  display: 'flex',
+                  '& .MuiButton-root': {
+                    flex: 1,
+                    height: '56px',
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    fontWeight: 500,
+                    textTransform: 'none',
+                    borderRadius: '8px',
+                    '&:hover': {
+                      backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                    },
+                    '&.MuiButton-contained': {
+                      backgroundColor: 'primary.main',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: 'primary.dark',
+                      }
+                    }
+                  }
+                }}
+              >
+                <Button
+                  variant={filtroTipo === 'dia' ? 'contained' : 'outlined'}
+                  onClick={() => setFiltroTipo('dia')}
+                >
+                  Día
+                </Button>
+                <Button
+                  variant={filtroTipo === 'mes' ? 'contained' : 'outlined'}
+                  onClick={() => setFiltroTipo('mes')}
+                >
+                  Mes
+                </Button>
+                <Button
+                  variant={filtroTipo === 'anio' ? 'contained' : 'outlined'}
+                  onClick={() => setFiltroTipo('anio')}
+                >
+                  Año
+                </Button>
+              </ButtonGroup>
+            </Grid>
+
+            {/* Selector de fecha específica (solo para día) */}
+            {filtroTipo === 'dia' && (
+              <Grid item xs={12} sm={6} md={3}>
+                <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
+                  Fecha Específica
+                </Typography>
+                <TextField
+                  type="date"
+                  value={fechaEspecifica}
+                  onChange={(e) => setFechaEspecifica(e.target.value)}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  sx={{
+                    height: '56px',
+                    '& .MuiOutlinedInput-root': {
+                      height: '56px',
+                      fontSize: '0.875rem',
+                      borderRadius: '8px',
+                      backgroundColor: '#fff',
+                      '& input': {
+                        padding: '16.5px 14px',
+                      }
+                    }
+                  }}
+                />
+              </Grid>
+            )}
+
+            {/* Selectores de mes y año */}
+            {(filtroTipo === 'mes' || filtroTipo === 'anio') && (
+              <>
+                {filtroTipo === 'mes' && (
+                  <Grid item xs={12} sm={6} md={2}>
+                    <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
+                      Mes
+                    </Typography>
+                    <TextField
+                      type="number"
+                      value={mes}
+                      onChange={(e) => setMes(Number(e.target.value))}
+                      fullWidth
+                      inputProps={{ min: 1, max: 12 }}
+                      sx={{
+                        height: '56px',
+                        '& .MuiOutlinedInput-root': {
+                          height: '56px',
+                          fontSize: '0.875rem',
+                          borderRadius: '8px',
+                          backgroundColor: '#fff',
+                          '& input': {
+                            padding: '16.5px 14px',
+                          }
+                        }
+                      }}
+                    />
+                  </Grid>
+                )}
+                <Grid item xs={12} sm={6} md={2}>
+                  <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
+                    Año
+                  </Typography>
+                  <TextField
+                    type="number"
+                    value={anio}
+                    onChange={(e) => setAnio(Number(e.target.value))}
+                    fullWidth
+                    inputProps={{ min: 2020, max: 2030 }}
+                    sx={{
+                      height: '56px',
+                      '& .MuiOutlinedInput-root': {
+                        height: '56px',
+                        fontSize: '0.875rem',
+                        borderRadius: '8px',
+                        backgroundColor: '#fff',
+                        '& input': {
+                          padding: '16.5px 14px',
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+              </>
+            )}
+
+            {/* Botones de acción */}
+            <Grid item xs={12} md={3}>
+              <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500, visibility: 'hidden' }}>
+                Acciones
+              </Typography>
+              <Box sx={{ 
+                display: 'flex', 
+                gap: 1.5,
+                flexDirection: { xs: 'column', sm: 'row' }
+              }}>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setFormularioAbierto(true)}
+                  sx={{
+                    height: '56px',
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    textTransform: 'none',
+                    borderRadius: '8px',
+                    flex: 1,
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                    }
+                  }}
+                >
+                  Nuevo
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<GetAppIcon />}
+                  onClick={handleExportar}
+                  disabled={loading}
+                  sx={{
+                    height: '56px',
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    textTransform: 'none',
+                    borderRadius: '8px',
+                    flex: 1,
+                    '&:hover': {
+                      backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                    }
+                  }}
+                >
+                  Exportar
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
+      {/* Mensaje de error */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+        <Alert 
+          severity="error" 
+          sx={{ 
+            mb: 3,
+            borderRadius: 1
+          }}
+        >
           {error}
         </Alert>
       )}
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FilterListIcon />
-          Filtros de Búsqueda
-        </Typography>
-        
-        <Grid container spacing={2} alignItems="center">
-          {/* Selector de tipo de filtro */}
-          <Grid item xs={12} sm={6} md={3}>
-            <ButtonGroup fullWidth variant="outlined">
-              <Button
-                variant={filtroTipo === 'dia' ? 'contained' : 'outlined'}
-                onClick={() => setFiltroTipo('dia')}
-              >
-                Día
-              </Button>
-              <Button
-                variant={filtroTipo === 'mes' ? 'contained' : 'outlined'}
-                onClick={() => setFiltroTipo('mes')}
-              >
-                Mes
-              </Button>
-              <Button
-                variant={filtroTipo === 'anio' ? 'contained' : 'outlined'}
-                onClick={() => setFiltroTipo('anio')}
-              >
-                Año
-              </Button>
-            </ButtonGroup>
-          </Grid>
+      {/* Tabla de registros */}
+      <Card sx={{ 
+        borderRadius: 2,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        border: '1px solid',
+        borderColor: 'divider'
+      }}>
+        <CardContent sx={{ p: 0 }}>
+          <Box sx={{ 
+            p: 3,
+            borderBottom: '1px solid',
+            borderColor: 'divider'
+          }}>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontWeight: 600,
+                color: 'text.primary'
+              }}
+            >
+              Registros de Control
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ mt: 0.5 }}
+            >
+              {registros.length} registro{registros.length !== 1 ? 's' : ''} encontrado{registros.length !== 1 ? 's' : ''}
+            </Typography>
+          </Box>
 
-          {/* Selector de fecha específica (solo para día) */}
-          {filtroTipo === 'dia' && (
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                label="Fecha"
-                type="date"
-                value={fechaEspecifica}
-                onChange={(e) => setFechaEspecifica(e.target.value)}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-          )}
+          <Box className="table-container">
+            <Table>
+              <TableHead>
+                  <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
+                    <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Hora</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Área</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Empleado</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Turno</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Procedimiento</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Acción Correctiva</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Supervisor</TableCell>
+                  </TableRow>
+                </TableHead>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center',
+                        gap: 2
+                      }}>
+                        <CircularProgress />
+                        <Typography color="text.secondary">
+                          Cargando registros...
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ) : registros.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center',
+                        gap: 1
+                      }}>
+                        <Typography color="text.secondary" variant="h6">
+                          No hay registros
+                        </Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          No se encontraron registros para el período seleccionado
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  registros.map((registro, index) => (
+                    <TableRow 
+                      key={registro.id || index} 
+                      hover
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: '#f8f9fa'
+                        }
+                      }}
+                    >
+                      <TableCell sx={{ fontWeight: 500 }}>
+                        {format(new Date(registro.fecha), 'dd/MM/yyyy')}
+                      </TableCell>
+                      <TableCell>{registro.hora}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={registro.area_trabajo} 
+                          size="small"
+                          sx={{ 
+                            borderRadius: 1,
+                            fontWeight: 500
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 500 }}>
+                        {registro.empleado_nombre}
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={registro.turno || 'No especificado'} 
+                          size="small"
+                          color="info"
+                          sx={{ 
+                            borderRadius: 1,
+                            fontWeight: 500
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={registro.procedimiento_correcto === 'C' ? 'Conforme' : 'No Conforme'} 
+                          size="small"
+                          color={registro.procedimiento_correcto === 'C' ? 'success' : 'error'}
+                          sx={{ 
+                            borderRadius: 1,
+                            fontWeight: 500
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {registro.accion_correctiva || '-'}
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 500 }}>
+                        {registro.supervisor_nombre}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </Box>
+        </CardContent>
+      </Card>
 
-          {/* Selectores de mes y año (para mes y año) */}
-          {(filtroTipo === 'mes' || filtroTipo === 'anio') && (
-            <>
-              {filtroTipo === 'mes' && (
-                <Grid item xs={12} sm={6} md={2}>
-                  <TextField
-                    label="Mes"
-                    type="number"
-                    value={mes}
-                    onChange={(e) => setMes(Number(e.target.value))}
-                    fullWidth
-                    InputProps={{ inputProps: { min: 1, max: 12 } }}
-                  />
-                </Grid>
-              )}
-              <Grid item xs={12} sm={6} md={2}>
-                <TextField
-                  label="Año"
-                  type="number"
-                  value={anio}
-                  onChange={(e) => setAnio(Number(e.target.value))}
-                  fullWidth
-                  InputProps={{ inputProps: { min: 2020, max: 2030 } }}
-                />
-              </Grid>
-            </>
-          )}
-
-          {/* Filtro por área (solo Cocina y Salón) */}
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Área o Estación</InputLabel>
-              <Select
-                value={areaSeleccionada}
-                onChange={(e) => setAreaSeleccionada(e.target.value)}
-                label="Área o Estación"
-              >
-                <MenuItem value="">Todas las áreas</MenuItem>
-                <MenuItem value="Cocina">Cocina</MenuItem>
-                <MenuItem value="Salon">Salón</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          {/* Botones de acción */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Box display="flex" gap={1}>
-              <Button
-                variant="contained"
-                onClick={cargarRegistros}
-                disabled={loading}
-                startIcon={<FilterListIcon />}
-                fullWidth
-              >
-                Buscar
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={limpiarFiltros}
-                disabled={loading}
-                startIcon={<ClearIcon />}
-                fullWidth
-              >
-                Limpiar
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      <TableContainer component={Paper}>
-        <Table size="small">
-          <TableHead sx={{ bgcolor: '#f5f5f5' }}>
-            <TableRow>
-              <TableCell><strong>Fecha</strong></TableCell>
-              <TableCell><strong>Hora</strong></TableCell>
-              <TableCell><strong>Turno</strong></TableCell>
-              <TableCell><strong>Nombres y Apellido</strong></TableCell>
-              <TableCell><strong>Firma</strong></TableCell>
-              <TableCell align="center"><strong>Procedimiento</strong></TableCell>
-              <TableCell><strong>Acción Correctiva</strong></TableCell>
-              <TableCell><strong>Supervisor</strong></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 5 }}>
-                  <CircularProgress />
-                </TableCell>
-              </TableRow>
-            ) : registros.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 5 }}>
-                  <Typography color="text.secondary">
-                    No hay registros para el período seleccionado
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              registros.map((row, index) => (
-                <TableRow key={index} hover>
-                  <TableCell>{format(new Date(row.fecha), 'dd/MM/yyyy')}</TableCell>
-                  <TableCell>{row.hora}</TableCell>
-                  <TableCell>{row.turno}</TableCell>
-                  <TableCell>{row.nombres_apellidos}</TableCell>
-                  <TableCell>{row.firma}</TableCell>
-                  <TableCell align="center">
-                    <Chip
-                      label={row.procedimiento_correcto === 'Sí' ? 'C' : 'NC'}
-                      color={getProcedimientoColor(row.procedimiento_correcto)}
-                      size="small"
-                      sx={{ fontWeight: 'bold' }}
-                    />
-                  </TableCell>
-                  <TableCell>{row.accion_correctiva || '-'}</TableCell>
-                  <TableCell>{row.supervisor_nombre || '-'}</TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {/* Formulario para nuevo registro */}
+      <FormularioLavadoManos
+        open={formularioAbierto}
+        onClose={() => setFormularioAbierto(false)}
+        onSuccess={handleFormularioExito}
+        empleados={empleados}
+        supervisores={supervisores}
+      />
     </Box>
   );
 };

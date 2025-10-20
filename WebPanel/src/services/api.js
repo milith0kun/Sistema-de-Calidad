@@ -1,6 +1,38 @@
 import axios from 'axios';
+import { getApiUrl, getEnvironmentConfig } from '../config/environment.js';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// Variable para almacenar la URL de la API detectada
+let API_URL = import.meta.env.VITE_API_URL || '/api';
+let apiInitialized = false;
+
+// Función para inicializar la configuración de la API
+const initializeApi = async () => {
+  if (apiInitialized) return;
+  
+  try {
+    console.log('🔧 Inicializando configuración de API...');
+    const detectedApiUrl = await getApiUrl();
+    API_URL = detectedApiUrl;
+    
+    // Actualizar la baseURL de la instancia de axios
+    api.defaults.baseURL = API_URL;
+    
+    const config = await getEnvironmentConfig();
+    console.log('✅ API configurada:', {
+      environment: config.environment,
+      apiUrl: API_URL,
+      backendUrl: config.backendUrl
+    });
+    
+    apiInitialized = true;
+  } catch (error) {
+    console.error('❌ Error inicializando API:', error);
+    // Usar configuración por defecto
+    API_URL = import.meta.env.VITE_API_URL || '/api';
+    api.defaults.baseURL = API_URL;
+    apiInitialized = true;
+  }
+};
 
 // Crear instancia de axios
 const api = axios.create({
@@ -10,9 +42,12 @@ const api = axios.create({
   },
 });
 
-// Interceptor para añadir token a todas las peticiones
+// Interceptor para inicializar API y añadir token a todas las peticiones
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    // Inicializar API si no se ha hecho
+    await initializeApi();
+    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -31,23 +66,50 @@ api.interceptors.response.use(
     console.log('🔍 Interceptor de axios ejecutándose:', {
       status: error.response?.status,
       url: error.config?.url,
-      isVerifyCall: error.config?.url?.includes('/auth/verify')
+      isVerifyCall: error.config?.url?.includes('/auth/verify'),
+      isLoginCall: error.config?.url?.includes('/auth/login')
     });
     
-    // Solo hacer logout automático si NO es una verificación de token inicial
+    // Solo hacer logout automático en casos muy específicos
     if (error.response?.status === 401 || error.response?.status === 403) {
-      // Verificar si es una llamada a /auth/verify (verificación inicial)
       const isTokenVerification = error.config?.url?.includes('/auth/verify');
+      const isLoginCall = error.config?.url?.includes('/auth/login');
+      const isHealthCheck = error.config?.url?.includes('/health');
       
-      if (!isTokenVerification) {
-        // Token expirado o inválido en operaciones normales
-        console.log('🚨 Error 401/403 en llamada NO-verify, ejecutando logout...');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+      // NO hacer logout automático en estos casos:
+      // 1. Verificación inicial de token
+      // 2. Intentos de login
+      // 3. Health checks
+      // 4. Errores de red (sin response del servidor)
+      if (isTokenVerification || isLoginCall || isHealthCheck) {
+        console.warn('⚠️ Error 401/403 en operación especial, manteniendo sesión');
+        return Promise.reject(error);
+      }
+      
+      // Solo hacer logout si es un error claro de autenticación en operaciones normales
+      // Y solo si el error viene del servidor (no errores de red)
+      if (error.response && error.response.data) {
+        const errorMessage = error.response.data.message || error.response.data.error || '';
+        
+        // Hacer logout solo si el mensaje indica token expirado o inválido
+        if (errorMessage.toLowerCase().includes('token') || 
+            errorMessage.toLowerCase().includes('expired') ||
+            errorMessage.toLowerCase().includes('invalid') ||
+            errorMessage.toLowerCase().includes('unauthorized')) {
+          
+          console.log('🚨 Token claramente inválido/expirado, ejecutando logout...');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          
+          // Usar setTimeout para evitar conflictos con React
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 100);
+        } else {
+          console.warn('⚠️ Error 401/403 sin indicación clara de token inválido, manteniendo sesión');
+        }
       } else {
-        // Es una verificación inicial, solo log del error sin logout
-        console.warn('⚠️ Verificación inicial de token falló, pero manteniendo sesión');
+        console.warn('⚠️ Error 401/403 sin respuesta del servidor (posible error de red), manteniendo sesión');
       }
     } else {
       console.log('ℹ️ Error no relacionado con autenticación:', error.response?.status);
@@ -119,11 +181,54 @@ export const fichadoService = {
 // =====================================================
 
 export const haccpService = {
-  // Recepción Mercadería
+  // Recepción Mercadería - Función legacy que combina ambos tipos
   getRecepcionMercaderia: async (mes, anio, tipo = null) => {
-    let url = `/haccp/recepcion-mercaderia?mes=${mes}&anio=${anio}`;
-    if (tipo) url += `&tipo=${tipo}`;
+    try {
+      if (tipo === 'ABARROTES') {
+        const response = await api.get(`/haccp/recepcion-abarrotes?mes=${mes}&anio=${anio}`);
+        return response.data;
+      } else if (tipo === 'FRUTAS_VERDURAS') {
+        const response = await api.get(`/haccp/recepcion-frutas-verduras?mes=${mes}&anio=${anio}`);
+        return response.data;
+      } else {
+        // Si no se especifica tipo, obtener ambos y combinarlos
+        const [abarrotes, frutasVerduras] = await Promise.all([
+          api.get(`/haccp/recepcion-abarrotes?mes=${mes}&anio=${anio}`),
+          api.get(`/haccp/recepcion-frutas-verduras?mes=${mes}&anio=${anio}`)
+        ]);
+        
+        return {
+          success: true,
+          data: [...(abarrotes.data.data || []), ...(frutasVerduras.data.data || [])],
+          total: (abarrotes.data.total || 0) + (frutasVerduras.data.total || 0)
+        };
+      }
+    } catch (error) {
+      console.error('Error al obtener recepción mercadería:', error);
+      throw error;
+    }
+  },
+
+  // Recepción Abarrotes - Endpoint específico
+  getRecepcionAbarrotes: async (mes = null, anio = null) => {
+    let url = '/haccp/recepcion-abarrotes';
+    const params = new URLSearchParams();
+    
+    // Solo agregar parámetros si se proporcionan
+    if (mes) params.append('mes', mes);
+    if (anio) params.append('anio', anio);
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
     const response = await api.get(url);
+    return response.data;
+  },
+
+  // Recepción Frutas y Verduras - Endpoint específico
+  getRecepcionFrutasVerduras: async (mes, anio) => {
+    const response = await api.get(`/haccp/recepcion-frutas-verduras?mes=${mes}&anio=${anio}`);
     return response.data;
   },
 
@@ -162,8 +267,23 @@ export const haccpService = {
   },
 
   // Temperatura Cámaras
-  getTemperaturaCamaras: async (mes, anio) => {
-    const response = await api.get(`/haccp/temperatura-camaras?mes=${mes}&anio=${anio}`);
+  getTemperaturaCamaras: async (params = {}) => {
+    const queryParams = new URLSearchParams();
+    
+    // Agregar parámetros de fecha
+    if (params.mes) queryParams.append('mes', params.mes);
+    if (params.anio) queryParams.append('anio', params.anio);
+    if (params.fecha_especifica) queryParams.append('fecha', params.fecha_especifica);
+    if (params.fecha_inicio) queryParams.append('fecha_inicio', params.fecha_inicio);
+    if (params.fecha_fin) queryParams.append('fecha_fin', params.fecha_fin);
+    
+    // Agregar parámetro de cámara
+    if (params.camara_id) queryParams.append('camara_id', params.camara_id);
+    
+    // Agregar límite si se especifica
+    if (params.limite) queryParams.append('limite', params.limite);
+    
+    const response = await api.get(`/haccp/temperatura-camaras?${queryParams.toString()}`);
     return response.data;
   },
 
@@ -198,6 +318,12 @@ export const haccpService = {
   // Obtener frutas/verduras
   getFrutasVerduras: async () => {
     const response = await api.get('/haccp/frutas-verduras');
+    return response.data;
+  },
+
+  // Registrar lavado de manos
+  registrarLavadoManos: async (data) => {
+    const response = await api.post('/haccp/lavado-manos', data);
     return response.data;
   },
 };
@@ -250,6 +376,11 @@ export const auditoriaService = {
     const response = await api.get(url);
     return response.data;
   },
+  
+  getFiltros: async () => {
+    const response = await api.get('/auditoria/filtros');
+    return response.data;
+  },
 };
 
 // =====================================================
@@ -297,6 +428,25 @@ export const configuracionService = {
     const response = await api.get('/configuracion/roles');
     return response.data;
   },
+};
+
+// Función para obtener la configuración actual de la API
+export const getApiConfig = async () => {
+  await initializeApi();
+  const config = await getEnvironmentConfig();
+  return {
+    apiUrl: API_URL,
+    environment: config.environment,
+    backendInfo: config.backendInfo,
+    detectedAt: config.detectedAt
+  };
+};
+
+// Función para forzar reinicialización de la API
+export const reinitializeApi = async () => {
+  apiInitialized = false;
+  await initializeApi();
+  return await getApiConfig();
 };
 
 export default api;

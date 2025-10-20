@@ -199,39 +199,97 @@ const Auditoria = () => {
   };
 
   return (
-    <Box>
-      {/* Header con controles */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" gutterBottom fontWeight="bold">
-            Auditoría del Sistema
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Registro completo de todas las acciones realizadas en el sistema
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<FileDownloadIcon />}
-          onClick={exportarLogs}
-          disabled={loading || logs.length === 0}
+    <Box sx={{ 
+      p: 3,
+      backgroundColor: '#f8f9fa',
+      minHeight: '100vh'
+    }}>
+      {/* Encabezado de la página */}
+      <Box sx={{ 
+        mb: 4,
+        pb: 2,
+        borderBottom: '2px solid',
+        borderColor: 'primary.main'
+      }}>
+        <Typography 
+          variant="h4" 
+          component="h1" 
+          sx={{ 
+            fontWeight: 600,
+            color: 'primary.main',
+            mb: 1
+          }}
         >
-          Exportar Excel
-        </Button>
+          Auditoría del Sistema
+        </Typography>
+        <Typography 
+          variant="subtitle1" 
+          color="text.secondary"
+          sx={{ fontWeight: 400 }}
+        >
+          Registro completo de todas las acciones realizadas en el sistema
+        </Typography>
       </Box>
 
+      {/* Mensajes de estado */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+        <Alert 
+          severity="error" 
+          sx={{ 
+            mb: 3,
+            borderRadius: 1
+          }}
+          onClose={() => setError(null)}
+        >
           {error}
         </Alert>
       )}
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom startIcon={<FilterListIcon />}>
-          Filtros de Búsqueda
-        </Typography>
+      {/* Sección de filtros */}
+      <Paper sx={{ 
+        p: 3, 
+        mb: 3,
+        borderRadius: 2,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        border: '1px solid',
+        borderColor: 'divider'
+      }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          mb: 3 
+        }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 600,
+              color: 'text.primary',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}
+          >
+            <FilterListIcon />
+            Filtros de Búsqueda
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<FileDownloadIcon />}
+            onClick={exportarLogs}
+            disabled={loading || logs.length === 0}
+            sx={{
+              borderRadius: 1,
+              textTransform: 'none',
+              fontWeight: 500,
+              minHeight: 40
+            }}
+          >
+            Exportar Excel
+          </Button>
+        </Box>
         
-        <Grid container spacing={2} alignItems="center">
+        <Grid container spacing={3} alignItems="center">
           {/* Filtros de fecha */}
           <Grid item xs={12} sm={6} md={3}>
             <TextField
@@ -241,6 +299,12 @@ const Auditoria = () => {
               onChange={(e) => setFechaDesde(e.target.value)}
               fullWidth
               InputLabelProps={{ shrink: true }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  backgroundColor: '#fff'
+                }
+              }}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
@@ -251,12 +315,26 @@ const Auditoria = () => {
               onChange={(e) => setFechaHasta(e.target.value)}
               fullWidth
               InputLabelProps={{ shrink: true }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  backgroundColor: '#fff'
+                }
+              }}
             />
           </Grid>
           
           {/* Filtros avanzados */}
           <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth>
+            <FormControl 
+              fullWidth
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  backgroundColor: '#fff'
+                }
+              }}
+            >
               <InputLabel>Acción</InputLabel>
               <Select
                 value={filtroAccion}
@@ -274,7 +352,15 @@ const Auditoria = () => {
           </Grid>
           
           <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth>
+            <FormControl 
+              fullWidth
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  backgroundColor: '#fff'
+                }
+              }}
+            >
               <InputLabel>Tabla</InputLabel>
               <Select
                 value={filtroTabla}
@@ -298,207 +384,349 @@ const Auditoria = () => {
               value={usuarios.find(u => u.id === filtroUsuario) || null}
               onChange={(event, newValue) => setFiltroUsuario(newValue?.id || '')}
               renderInput={(params) => (
-                <TextField {...params} label="Usuario" fullWidth />
+                <TextField
+                  {...params}
+                  label="Usuario"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1,
+                      backgroundColor: '#fff'
+                    }
+                  }}
+                />
               )}
             />
           </Grid>
-          
-          {/* Botones de acción */}
-          <Grid item xs={12}>
-            <ButtonGroup variant="contained" sx={{ mt: 2 }}>
-              <Button
-                onClick={() => cargarLogs()}
-                disabled={loading}
-                startIcon={<FilterListIcon />}
-              >
-                Buscar
-              </Button>
-              <Button
-                onClick={limpiarFiltros}
-                disabled={loading}
-                startIcon={<ClearIcon />}
-                color="secondary"
-              >
-                Limpiar
-              </Button>
-            </ButtonGroup>
-          </Grid>
         </Grid>
+
+        {/* Botones de acción */}
+        <Box sx={{ 
+          display: 'flex', 
+          gap: 2, 
+          mt: 3,
+          justifyContent: 'flex-end'
+        }}>
+          <Button
+            variant="outlined"
+            startIcon={<ClearIcon />}
+            onClick={limpiarFiltros}
+            sx={{
+              borderRadius: 1,
+              textTransform: 'none',
+              fontWeight: 500,
+              minHeight: 40
+            }}
+          >
+            Limpiar Filtros
+          </Button>
+        </Box>
       </Paper>
 
-      <TableContainer component={Paper}>
-        <Table size="small">
-          <TableHead sx={{ bgcolor: '#f5f5f5' }}>
-            <TableRow>
-              <TableCell><strong>Fecha y Hora</strong></TableCell>
-              <TableCell><strong>Usuario</strong></TableCell>
-              <TableCell align="center"><strong>Acción</strong></TableCell>
-              <TableCell><strong>Tabla</strong></TableCell>
-              <TableCell align="center"><strong>ID Registro</strong></TableCell>
-              <TableCell><strong>IP</strong></TableCell>
-              <TableCell align="center"><strong>Detalles</strong></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 5 }}>
-                  <CircularProgress />
-                </TableCell>
+      {/* Tabla de logs */}
+      <Paper sx={{ 
+        borderRadius: 2,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        border: '1px solid',
+        borderColor: 'divider'
+      }}>
+        {/* Encabezado de la tabla */}
+        <Box sx={{ 
+          p: 3,
+          borderBottom: '1px solid',
+          borderColor: 'divider'
+        }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 600,
+              color: 'text.primary'
+            }}
+          >
+            Registros de Auditoría
+            {logs.length > 0 && (
+              <Typography 
+                component="span" 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ ml: 1 }}
+              >
+                ({logs.length} registros)
+              </Typography>
+            )}
+          </Typography>
+        </Box>
+
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
+                <TableCell sx={{ fontWeight: 600 }}>Fecha y Hora</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Usuario</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 600 }}>Acción</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Tabla</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 600 }}>ID Registro</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>IP</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 600 }}>Detalles</TableCell>
               </TableRow>
-            ) : logs.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 5 }}>
-                  <Typography color="text.secondary">
-                    No hay logs de auditoría para el período seleccionado
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              logs.map((log, index) => (
-                <TableRow key={index} hover>
-                  <TableCell>
-                    {format(new Date(log.fecha_hora), 'dd/MM/yyyy HH:mm:ss')}
-                  </TableCell>
-                  <TableCell>
-                    {log.usuario_nombre || log.usuario_email || 'Sistema'}
-                  </TableCell>
-                  <TableCell align="center">
-                    <Chip
-                      label={log.accion}
-                      color={getAccionColor(log.accion)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{log.tabla_afectada || '-'}</TableCell>
-                  <TableCell align="center">{log.registro_id || '-'}</TableCell>
-                  <TableCell>{log.ip_address || '-'}</TableCell>
-                  <TableCell align="center">
-                    {log.datos_json && (
-                      <Tooltip title="Ver detalles completos">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleVerDetalles(log)}
-                        >
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
+            </TableHead>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center',
+                      gap: 2
+                    }}>
+                      <CircularProgress />
+                      <Typography color="text.secondary">
+                        Cargando logs de auditoría...
+                      </Typography>
+                    </Box>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              ) : logs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center',
+                      gap: 1
+                    }}>
+                      <Typography color="text.secondary" variant="h6">
+                        No hay registros
+                      </Typography>
+                      <Typography color="text.secondary" variant="body2">
+                        No hay logs de auditoría para el período seleccionado
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                logs.map((log, index) => (
+                  <TableRow 
+                    key={index} 
+                    hover
+                    sx={{
+                      '&:hover': {
+                        backgroundColor: '#f8f9fa'
+                      }
+                    }}
+                  >
+                    <TableCell sx={{ fontWeight: 500 }}>
+                      {format(new Date(log.fecha_hora), 'dd/MM/yyyy HH:mm:ss')}
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 500 }}>
+                      {log.usuario_nombre || log.usuario_email || 'Sistema'}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Chip
+                        label={log.accion}
+                        color={getAccionColor(log.accion)}
+                        size="small"
+                        sx={{ 
+                          borderRadius: 1,
+                          fontWeight: 500
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>{log.tabla_afectada || '-'}</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 500 }}>
+                      {log.registro_id || '-'}
+                    </TableCell>
+                    <TableCell>{log.ip_address || '-'}</TableCell>
+                    <TableCell align="center">
+                      {log.datos_json && (
+                        <Tooltip title="Ver detalles completos">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => handleVerDetalles(log)}
+                            sx={{
+                              borderRadius: 1,
+                              '&:hover': {
+                                backgroundColor: 'primary.light',
+                                color: 'white'
+                              }
+                            }}
+                          >
+                            <VisibilityIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-      {/* Paginación */}
-      <TablePagination
-        component="div"
-        count={totalLogs}
-        page={page}
-        onPageChange={handleChangePage}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        rowsPerPageOptions={[10, 25, 50, 100]}
-        labelRowsPerPage="Filas por página:"
-        labelDisplayedRows={({ from, to, count }) => 
-          `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
-        }
-      />
+        {/* Paginación */}
+        <TablePagination
+          component="div"
+          count={totalLogs}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[10, 25, 50, 100]}
+          labelRowsPerPage="Filas por página:"
+          labelDisplayedRows={({ from, to, count }) => 
+            `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+          }
+          sx={{
+            borderTop: '1px solid',
+            borderColor: 'divider'
+          }}
+        />
+      </Paper>
 
-      {/* Dialog para ver detalles del log */}
+      {/* Diálogo para ver detalles del log */}
       <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
         maxWidth="md"
         fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            borderRadius: 2,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+          }
+        }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          pb: 2,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          fontWeight: 600
+        }}>
           Detalles del Log de Auditoría
+          <IconButton 
+            onClick={handleCloseDialog}
+            size="small"
+            sx={{
+              color: 'text.secondary',
+              '&:hover': {
+                backgroundColor: 'error.light',
+                color: 'white'
+              }
+            }}
+          >
+            <ClearIcon />
+          </IconButton>
         </DialogTitle>
-        <DialogContent dividers>
+        
+        <DialogContent dividers sx={{ pt: 3 }}>
           {selectedLog && (
             <Box>
-              <Grid container spacing={2}>
+              <Grid container spacing={3}>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Fecha y Hora:</strong>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Fecha y Hora:
                   </Typography>
-                  <Typography variant="body1" mb={2}>
+                  <Typography variant="body1" sx={{ mb: 2, fontWeight: 500 }}>
                     {format(new Date(selectedLog.fecha_hora), 'dd/MM/yyyy HH:mm:ss')}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Usuario:</strong>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Usuario:
                   </Typography>
-                  <Typography variant="body1" mb={2}>
+                  <Typography variant="body1" sx={{ mb: 2, fontWeight: 500 }}>
                     {selectedLog.usuario_nombre || selectedLog.usuario_email || 'Sistema'}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Acción:</strong>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Acción:
                   </Typography>
-                  <Typography variant="body1" mb={2}>
+                  <Box sx={{ mb: 2 }}>
                     <Chip
                       label={selectedLog.accion}
                       color={getAccionColor(selectedLog.accion)}
                       size="small"
+                      sx={{ 
+                        borderRadius: 1,
+                        fontWeight: 500
+                      }}
                     />
-                  </Typography>
+                  </Box>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Tabla Afectada:</strong>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Tabla Afectada:
                   </Typography>
-                  <Typography variant="body1" mb={2}>
+                  <Typography variant="body1" sx={{ mb: 2, fontWeight: 500 }}>
                     {selectedLog.tabla_afectada || '-'}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>ID Registro:</strong>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    ID del Registro:
                   </Typography>
-                  <Typography variant="body1" mb={2}>
+                  <Typography variant="body1" sx={{ mb: 2, fontWeight: 500 }}>
                     {selectedLog.registro_id || '-'}
                   </Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>IP:</strong>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Dirección IP:
                   </Typography>
-                  <Typography variant="body1" mb={2}>
+                  <Typography variant="body1" sx={{ mb: 2, fontWeight: 500 }}>
                     {selectedLog.ip_address || '-'}
                   </Typography>
                 </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary" mb={1}>
-                    <strong>Datos JSON:</strong>
-                  </Typography>
-                  <Paper 
-                    sx={{ 
+                {selectedLog.datos_json && (
+                  <Grid item xs={12}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mb: 1 }}>
+                      Datos JSON:
+                    </Typography>
+                    <Paper sx={{ 
                       p: 2, 
-                      bgcolor: '#f5f5f5', 
-                      maxHeight: 300, 
-                      overflow: 'auto' 
-                    }}
-                  >
-                    <pre style={{ margin: 0, fontSize: '0.875rem' }}>
-                      {selectedLog.datos_json 
-                        ? JSON.stringify(JSON.parse(selectedLog.datos_json), null, 2)
-                        : 'Sin datos adicionales'}
-                    </pre>
-                  </Paper>
-                </Grid>
+                      backgroundColor: '#f8f9fa',
+                      borderRadius: 1,
+                      border: '1px solid',
+                      borderColor: 'divider'
+                    }}>
+                      <pre style={{ 
+                        margin: 0, 
+                        fontSize: '0.875rem',
+                        fontFamily: 'monospace',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word'
+                      }}>
+                        {JSON.stringify(selectedLog.datos_json, null, 2)}
+                      </pre>
+                    </Paper>
+                  </Grid>
+                )}
               </Grid>
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} variant="contained">
+        
+        <DialogActions sx={{
+          p: 3,
+          borderTop: '1px solid',
+          borderColor: 'divider'
+        }}>
+          <Button 
+            onClick={handleCloseDialog}
+            variant="contained"
+            sx={{
+              borderRadius: 1,
+              textTransform: 'none',
+              fontWeight: 500,
+              minWidth: 100,
+              minHeight: 40
+            }}
+          >
             Cerrar
           </Button>
         </DialogActions>

@@ -357,9 +357,17 @@ class HaccpViewModel(
                     )
                     Log.d(TAG, "✅ Temperatura cámara registrada")
                 }.onFailure { error ->
+                    // Manejo específico para registro duplicado
+                    val errorMessage = when (error) {
+                        is com.example.sistemadecalidad.data.exceptions.RegistroDuplicadoException -> {
+                            "⚠️ ${error.message}"
+                        }
+                        else -> error.message ?: "Error guardando registro"
+                    }
+                    
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = error.message ?: "Error guardando registro"
+                        error = errorMessage
                     )
                     Log.e(TAG, "❌ Error en temperatura cámara", error)
                 }
@@ -369,6 +377,50 @@ class HaccpViewModel(
                     error = e.message ?: "Error inesperado"
                 )
                 Log.e(TAG, "❌ Excepción en temperatura cámara", e)
+            }
+        }
+    }
+
+    /**
+     * Verificar si ya existe un registro de temperatura para una cámara en el día actual
+     */
+    fun verificarRegistroTemperaturaCamara(
+        camaraId: Int,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val token = preferencesManager.getToken().first() ?: run {
+                    onResult(false, "No hay sesión activa")
+                    return@launch
+                }
+
+                val result = haccpRepository.verificarRegistroTemperaturaCamara(
+                    token = token,
+                    camaraId = camaraId
+                )
+                
+                result.onSuccess { response ->
+                    if (response.existeRegistro) {
+                        val mensaje = response.data?.let { registro ->
+                            "Ya existe un registro para esta cámara el día de hoy.\n" +
+                            "Registrado por: ${registro.responsable ?: "Usuario desconocido"}\n" +
+                            "Fecha: ${registro.fecha}\n" +
+                            "Temperatura mañana: ${registro.temperaturaManana ?: "No registrada"}°C\n" +
+                            "Temperatura tarde: ${registro.temperaturaTarde ?: "No registrada"}°C"
+                        } ?: "Ya existe un registro para esta cámara el día de hoy"
+                        onResult(true, mensaje)
+                    } else {
+                        onResult(false, null)
+                    }
+                    Log.d(TAG, "✅ Verificación completada: existe=${response.existeRegistro}")
+                }.onFailure { error ->
+                    onResult(false, "Error verificando registro: ${error.message}")
+                    Log.e(TAG, "❌ Error en verificación", error)
+                }
+            } catch (e: Exception) {
+                onResult(false, "Error inesperado: ${e.message}")
+                Log.e(TAG, "❌ Excepción en verificación", e)
             }
         }
     }
@@ -434,89 +486,6 @@ class HaccpViewModel(
                     )
                     Log.d(TAG, "✅ Recepción de abarrotes registrada")
                 }.onFailure { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = error.message ?: "Error guardando registro"
-                    )
-                    Log.e(TAG, "❌ Error en recepción de abarrotes", error)
-                }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Error inesperado"
-                )
-                Log.e(TAG, "❌ Excepción en recepción de abarrotes", e)
-            }
-        }
-    }
-    
-    /**
-     * Registrar recepción de frutas y verduras
-     */
-    fun registrarRecepcionFrutasVerduras(
-        mes: Int,
-        anio: Int,
-        fecha: String,
-        hora: String,
-        tipoControl: String,
-        nombreProveedor: String,
-        nombreProducto: String,
-        cantidadSolicitada: String,
-        pesoUnidadRecibido: Double,
-        unidadMedida: String,
-        estadoProducto: String,
-        conformidadIntegridad: String,
-        uniformeCompleto: String,
-        transporteAdecuado: String,
-        puntualidad: String,
-        observaciones: String?,
-        accionCorrectiva: String?,
-        productoRechazado: Boolean,
-        supervisorId: Int?
-    ) {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isLoading = true, error = null, successMessage = null)
-                
-                val token = preferencesManager.getToken().first() ?: run {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = "No hay sesión activa"
-                    )
-                    return@launch
-                }
-
-                val result = haccpRepository.registrarRecepcionMercaderia(
-                    token = token,
-                    mes = mes,
-                    anio = anio,
-                    fecha = fecha,
-                    hora = hora,
-                    tipoControl = tipoControl,
-                    nombreProveedor = nombreProveedor,
-                    nombreProducto = nombreProducto,
-                    cantidadSolicitada = cantidadSolicitada,
-                    pesoUnidadRecibido = pesoUnidadRecibido,
-                    unidadMedida = unidadMedida,
-                    estadoProducto = estadoProducto,
-                    conformidadIntegridad = conformidadIntegridad,
-                    uniformeCompleto = uniformeCompleto,
-                    transporteAdecuado = transporteAdecuado,
-                    puntualidad = puntualidad,
-                    observaciones = observaciones,
-                    accionCorrectiva = accionCorrectiva,
-                    productoRechazado = productoRechazado,
-                    supervisorId = supervisorId
-                )
-                
-                result.onSuccess { response ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        successMessage = response.message ?: "Recepción de frutas/verduras registrada correctamente",
-                        isFormSuccess = true
-                    )
-                    Log.d(TAG, "✅ Recepción de frutas/verduras registrada")
-                }.onFailure { error ->
                     val errorMessage = when {
                         error.message?.contains("network", ignoreCase = true) == true -> 
                             "Error de conexión. Verifique su conexión a internet."
@@ -542,6 +511,117 @@ class HaccpViewModel(
                 val exceptionMessage = when (e) {
                     is java.net.UnknownHostException -> 
                         "Sin conexión a internet. Verifique su conexión."
+                    is java.net.SocketTimeoutException -> 
+                        "Tiempo de espera agotado. Intente nuevamente."
+                    is java.net.ConnectException -> 
+                        "No se puede conectar al servidor. Verifique su conexión."
+                    is IllegalArgumentException -> 
+                        "Error en el formato de datos. Contacte al administrador."
+                    else -> e.message ?: "Error inesperado. Intente nuevamente."
+                }
+                
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = exceptionMessage
+                )
+                Log.e(TAG, "❌ Excepción en recepción de frutas/verduras: $exceptionMessage", e)
+            }
+        }
+    }
+    
+    /**
+     * Registrar recepción de frutas y verduras
+     */
+    fun registrarRecepcionFrutasVerduras(
+        mes: Int,
+        anio: Int,
+        fecha: String,
+        hora: String,
+        tipoControl: String,
+        nombreProveedor: String,
+        nombreProducto: String,
+        cantidadSolicitada: String,
+        pesoUnidadRecibido: String,
+        unidadMedida: String,
+        cNc: String, // Campo de conformidad general
+        estadoProducto: String,
+        conformidadIntegridad: String,
+        uniformeCompleto: String,
+        transporteAdecuado: String,
+        puntualidad: String,
+        observaciones: String?,
+        accionCorrectiva: String?,
+        productoRechazado: Boolean,
+        supervisorId: Int?
+    ) {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(isLoading = true, error = null, successMessage = null)
+                
+                val token = preferencesManager.getToken().first() ?: run {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "No hay sesión activa"
+                    )
+                    return@launch
+                }
+
+                val result = haccpRepository.registrarRecepcionFrutasVerduras(
+                    token = token,
+                    mes = mes,
+                    anio = anio,
+                    fecha = fecha,
+                    hora = hora,
+                    tipoControl = tipoControl,
+                    nombreProveedor = nombreProveedor,
+                    nombreProducto = nombreProducto,
+                    cantidadSolicitada = cantidadSolicitada,
+                    pesoUnidadRecibido = pesoUnidadRecibido,
+                    unidadMedida = unidadMedida,
+                    cNc = cNc,
+                    estadoProducto = estadoProducto,
+                    conformidadIntegridad = conformidadIntegridad,
+                    uniformeCompleto = uniformeCompleto,
+                    transporteAdecuado = transporteAdecuado,
+                    puntualidad = puntualidad,
+                    observaciones = observaciones,
+                    accionCorrectiva = accionCorrectiva,
+                    productoRechazado = productoRechazado,
+                    supervisorId = supervisorId
+                )
+                
+                result.onSuccess { response ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        successMessage = response.message ?: "Recepción de frutas/verduras registrada correctamente",
+                        isFormSuccess = true
+                    )
+                    Log.d(TAG, "✅ Recepción de frutas/verduras registrada")
+                }.onFailure { error ->
+                    val errorMessage = when {
+                        error.message?.contains("network", ignoreCase = true) == true -> 
+                            "Error de conexión. Verifique su conexión a internet."
+                        error.message?.contains("timeout", ignoreCase = true) == true -> 
+                            "Tiempo de espera agotado. Intente nuevamente."
+                        error.message?.contains("401", ignoreCase = true) == true -> 
+                            "Sesión expirada. Inicie sesión nuevamente."
+                        error.message?.contains("403", ignoreCase = true) == true -> 
+                            "No tiene permisos para realizar esta acción."
+                        error.message?.contains("500", ignoreCase = true) == true -> 
+                            "Error interno del servidor. Contacte al administrador."
+                        else -> error.message ?: "Error desconocido. Intente nuevamente."
+                    }
+                    
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = errorMessage
+                    )
+                    Log.e(TAG, "❌ Error en recepción de frutas/verduras: $errorMessage")
+                }
+            } catch (e: Exception) {
+                val exceptionMessage = when (e) {
+                    is java.net.UnknownHostException -> 
+                        "No se puede conectar al servidor. Verifique su conexión."
                     is java.net.SocketTimeoutException -> 
                         "Tiempo de espera agotado. Intente nuevamente."
                     is java.net.ConnectException -> 

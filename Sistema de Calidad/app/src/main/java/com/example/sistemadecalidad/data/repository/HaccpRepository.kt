@@ -2,6 +2,7 @@ package com.example.sistemadecalidad.data.repository
 
 import com.example.sistemadecalidad.data.api.*
 import com.example.sistemadecalidad.data.model.ControlCoccionRequest
+import com.example.sistemadecalidad.data.exceptions.RegistroDuplicadoException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import android.util.Log
@@ -61,9 +62,33 @@ class HaccpRepository(
                     Result.failure(Exception(body.error ?: "Error desconocido"))
                 }
             } else {
-                val errorMsg = "Error HTTP ${response.code()}: ${response.message()}"
-                Log.e(TAG, errorMsg)
-                Result.failure(Exception(errorMsg))
+                // Manejo específico para diferentes códigos de error HTTP
+                when (response.code()) {
+                    409 -> {
+                        // Registro duplicado - parsear el mensaje específico del backend
+                        try {
+                            val errorBody = response.errorBody()?.string()
+                            if (errorBody != null) {
+                                val gson = com.google.gson.Gson()
+                                val errorResponse = gson.fromJson(errorBody, HaccpResponse::class.java)
+                                val mensaje = errorResponse.message ?: errorResponse.error ?: "Ya existe un registro para esta cámara hoy"
+                                Log.w(TAG, "⚠️ Registro duplicado: $mensaje")
+                                Result.failure(RegistroDuplicadoException(mensaje))
+                            } else {
+                                Log.w(TAG, "⚠️ Registro duplicado sin detalles")
+                                Result.failure(RegistroDuplicadoException("Ya existe un registro de temperatura para esta cámara en el día de hoy"))
+                            }
+                        } catch (e: Exception) {
+                            Log.w(TAG, "⚠️ Error parseando respuesta de registro duplicado")
+                            Result.failure(RegistroDuplicadoException("Ya existe un registro de temperatura para esta cámara en el día de hoy"))
+                        }
+                    }
+                    else -> {
+                        val errorMsg = "Error HTTP ${response.code()}: ${response.message()}"
+                        Log.e(TAG, errorMsg)
+                        Result.failure(Exception(errorMsg))
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "❌ Excepción en lavado de frutas", e)
@@ -109,9 +134,33 @@ class HaccpRepository(
                     Result.failure(Exception(body.error ?: "Error desconocido"))
                 }
             } else {
-                val errorMsg = "Error HTTP ${response.code()}: ${response.message()}"
-                Log.e(TAG, errorMsg)
-                Result.failure(Exception(errorMsg))
+                // Manejo específico para diferentes códigos de error HTTP
+                when (response.code()) {
+                    409 -> {
+                        // Registro duplicado - parsear el mensaje específico del backend
+                        try {
+                            val errorBody = response.errorBody()?.string()
+                            if (errorBody != null) {
+                                val gson = com.google.gson.Gson()
+                                val errorResponse = gson.fromJson(errorBody, HaccpResponse::class.java)
+                                val mensaje = errorResponse.message ?: errorResponse.error ?: "Ya existe un registro para esta cámara hoy"
+                                Log.w(TAG, "⚠️ Registro duplicado temperatura cámara: $mensaje")
+                                Result.failure(RegistroDuplicadoException(mensaje))
+                            } else {
+                                Log.w(TAG, "⚠️ Registro duplicado temperatura cámara sin detalles")
+                                Result.failure(RegistroDuplicadoException("Ya existe un registro de temperatura para esta cámara en el día de hoy"))
+                            }
+                        } catch (e: Exception) {
+                            Log.w(TAG, "⚠️ Error parseando respuesta de registro duplicado temperatura cámara")
+                            Result.failure(RegistroDuplicadoException("Ya existe un registro de temperatura para esta cámara en el día de hoy"))
+                        }
+                    }
+                    else -> {
+                        val errorMsg = "Error HTTP ${response.code()}: ${response.message()}"
+                        Log.e(TAG, errorMsg)
+                        Result.failure(Exception(errorMsg))
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "❌ Excepción en lavado de manos", e)
@@ -242,6 +291,39 @@ class HaccpRepository(
     }
 
     /**
+     * Verificar si ya existe un registro de temperatura para una cámara en el día actual
+     */
+    suspend fun verificarRegistroTemperaturaCamara(
+        token: String,
+        camaraId: Int
+    ): Result<VerificacionTemperaturaResponse> = withContext(Dispatchers.IO) {
+        try {
+            val bearerToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
+            
+            Log.d(TAG, "Verificando registro de temperatura para cámara: $camaraId")
+            val response = apiService.verificarRegistroTemperaturaCamara(bearerToken, camaraId)
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.success) {
+                    Log.d(TAG, "✅ Verificación completada: existe_registro=${body.existeRegistro}")
+                    Result.success(body)
+                } else {
+                    Log.e(TAG, "❌ Error en verificación: ${body.error}")
+                    Result.failure(Exception(body.error ?: "Error desconocido"))
+                }
+            } else {
+                val errorMsg = "Error HTTP ${response.code()}: ${response.message()}"
+                Log.e(TAG, errorMsg)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Excepción en verificación de temperatura", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
      * Obtener lista de cámaras frigoríficas
      */
     suspend fun obtenerCamaras(token: String): Result<List<Camara>> = withContext(Dispatchers.IO) {
@@ -340,7 +422,7 @@ class HaccpRepository(
     /**
      * Registrar recepción de frutas y verduras
      */
-    suspend fun registrarRecepcionMercaderia(
+    suspend fun registrarRecepcionFrutasVerduras(
         token: String,
         mes: Int,
         anio: Int,
@@ -350,8 +432,9 @@ class HaccpRepository(
         nombreProveedor: String,
         nombreProducto: String,
         cantidadSolicitada: String,
-        pesoUnidadRecibido: Double,
+        pesoUnidadRecibido: String,
         unidadMedida: String,
+        cNc: String, // Campo de conformidad general
         estadoProducto: String,
         conformidadIntegridad: String,
         uniformeCompleto: String,
@@ -388,6 +471,7 @@ class HaccpRepository(
                 cantidadSolicitada = cantidadSolicitada,
                 pesoUnidadRecibido = pesoUnidadRecibido,
                 unidadMedida = unidadMedida,
+                cNc = cNc,
                 estadoProducto = estadoProducto,
                 conformidadIntegridad = conformidadIntegridad,
                 uniformeCompleto = uniformeCompleto,
@@ -399,16 +483,16 @@ class HaccpRepository(
                 supervisorId = supervisorId
             )
             
-            Log.d(TAG, "Registrando recepción de mercadería: tipo=$tipoControl, proveedor=$nombreProveedor, producto=$nombreProducto")
+            Log.d(TAG, "Registrando recepción de frutas y verduras: tipo=$tipoControl, proveedor=$nombreProveedor, producto=$nombreProducto")
             val response = apiService.registrarRecepcionMercaderia(bearerToken, request)
             
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!
                 if (body.success) {
-                    Log.d(TAG, "✅ Recepción de mercadería registrada exitosamente")
+                    Log.d(TAG, "✅ Recepción de frutas y verduras registrada exitosamente")
                     Result.success(body)
                 } else {
-                    Log.e(TAG, "❌ Error en recepción de mercadería: ${body.error}")
+                    Log.e(TAG, "❌ Error en recepción de frutas y verduras: ${body.error}")
                     Result.failure(Exception(body.error ?: "Error desconocido"))
                 }
             } else {
@@ -417,7 +501,7 @@ class HaccpRepository(
                 Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Excepción en recepción de mercadería", e)
+            Log.e(TAG, "❌ Excepción en recepción de frutas y verduras", e)
             Result.failure(e)
         }
     }

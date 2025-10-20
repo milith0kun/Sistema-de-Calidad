@@ -28,7 +28,7 @@ router.get('/supervisores/lista', authenticateToken, async (req, res) => {
                 area,
                 rol
             FROM usuarios
-            WHERE rol = 'supervisor' AND activo = 1
+            WHERE rol = 'Supervisor' AND activo = 1
             ORDER BY nombre ASC
         `);
 
@@ -55,11 +55,11 @@ router.get('/', authenticateToken, async (req, res) => {
         console.log('=== GET /api/usuarios ===');
         console.log('Usuario solicitante:', req.user);
 
-        // Verificar que sea supervisor
-        if (req.user.rol !== 'supervisor') {
+        // Verificar que sea supervisor o empleador
+        if (req.user.rol !== 'Supervisor' && req.user.rol !== 'Empleador') {
             return res.status(403).json({
                 success: false,
-                error: 'Acceso denegado. Se requieren permisos de supervisor.'
+                error: 'Acceso denegado. Se requieren permisos de Supervisor o Empleador.'
             });
         }
 
@@ -142,11 +142,11 @@ router.post('/', authenticateToken, async (req, res) => {
     try {
         console.log('=== POST /api/usuarios ===');
         
-        // Verificar que sea supervisor
-        if (req.user.rol !== 'supervisor') {
+        // Verificar que sea supervisor o empleador
+        if (req.user.rol !== 'Supervisor' && req.user.rol !== 'Empleador') {
             return res.status(403).json({
                 success: false,
-                error: 'Acceso denegado. Se requieren permisos de supervisor.'
+                error: 'Acceso denegado. Se requieren permisos de Supervisor o Empleador.'
             });
         }
 
@@ -221,11 +221,11 @@ router.put('/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         
-        // Verificar que sea supervisor
-        if (req.user.rol !== 'supervisor') {
+        // Verificar que sea supervisor o empleador
+        if (req.user.rol !== 'Supervisor' && req.user.rol !== 'Empleador') {
             return res.status(403).json({
                 success: false,
-                error: 'Acceso denegado. Se requieren permisos de supervisor.'
+                error: 'Acceso denegado. Se requieren permisos de Supervisor o Empleador.'
             });
         }
 
@@ -298,8 +298,8 @@ router.put('/:id/password', authenticateToken, async (req, res) => {
         const { id } = req.params;
         const { password } = req.body;
 
-        // Solo admin o el mismo usuario puede cambiar su contraseña
-        if (req.user.rol !== 'ADMIN' && req.user.id !== parseInt(id)) {
+        // Solo empleador o el mismo usuario puede cambiar su contraseña
+        if (req.user.rol !== 'Empleador' && req.user.id !== parseInt(id)) {
             return res.status(403).json({
                 success: false,
                 error: 'No tiene permisos para cambiar esta contraseña'
@@ -341,11 +341,11 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Verificar que sea supervisor
-        if (req.user.rol !== 'supervisor') {
+        // Verificar que sea supervisor o empleador
+        if (req.user.rol !== 'Supervisor' && req.user.rol !== 'Empleador') {
             return res.status(403).json({
                 success: false,
-                error: 'Acceso denegado. Se requieren permisos de supervisor.'
+                error: 'Acceso denegado. Se requieren permisos de Supervisor o Empleador.'
             });
         }
 

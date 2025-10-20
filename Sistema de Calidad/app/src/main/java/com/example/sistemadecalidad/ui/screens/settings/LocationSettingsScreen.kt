@@ -426,21 +426,19 @@ fun LocationSettingsScreen(
                 }
             }
             
-            // Botón guardar
+            // Botón para guardar configuración
             Button(
                 onClick = {
-                    Log.d(TAG, "Botón 'Guardar Configuración' presionado")
-                    errorMessage = null
-                    
                     scope.launch {
+                        errorMessage = null
+                        
                         try {
-                            // Validar inputs
                             val lat = targetLatitude.toDoubleOrNull()
                             val lon = targetLongitude.toDoubleOrNull()
                             val radius = allowedRadius.toIntOrNull()
                             
                             if (lat == null || lon == null || radius == null) {
-                                errorMessage = "Por favor ingresa valores numéricos válidos"
+                                errorMessage = "Por favor, ingresa valores numéricos válidos"
                                 Log.w(TAG, "Valores inválidos: lat=$targetLatitude, lon=$targetLongitude, radius=$allowedRadius")
                                 return@launch
                             }
@@ -468,24 +466,26 @@ fun LocationSettingsScreen(
                             // Guardar en PreferencesManager
                             preferencesManager.saveLocationConfig(lat, lon, radius, gpsValidationEnabled)
                             
+                            // Recargar configuración en LocationManager
+                            locationManager.reloadLocationConfig()
+                            
                             showSuccessMessage = true
-                            Log.i(TAG, "✅ Configuración guardada exitosamente en PreferencesManager")
+                            Log.i(TAG, "Configuración guardada exitosamente")
                             
                             delay(2000)
                             showSuccessMessage = false
                             
                         } catch (e: Exception) {
-                            errorMessage = "Error guardando: ${e.message}"
-                            Log.e(TAG, "Error guardando configuración: ${e.message}", e)
+                            errorMessage = "Error al guardar: ${e.message}"
+                            Log.e(TAG, "Error guardando configuración", e)
                         }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(Icons.Default.Save, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
                 Text("Guardar Configuración")
             }
+
         }
     }
 }

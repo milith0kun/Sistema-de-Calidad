@@ -349,13 +349,12 @@ router.get('/reporte/abarrotes/:mes/:anio', async (req, res) => {
         prod.nombre as nombre_producto,
         u1.nombre as responsable_registro_nombre,
         u2.nombre as responsable_supervision_nombre
-      FROM control_recepcion_mercaderia_temp crm
+      FROM control_recepcion_abarrotes crm
       LEFT JOIN proveedores p ON crm.proveedor_id = p.id
       LEFT JOIN productos prod ON crm.producto_id = prod.id
       LEFT JOIN usuarios u1 ON crm.responsable_registro_id = u1.id
       LEFT JOIN usuarios u2 ON crm.responsable_supervision_id = u2.id
-      WHERE crm.tipo_control = 'ABARROTES'
-        AND crm.mes = ?
+      WHERE crm.mes = ?
         AND crm.anio = ?
       ORDER BY crm.fecha, crm.hora
     `;
@@ -396,13 +395,12 @@ router.get('/reporte/frutas-verduras/:mes/:anio', async (req, res) => {
         prod.nombre as nombre_producto,
         u1.nombre as responsable_registro_nombre,
         u2.nombre as responsable_supervision_nombre
-      FROM control_recepcion_mercaderia_temp crm
+      FROM control_recepcion_frutas_verduras crm
       LEFT JOIN proveedores p ON crm.proveedor_id = p.id
       LEFT JOIN productos prod ON crm.producto_id = prod.id
       LEFT JOIN usuarios u1 ON crm.responsable_registro_id = u1.id
       LEFT JOIN usuarios u2 ON crm.responsable_supervision_id = u2.id
-      WHERE crm.tipo_control = 'FRUTAS_VERDURAS'
-        AND crm.mes = ?
+      WHERE crm.mes = ?
         AND crm.anio = ?
       ORDER BY crm.fecha, crm.hora
     `;
@@ -448,7 +446,7 @@ router.get('/test-db', async (req, res) => {
     const allTables = await db.all("SELECT name FROM sqlite_master WHERE type='table'");
     
     // Verificar tablas específicas requeridas
-    const requiredTables = ['control_recepcion_mercaderia_temp', 'proveedores', 'productos', 'usuarios'];
+    const requiredTables = ['control_recepcion_abarrotes', 'control_recepcion_frutas_verduras', 'proveedores', 'productos', 'usuarios'];
     const tableInfo = {};
     
     for (const tableName of requiredTables) {

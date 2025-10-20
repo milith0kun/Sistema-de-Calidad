@@ -91,15 +91,34 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Control Abarrotes');
   
+  // ============= CONFIGURACIÓN DE PÁGINA =============
+  worksheet.pageSetup = {
+    paperSize: 9, // A4
+    orientation: 'landscape', // Horizontal para 16 columnas
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0, // Permitir múltiples páginas verticalmente
+    margins: {
+      left: 0.5,
+      right: 0.5,
+      top: 0.75,
+      bottom: 0.75,
+      header: 0.3,
+      footer: 0.3
+    },
+    printArea: 'A1:P21',
+    showGridLines: false
+  };
+  
   // ============= CONFIGURACIÓN DE COLUMNAS =============
-  // Anchos optimizados para el formulario de frutas y verduras (16 columnas)
-  const anchos = [8, 8, 12, 12, 10, 8, 10, 12, 12, 12, 12, 15, 15, 18, 18, 18];
+  // Anchos optimizados para A4 horizontal (16 columnas) - Mejorados para mejor visualización
+  const anchos = [10, 8, 15, 15, 12, 8, 12, 12, 15, 10, 10, 10, 16, 18, 18, 18];
   anchos.forEach((ancho, i) => {
-    worksheet.getColumn(i + 1).width = ancho; // Usar directamente las unidades Excel
+    worksheet.getColumn(i + 1).width = ancho;
   });
 
   // ============= TÍTULO PRINCIPAL =============
-  worksheet.mergeCells('A1:O1');
+  worksheet.mergeCells('A1:P1');
   const tituloCell = worksheet.getCell('A1');
   tituloCell.value = 'REGISTRO HACCP';
   tituloCell.font = { name: 'Arial', size: 14, bold: true };
@@ -113,9 +132,9 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
   };
 
   // ============= SUBTÍTULO =============
-  worksheet.mergeCells('A2:O2');
+  worksheet.mergeCells('A2:P2');
   const subtituloCell = worksheet.getCell('A2');
-  subtituloCell.value = 'CONTROL DE CALIDAD DE RECEPCIÓN DE MERCADERÍA DE ABARROTES EN GENERAL';
+  subtituloCell.value = 'CONTROL DE CALIDAD DE RECEPCION DE MERCADERIA DE ABARROTES EN GENERAL';
   subtituloCell.font = { name: 'Arial', size: 14, bold: true };
   subtituloCell.alignment = { horizontal: 'center', vertical: 'middle' };
   subtituloCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
@@ -144,7 +163,7 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
   worksheet.mergeCells('C3:F3');
   const mesValueCell = worksheet.getCell('C3');
   mesValueCell.value = mes || '';
-  mesValueCell.font = { name: 'Arial', size: 9 };
+  mesValueCell.font = { name: 'Arial', size: 10 };
   mesValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
   mesValueCell.border = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
@@ -167,10 +186,10 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
     right: { style: 'thin', color: { argb: 'FF000000' } }
   };
 
-  worksheet.mergeCells('I3:L3');
+  worksheet.mergeCells('I3:P3');
   const anioValueCell = worksheet.getCell('I3');
   anioValueCell.value = anio || '';
-  anioValueCell.font = { name: 'Arial', size: 9 };
+  anioValueCell.font = { name: 'Arial', size: 10 };
   anioValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
   anioValueCell.border = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
@@ -182,22 +201,25 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
   // ============= ENCABEZADOS DE COLUMNAS =============
   const headers = [
     'FECHA', 'HORA', 'NOMBRE DEL\nPROVEEDOR', 'NOMBRE DEL\nPRODUCTO',
-    'CANTIDAD\nSOLICITADA\nPESO O UNIDAD', 'C/NC',
-    'VIGENCIA\nREGISTRO\nSANITARIO', 
-    'FECHA\nVENCIMIENTO\nVIGENTE',
-    'EMPAQUE\nÍNTEGRO',
-    'CONFORMIDAD\nINTEGRIDAD', 
-    'ESTADO\nPRODUCTO', 
-    'RESPONSABLE\nREGISTRO',
-    'RESPONSABLE\nSUPERVISIÓN',
+    'CANTIDAD\nSOLICITADA\nPESO O UNIDAD', 'C-NC',
+    'VIGENCIA DE\nREGISTRO\nSANITARIO', 
+    'FECHA DE\nVENCIMIENTO\nDEL PRODUCTO',
+    'CONFORMIDAD E\nINTEGRIDAD DEL\nEMPAQUE PRIMARIO',
+    'UNIFORME\nCOMPLETO', 
+    'TRANSPORTE\nADECUADO', 
+    'PUNTUALIDAD',
+    'NOMBRE DEL\nRESPONSABLE\nDE REGISTRO',
     'OBSERVACIONES', 
-    'ACCIÓN\nCORRECTIVA'
+    'ACCION\nCORRECTIVA',
+    'NOMBRE DEL\nRESPONSABLE DE LA\nSUPERVISION'
   ];
 
   headers.forEach((header, index) => {
     const cell = worksheet.getCell(4, index + 1);
     cell.value = header;
-    cell.font = { name: 'Arial', size: 10, bold: true };
+    // Tamaño de fuente mejorado para mejor legibilidad
+    const fontSize = index < 6 || index === 11 ? 9 : 10;
+    cell.font = { name: 'Arial', size: fontSize, bold: true };
     cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
     cell.border = {
@@ -208,20 +230,44 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
     };
   });
 
-  // Altura especial para la fila de encabezados
-  worksheet.getRow(4).height = 55;
+  // Altura mejorada para la fila de encabezados
+  worksheet.getRow(4).height = 70;
 
   // ============= FILAS DE DATOS =============
   // 15 filas de datos (filas 5-19)
   for (let row = 5; row <= 19; row++) {
-    for (let col = 1; col <= 14; col++) {
+    // Altura mejorada para filas de datos
+    worksheet.getRow(row).height = 30;
+    
+    for (let col = 1; col <= 16; col++) {
       const cell = worksheet.getCell(row, col);
       
       // Si hay datos, llenar la celda
       if (datos && datos[row - 5]) {
         const fila = datos[row - 5];
         switch (col) {
-          case 1: cell.value = fila.fecha || ''; break;
+          case 1: 
+            // Formatear fecha si existe
+            if (fila.fecha) {
+              try {
+                // Si la fecha viene en formato dd/MM/yyyy, convertirla
+                if (fila.fecha.includes('/')) {
+                  const [day, month, year] = fila.fecha.split('/');
+                  const fecha = new Date(year, month - 1, day);
+                  cell.value = format(fecha, 'dd/MM/yyyy');
+                } else {
+                  // Si viene en formato ISO o similar
+                  const fecha = new Date(fila.fecha);
+                  cell.value = format(fecha, 'dd/MM/yyyy');
+                }
+              } catch (error) {
+                // Si hay error, usar la fecha original
+                cell.value = fila.fecha;
+              }
+            } else {
+              cell.value = '';
+            }
+            break;
           case 2: cell.value = fila.hora || ''; break;
           case 3: cell.value = fila.nombre_proveedor || ''; break;
           case 4: cell.value = fila.nombre_producto || ''; break;
@@ -230,28 +276,33 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
             const cantidad = fila.cantidad_solicitada || '';
             const peso = fila.peso_unidad_recibido || '';
             const unidad = fila.unidad_medida || '';
-            cell.value = cantidad ? `${cantidad}` : peso && unidad ? `${peso} ${unidad}` : peso || unidad || '';
+            if (cantidad) {
+              cell.value = `${cantidad}`;
+            } else if (peso && unidad) {
+              cell.value = `${peso} ${unidad}`;
+            } else {
+              cell.value = peso || unidad || '';
+            }
             break;
           case 6: 
-            // Mapear conformidad_general a C/NC
-            cell.value = fila.conformidad_general === 'CONFORME' ? 'C' : 
-                        fila.conformidad_general === 'NO_CONFORME' ? 'NC' : 
-                        fila.conformidad_general || '';
+            // Columna C-NC - campo no disponible en formulario web actual
+            cell.value = '';
             break;
           case 7: cell.value = fila.registro_sanitario_vigente || ''; break;
-          case 8: cell.value = fila.fecha_vencimiento_vigente || ''; break;
+          case 8: cell.value = fila.fecha_vencimiento_producto || ''; break;
           case 9: cell.value = fila.empaque_integro || ''; break;
-          case 10: cell.value = fila.conformidad_integridad_producto || ''; break;
-          case 11: cell.value = fila.estado_producto || ''; break;
-          case 12: cell.value = fila.responsable_registro_nombre || ''; break;
-          case 13: cell.value = fila.responsable_supervision_nombre || ''; break;
+          case 10: cell.value = fila.uniforme_completo || ''; break;
+          case 11: cell.value = fila.transporte_adecuado || ''; break;
+          case 12: cell.value = fila.puntualidad || ''; break;
+          case 13: cell.value = fila.nombre_responsable_registro || ''; break;
           case 14: cell.value = fila.observaciones || ''; break;
           case 15: cell.value = fila.accion_correctiva || ''; break;
+          case 16: cell.value = fila.nombre_responsable_supervision || ''; break;
         }
       }
 
-      // Aplicar estilos
-      cell.font = { name: 'Arial', size: 9 };
+      // Aplicar estilos mejorados
+      cell.font = { name: 'Arial', size: 10 };
       // Centrar columnas específicas según el script
       const columnasCentradas = [1, 2, 6, 10, 11, 12];
       cell.alignment = { 
@@ -268,12 +319,30 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
     }
   }
 
+  // ============= FILA VACÍA PARA SEPARACIÓN =============
+  worksheet.getRow(20).height = 15;
+  for (let col = 1; col <= 16; col++) {
+    const cell = worksheet.getCell(20, col);
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FF000000' } },
+      left: { style: 'thin', color: { argb: 'FF000000' } },
+      bottom: { style: 'thin', color: { argb: 'FF000000' } },
+      right: { style: 'thin', color: { argb: 'FF000000' } }
+    };
+  }
+
   // ============= NOTAS AL PIE =============
-  worksheet.mergeCells('A21:O21');
+  worksheet.mergeCells('A21:P21');
   const notaCell = worksheet.getCell('A21');
   notaCell.value = 'C = CONFORME: Todo está bien | NC = NO CONFORME: Hay un problema que necesita corrección';
-  notaCell.font = { name: 'Arial', size: 8, bold: true };
+  notaCell.font = { name: 'Arial', size: 9, bold: true };
   notaCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  notaCell.border = {
+    top: { style: 'thin', color: { argb: 'FF000000' } },
+    left: { style: 'thin', color: { argb: 'FF000000' } },
+    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+    right: { style: 'thin', color: { argb: 'FF000000' } }
+  };
 
   return workbook;
 };
@@ -286,15 +355,33 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Control Frutas Verduras');
   
+  // ============= CONFIGURACIÓN DE PÁGINA A4 HORIZONTAL =============
+  worksheet.pageSetup = {
+    paperSize: 9, // A4
+    orientation: 'landscape',
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0,
+    margins: {
+      left: 0.5,
+      right: 0.5,
+      top: 0.75,
+      bottom: 0.75,
+      header: 0.3,
+      footer: 0.3
+    },
+    printArea: 'A1:O21'
+  };
+
   // ============= CONFIGURACIÓN DE COLUMNAS =============
-  // Anchos exactos según el script para A4 horizontal (14 columnas)
-  const anchos = [70, 60, 100, 100, 85, 45, 100, 75, 75, 70, 70, 70, 110, 120];
+  // Anchos optimizados para A4 horizontal (15 columnas) - Mejorados para mejor visualización
+  const anchos = [10, 8, 15, 15, 12, 6, 12, 14, 10, 10, 10, 15, 16, 16, 16];
   anchos.forEach((ancho, i) => {
-    worksheet.getColumn(i + 1).width = ancho / 7; // Convertir a unidades Excel
+    worksheet.getColumn(i + 1).width = ancho;
   });
 
   // ============= TÍTULO PRINCIPAL =============
-  worksheet.mergeCells('A1:P1');
+  worksheet.mergeCells('A1:O1');
   const tituloCell = worksheet.getCell('A1');
   tituloCell.value = 'REGISTRO HACCP';
   tituloCell.font = { name: 'Arial', size: 14, bold: true };
@@ -308,7 +395,7 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
   };
 
   // ============= SUBTÍTULO =============
-  worksheet.mergeCells('A2:P2');
+  worksheet.mergeCells('A2:O2');
   const subtituloCell = worksheet.getCell('A2');
   subtituloCell.value = 'CONTROL DE CALIDAD DE RECEPCIÓN DE MERCADERÍA DE FRUTAS Y VERDURAS';
   subtituloCell.font = { name: 'Arial', size: 14, bold: true };
@@ -365,9 +452,20 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
   worksheet.mergeCells('I3:L3');
   const anioValueCell = worksheet.getCell('I3');
   anioValueCell.value = anio || '';
-  anioValueCell.font = { name: 'Arial', size: 9 };
+  anioValueCell.font = { name: 'Arial', size: 10 };
   anioValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
   anioValueCell.border = {
+    top: { style: 'thin', color: { argb: 'FF000000' } },
+    left: { style: 'thin', color: { argb: 'FF000000' } },
+    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+    right: { style: 'thin', color: { argb: 'FF000000' } }
+  };
+
+  // Completar la fila 3 con celdas vacías pero con bordes
+  worksheet.mergeCells('M3:O3');
+  const emptyCell = worksheet.getCell('M3');
+  emptyCell.value = '';
+  emptyCell.border = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
     left: { style: 'thin', color: { argb: 'FF000000' } },
     bottom: { style: 'thin', color: { argb: 'FF000000' } },
@@ -377,21 +475,26 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
   // ============= ENCABEZADOS DE COLUMNAS =============
   const headers = [
     'FECHA', 'HORA', 'NOMBRE DEL\nPROVEEDOR', 'NOMBRE DEL\nPRODUCTO',
-    'PESO O\nUNIDAD\nRECIBIDO', 'CNC',
-    'ESTADO\nDEL\nPRODUCT\nO\nINTEGRIDA\nD', 
-    'EMPAQUE\nINTEGRO',
-    'REGISTR\nO\nSANITARI\nO\nVIGENTE',
-    'FECHA\nVENCIMIE\nNTO\nVIGENTE', 
-    'RESPONSABL\nE\nREGISTRO',
-    'RESPONSABL\nE\nSUPERVISIÓN',
+    'CANTIDAD\nSOLICITADA\nPESO O UNIDAD', 'C-NC',
+    'ESTADO DEL\nPRODUCTO', 
+    'CONFORMIDAD E\nINTEGRIDAD DEL\nPRODUCTO',
+    'UNIFORME\nCOMPLETO',
+    'TRANSPORTE\nADECUADO', 
+    'PUNTUALIDAD',
+    'NOMBRE DEL\nRESPONSABLE DE\nREGISTRO',
     'OBSERVACIONES', 
-    'ACCIÓN\nCORRECTIVA'
+    'ACCION\nCORRECTIVA',
+    'NOMBRE DEL\nRESPONSABLE DE LA\nSUPERVISION'
   ];
 
   headers.forEach((header, index) => {
     const cell = worksheet.getCell(4, index + 1);
     cell.value = header;
-    cell.font = { name: 'Arial', size: 10, bold: true };
+    
+    // Tamaño de fuente optimizado para mejor legibilidad
+    const fontSize = (index < 6 || index === 10) ? 9 : 10;
+    cell.font = { name: 'Arial', size: fontSize, bold: true };
+    
     cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
     cell.border = {
@@ -403,62 +506,113 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
   });
 
   // Altura especial para la fila de encabezados
-  worksheet.getRow(4).height = 55;
+  worksheet.getRow(4).height = 70;
 
   // ============= FILAS DE DATOS =============
   // 15 filas de datos (filas 5-19)
   for (let row = 5; row <= 19; row++) {
-    for (let col = 1; col <= 14; col++) {
+    // Altura estándar para filas de datos
+    worksheet.getRow(row).height = 28;
+    
+    for (let col = 1; col <= 15; col++) {
       const cell = worksheet.getCell(row, col);
       
       // Si hay datos, llenar la celda
       if (datos && datos[row - 5]) {
         const fila = datos[row - 5];
         switch (col) {
-          case 1: cell.value = fila.fecha || ''; break;
+          case 1: 
+            // Formatear fecha si existe
+            if (fila.fecha) {
+              try {
+                const fecha = new Date(fila.fecha);
+                cell.value = format(fecha, 'dd/MM/yyyy');
+              } catch {
+                cell.value = fila.fecha;
+              }
+            } else {
+              cell.value = '';
+            }
+            break;
           case 2: cell.value = fila.hora || ''; break;
           case 3: cell.value = fila.nombre_proveedor || ''; break;
           case 4: cell.value = fila.nombre_producto || ''; break;
           case 5: 
-            // Formatear peso/unidad con unidad de medida
+            // Cantidad solicitada con peso o unidad - Corregido para usar peso_unidad_recibido
+            const cantidad = fila.cantidad_solicitada || '';
             const peso = fila.peso_unidad_recibido || '';
             const unidad = fila.unidad_medida || '';
-            cell.value = peso && unidad ? `${peso} ${unidad}` : peso || unidad || '';
+            if (cantidad && peso && unidad) {
+              cell.value = `${cantidad} ${unidad} - ${peso}`;
+            } else if (cantidad && unidad) {
+              cell.value = `${cantidad} ${unidad}`;
+            } else if (peso) {
+              cell.value = peso;
+            } else {
+              cell.value = '';
+            }
             break;
           case 6: 
-            // Mapear conformidad_general a C/NC
-            cell.value = fila.conformidad_general === 'CONFORME' ? 'C' : 
-                        fila.conformidad_general === 'NO_CONFORME' ? 'NC' : 
-                        fila.conformidad_general || '';
+            // C-NC (Conforme/No Conforme) - Usar conformidad_integridad_producto como base
+            const conformidad = fila.conformidad_integridad_producto || '';
+            if (conformidad === 'Conforme') {
+              cell.value = 'C';
+            } else if (conformidad === 'No Conforme') {
+              cell.value = 'NC';
+            } else {
+              cell.value = conformidad;
+            }
             break;
           case 7: 
-            // Estado del producto e integridad combinados
-            const estado = fila.estado_producto === 'FRESCO' ? 'F' : 
-                          fila.estado_producto === 'REGULAR' ? 'R' : 
-                          fila.estado_producto === 'MALO' ? 'M' : 
-                          fila.estado_producto || '';
-            const integridad = fila.conformidad_integridad_producto || '';
-            cell.value = estado && integridad ? `${estado}/${integridad}` : estado || integridad;
+            // Estado del producto
+            cell.value = fila.estado_producto || '';
             break;
-          case 8: cell.value = fila.empaque_integro || ''; break;
-          case 9: cell.value = fila.registro_sanitario_vigente || ''; break;
-          case 10: cell.value = fila.fecha_vencimiento_vigente || ''; break;
-          case 11: cell.value = fila.responsable_registro_nombre || ''; break;
-          case 12: cell.value = fila.responsable_supervision_nombre || ''; break;
-          case 13: cell.value = fila.observaciones || ''; break;
-          case 14: cell.value = fila.accion_correctiva || ''; break;
+          case 8: 
+            // Conformidad e integridad del producto
+            cell.value = fila.conformidad_integridad_producto || '';
+            break;
+          case 9: 
+            // Uniforme completo
+            cell.value = fila.uniforme_completo || '';
+            break;
+          case 10: 
+            // Transporte adecuado
+            cell.value = fila.transporte_adecuado || '';
+            break;
+          case 11: 
+            // Puntualidad
+            cell.value = fila.puntualidad || '';
+            break;
+          case 12: 
+            // Nombre del responsable de registro - Corregido para usar responsable_registro_nombre
+            cell.value = fila.responsable_registro_nombre || '';
+            break;
+          case 13: 
+            // Observaciones
+            cell.value = fila.observaciones || '';
+            break;
+          case 14: 
+            // Acción correctiva
+            cell.value = fila.accion_correctiva || '';
+            break;
+          case 15: 
+            // Nombre del responsable de la supervisión - Corregido para usar responsable_supervision_nombre
+            cell.value = fila.responsable_supervision_nombre || '';
+            break;
         }
       }
 
       // Aplicar estilos con mejor visibilidad
-      cell.font = { name: 'Arial', size: 11, bold: false, color: { argb: 'FF000000' } };
-      // Centrar columnas específicas según el script (ajustado para 14 columnas)
-      const columnasCentradas = [1, 2, 6, 7, 8, 9, 10];
+      cell.font = { name: 'Arial', size: 10, bold: false, color: { argb: 'FF000000' } };
+      
+      // Centrar columnas específicas según el tipo de dato
+      const columnasCentradas = [1, 2, 6, 9, 10, 11]; // Fecha, Hora, C-NC, Uniforme, Transporte, Puntualidad
       cell.alignment = { 
         horizontal: columnasCentradas.includes(col) ? 'center' : 'left', 
         vertical: 'middle',
         wrapText: true
       };
+      
       cell.border = {
         top: { style: 'thin', color: { argb: 'FF000000' } },
         left: { style: 'thin', color: { argb: 'FF000000' } },
@@ -468,12 +622,30 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
     }
   }
 
+  // ============= FILA VACÍA PARA SEPARACIÓN =============
+  worksheet.getRow(20).height = 15;
+  for (let col = 1; col <= 15; col++) {
+    const cell = worksheet.getCell(20, col);
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FF000000' } },
+      left: { style: 'thin', color: { argb: 'FF000000' } },
+      bottom: { style: 'thin', color: { argb: 'FF000000' } },
+      right: { style: 'thin', color: { argb: 'FF000000' } }
+    };
+  }
+
   // ============= NOTAS AL PIE =============
-  worksheet.mergeCells('A21:N21');
+  worksheet.mergeCells('A21:O21');
   const notaCell = worksheet.getCell('A21');
   notaCell.value = 'C = CONFORME: Todo está bien | NC = NO CONFORME: Hay un problema que necesita corrección | F = FRESCO | R = REGULAR | M = MALO';
-  notaCell.font = { name: 'Arial', size: 8, bold: true };
+  notaCell.font = { name: 'Arial', size: 9, bold: true };
   notaCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  notaCell.border = {
+    top: { style: 'thin', color: { argb: 'FF000000' } },
+    left: { style: 'thin', color: { argb: 'FF000000' } },
+    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+    right: { style: 'thin', color: { argb: 'FF000000' } }
+  };
 
   return workbook;
 };
@@ -487,8 +659,8 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
   const worksheet = workbook.addWorksheet('Control Cocción');
   
   // ============= CONFIGURACIÓN DE COLUMNAS =============
-  // Anchos exactos del script de Google Sheets para A4 vertical
-  const columnWidths = [50, 65, 130, 75, 85, 85, 130, 115];
+  // Anchos exactos del script de Google Sheets para A4 vertical - Mejorados
+  const columnWidths = [55, 70, 140, 85, 95, 95, 140, 125];
   columnWidths.forEach((width, index) => {
     worksheet.getColumn(index + 1).width = width / 7; // Conversión a unidades Excel
   });
@@ -593,10 +765,13 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
   });
 
   // Ajustar altura de la fila de encabezados
-  worksheet.getRow(3).height = 40;
+  worksheet.getRow(3).height = 50;
 
   // ============= FILAS DE DATOS (30 filas para A4 vertical) =============
   for (let row = 4; row <= 33; row++) {
+    // Altura estándar para filas de datos
+    worksheet.getRow(row).height = 22;
+    
     for (let col = 1; col <= 8; col++) {
       const cell = worksheet.getCell(row, col);
       
@@ -611,9 +786,9 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
             case 3: cell.value = registro.producto_cocinar || ''; break;
             case 4: cell.value = registro.proceso_coccion || ''; break;
             case 5: cell.value = registro.temperatura_coccion || ''; break;
-            case 6: cell.value = registro.tiempo_coccion || ''; break;
+            case 6: cell.value = registro.tiempo_coccion_minutos || ''; break; // Corregido: tiempo_coccion_minutos en lugar de tiempo_coccion
             case 7: cell.value = registro.accion_correctiva || ''; break;
-            case 8: cell.value = registro.responsable || ''; break;
+            case 8: cell.value = registro.responsable_nombre || ''; break; // Corregido: responsable_nombre en lugar de responsable
           }
         }
       }
@@ -698,8 +873,8 @@ export const generarFormularioLavadoFrutas = async (datos = null, mes = null, an
   const worksheet = workbook.addWorksheet('Lavado Frutas-Verduras');
   
   // ============= CONFIGURACIÓN DE COLUMNAS =============
-  // Anchos optimizados para A4 horizontal
-  const columnWidths = [55, 65, 115, 90, 90, 90, 75, 120, 100, 100];
+  // Anchos optimizados para A4 horizontal - Mejorados
+  const columnWidths = [60, 70, 125, 100, 100, 100, 85, 130, 110, 110];
   columnWidths.forEach((width, index) => {
     worksheet.getColumn(index + 1).width = width / 7; // Conversión aproximada a unidades de Excel
   });
@@ -835,11 +1010,14 @@ export const generarFormularioLavadoFrutas = async (datos = null, mes = null, an
   });
 
   // Altura especial para la fila de encabezados
-  worksheet.getRow(3).height = 50;
+  worksheet.getRow(3).height = 60;
 
   // ============= FILAS DE DATOS =============
   // 31 filas de datos (filas 4-34) para A4 horizontal
   for (let row = 4; row <= 34; row++) {
+    // Altura estándar para filas de datos
+    worksheet.getRow(row).height = 24;
+    
     for (let col = 1; col <= 10; col++) {
       const cell = worksheet.getCell(row, col);
       
@@ -852,11 +1030,11 @@ export const generarFormularioLavadoFrutas = async (datos = null, mes = null, an
           case 3: cell.value = fila.nombre_fruta_verdura || ''; break;
           case 4: cell.value = fila.lavado_agua_potable || ''; break;
           case 5: cell.value = fila.desinfeccion_producto_quimico || ''; break;
-          case 6: cell.value = fila.concentracion_producto_quimico || ''; break;
-          case 7: cell.value = fila.tiempo_desinfeccion || ''; break;
+          case 6: cell.value = fila.concentracion_producto || ''; break; // Corregido: concentracion_producto en lugar de concentracion_producto_quimico
+          case 7: cell.value = fila.tiempo_desinfeccion_minutos || ''; break; // Corregido: tiempo_desinfeccion_minutos en lugar de tiempo_desinfeccion
           case 8: cell.value = fila.accion_correctiva || ''; break;
-          case 9: cell.value = fila.responsable || ''; break;
-          case 10: cell.value = fila.supervisor || ''; break;
+          case 9: cell.value = fila.supervisor_nombre || ''; break; // Corregido: supervisor_nombre en lugar de responsable
+          case 10: cell.value = fila.supervisor_nombre || ''; break; // Corregido: supervisor_nombre en lugar de supervisor
         }
       }
 
@@ -899,7 +1077,8 @@ export const generarFormularioLavadoFrutas = async (datos = null, mes = null, an
       bottom: 0.75,
       header: 0.3,
       footer: 0.3
-    }
+    },
+    printArea: 'A1:J36'
   };
 
   // ============= PROTECCIÓN DE HOJA =============
@@ -927,31 +1106,17 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
   const worksheet = workbook.addWorksheet('Lavado Manos');
   
   // ============= CONFIGURACIÓN DE COLUMNAS =============
-  // Anchos optimizados para A4 vertical (en unidades de Excel) - 7 columnas ahora (sin C/NC y sin ÁREA O ESTACIÓN)
-  const columnWidths = [8, 8, 12, 20, 10, 20, 18];
+  // Anchos optimizados para A4 vertical (en unidades de Excel) - 7 columnas - Mejorados
+  const columnWidths = [12, 10, 14, 28, 18, 25, 20];
   columnWidths.forEach((width, index) => {
     worksheet.getColumn(index + 1).width = width;
   });
 
-  // ============= FILA 1: REGISTRO HACCP =============
+  // ============= FILA 1: TÍTULO ESPECÍFICO =============
   worksheet.mergeCells('A1:G1');
-  const registroCell = worksheet.getCell('A1');
-  registroCell.value = 'REGISTRO HACCP';
-  registroCell.font = { name: 'Arial', size: 14, bold: true };
-  registroCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  registroCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
-  registroCell.border = {
-    top: { style: 'thin', color: { argb: 'FF000000' } },
-    left: { style: 'thin', color: { argb: 'FF000000' } },
-    bottom: { style: 'thin', color: { argb: 'FF000000' } },
-    right: { style: 'thin', color: { argb: 'FF000000' } }
-  };
-
-  // ============= FILA 2: TÍTULO ESPECÍFICO =============
-  worksheet.mergeCells('A2:G2');
-  const tituloCell = worksheet.getCell('A2');
+  const tituloCell = worksheet.getCell('A1');
   tituloCell.value = 'CONTROL DE LAVADO Y DESINFECCIÓN DE MANOS';
-  tituloCell.font = { name: 'Arial', size: 12, bold: true };
+  tituloCell.font = { name: 'Arial', size: 14, bold: true };
   tituloCell.alignment = { horizontal: 'center', vertical: 'middle' };
   tituloCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6E6' } };
   tituloCell.border = {
@@ -961,23 +1126,23 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
     right: { style: 'thin', color: { argb: 'FF000000' } }
   };
 
-  // ============= FILA 3: DATOS DEL PERÍODO =============
-  worksheet.mergeCells('A3:G3');
-  const periodoCell = worksheet.getCell('A3');
-  periodoCell.value = 'DATOS DEL PERÍODO';
-  periodoCell.font = { name: 'Arial', size: 10, bold: true };
-  periodoCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  periodoCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6E6' } };
-  periodoCell.border = {
+  // ============= FILA 2: ÁREA O ESTACIÓN =============
+  worksheet.mergeCells('A2:G2');
+  const areaCell = worksheet.getCell('A2');
+  areaCell.value = 'ÁREA O ESTACIÓN: Cocina y Salón';
+  areaCell.font = { name: 'Arial', size: 12, bold: true };
+  areaCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  areaCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
+  areaCell.border = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
     left: { style: 'thin', color: { argb: 'FF000000' } },
     bottom: { style: 'thin', color: { argb: 'FF000000' } },
     right: { style: 'thin', color: { argb: 'FF000000' } }
   };
 
-  // ============= FILA 4: MES Y AÑO =============
-  worksheet.mergeCells('A4:D4');
-  const mesCell = worksheet.getCell('A4');
+  // ============= FILA 3: MES Y AÑO =============
+  worksheet.mergeCells('A3:D3');
+  const mesCell = worksheet.getCell('A3');
   const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
                  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const nombreMes = mes ? meses[mes - 1] : '';
@@ -993,27 +1158,13 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
   };
 
   // AÑO
-  worksheet.mergeCells('E4:G4');
-  const anioCell = worksheet.getCell('E4');
+  worksheet.mergeCells('E3:G3');
+  const anioCell = worksheet.getCell('E3');
   anioCell.value = `AÑO: ${anio || ''}`;
   anioCell.font = { name: 'Arial', size: 10, bold: true };
   anioCell.alignment = { horizontal: 'center', vertical: 'middle' };
   anioCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
   anioCell.border = {
-    top: { style: 'thin', color: { argb: 'FF000000' } },
-    left: { style: 'thin', color: { argb: 'FF000000' } },
-    bottom: { style: 'thin', color: { argb: 'FF000000' } },
-    right: { style: 'thin', color: { argb: 'FF000000' } }
-  };
-
-  // ============= FILA 5: DATOS DE CONTROL =============
-  worksheet.mergeCells('A5:G5');
-  const controlCell = worksheet.getCell('A5');
-  controlCell.value = 'DATOS DE CONTROL';
-  controlCell.font = { name: 'Arial', size: 10, bold: true };
-  controlCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  controlCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6E6' } };
-  controlCell.border = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
     left: { style: 'thin', color: { argb: 'FF000000' } },
     bottom: { style: 'thin', color: { argb: 'FF000000' } },
@@ -1026,7 +1177,7 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
   ];
 
   headers.forEach((header, index) => {
-    const cell = worksheet.getCell(6, index + 1);
+    const cell = worksheet.getCell(4, index + 1);
     cell.value = header;
     cell.font = { name: 'Arial', size: 9, bold: true };
     cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
@@ -1040,25 +1191,28 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
   });
 
   // Altura de la fila de encabezados
-  worksheet.getRow(6).height = 35;
+  worksheet.getRow(4).height = 45;
 
   // ============= FILAS DE DATOS =============
-  // 31 filas de datos (filas 7-37) para A4 vertical
-  for (let row = 7; row <= 37; row++) {
+  // 33 filas de datos (filas 5-37) para A4 vertical
+  for (let row = 5; row <= 37; row++) {
     for (let col = 1; col <= 7; col++) {
       const cell = worksheet.getCell(row, col);
       
       // Si hay datos, llenar la celda
-      if (datos && datos[row - 7]) {
-        const fila = datos[row - 7];
+      if (datos && datos[row - 5]) {
+        const fila = datos[row - 5];
         switch (col) {
           case 1: 
             cell.value = fila.fecha ? format(new Date(fila.fecha), 'dd/MM/yyyy') : '';
             break;
           case 2: cell.value = fila.hora || ''; break;
           case 3: cell.value = fila.turno || ''; break;
-          case 4: cell.value = fila.nombres_apellidos || ''; break;
-          case 5: cell.value = fila.firma || ''; break;
+          case 4: cell.value = fila.empleado_nombre || ''; break;
+          case 5: 
+            // Campo firma debe estar vacío para permitir firma manual del personal
+            cell.value = '';
+            break;
           case 6: cell.value = fila.accion_correctiva || ''; break;
           case 7: cell.value = fila.supervisor_nombre || ''; break;
         }
@@ -1081,8 +1235,8 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
       };
     }
     
-    // Altura de las filas de datos
-    worksheet.getRow(row).height = 20;
+    // Altura de las filas de datos - optimizada para A4
+    worksheet.getRow(row).height = 22;
   }
 
   // ============= LEYENDA =============
@@ -1106,7 +1260,8 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
       bottom: 0.75,
       header: 0.3,
       footer: 0.3
-    }
+    },
+    printArea: 'A1:G39'
   };
 
   // ============= SIN PROTECCIÓN DE HOJA =============
@@ -1292,8 +1447,8 @@ const crearHojaTemperatura = (workbook, nombreHoja, titulo, rango, frecuencia, d
   });
 
   // Altura de las filas de encabezados
-  worksheet.getRow(5).height = 35;
-  worksheet.getRow(6).height = 30;
+  worksheet.getRow(5).height = 45;
+  worksheet.getRow(6).height = 40;
 
   // ============= FILAS DE DATOS (31 DÍAS) =============
   for (let dia = 1; dia <= 31; dia++) {
@@ -1315,8 +1470,16 @@ const crearHojaTemperatura = (workbook, nombreHoja, titulo, rango, frecuencia, d
     let diaData = null;
     if (datos && Array.isArray(datos)) {
       diaData = datos.find(item => {
-        const fecha = new Date(item.fecha);
-        return fecha.getDate() === dia;
+        // Crear fecha sin problemas de zona horaria
+        const fechaParts = item.fecha.split('-');
+        const fechaItem = new Date(fechaParts[0], fechaParts[1] - 1, fechaParts[2]);
+        
+        const mesActual = mes || (new Date().getMonth() + 1);
+        const anioActual = anio || new Date().getFullYear();
+        
+        return fechaItem.getDate() === dia && 
+               (fechaItem.getMonth() + 1) === mesActual && 
+               fechaItem.getFullYear() === anioActual;
       });
     }
 
@@ -1346,7 +1509,7 @@ const crearHojaTemperatura = (workbook, nombreHoja, titulo, rango, frecuencia, d
 
     // TURNO MAÑANA - Responsable
     const respMananaCell = worksheet.getCell(row, 4);
-    respMananaCell.value = diaData?.responsable_manana || '';
+    respMananaCell.value = diaData?.responsable_manana_nombre || '';
     respMananaCell.font = { name: 'Arial', size: 9 };
     respMananaCell.alignment = { horizontal: 'left', vertical: 'middle' };
     respMananaCell.border = {
@@ -1382,7 +1545,7 @@ const crearHojaTemperatura = (workbook, nombreHoja, titulo, rango, frecuencia, d
 
     // TURNO TARDE - Responsable
     const respTardeCell = worksheet.getCell(row, 7);
-    respTardeCell.value = diaData?.responsable_tarde || '';
+    respTardeCell.value = diaData?.responsable_tarde_nombre || '';
     respTardeCell.font = { name: 'Arial', size: 9 };
     respTardeCell.alignment = { horizontal: 'left', vertical: 'middle' };
     respTardeCell.border = {
@@ -1415,6 +1578,9 @@ const crearHojaTemperatura = (workbook, nombreHoja, titulo, rango, frecuencia, d
       bottom: { style: 'thin', color: { argb: 'FF000000' } },
       right: { style: 'thin', color: { argb: 'FF000000' } }
     };
+
+    // Altura de las filas de datos - optimizada para A4
+    worksheet.getRow(row).height = 24;
   }
 
   // ============= LEYENDA =============
@@ -1425,8 +1591,8 @@ const crearHojaTemperatura = (workbook, nombreHoja, titulo, rango, frecuencia, d
   leyendaCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
   // ============= CONFIGURACIÓN DE COLUMNAS =============
-  // Anchos para A4 horizontal: [50, 70, 55, 130, 70, 55, 130, 120, 100]
-  const columnWidths = [50, 70, 55, 130, 70, 55, 130, 120, 100];
+  // Anchos para A4 horizontal: [55, 75, 60, 140, 75, 60, 140, 130, 110]
+  const columnWidths = [55, 75, 60, 140, 75, 60, 140, 130, 110];
   columnWidths.forEach((width, index) => {
     worksheet.getColumn(index + 1).width = width / 7; // Conversión aproximada a unidades de Excel
   });
@@ -1445,7 +1611,8 @@ const crearHojaTemperatura = (workbook, nombreHoja, titulo, rango, frecuencia, d
       bottom: 0.75,
       header: 0.3,
       footer: 0.3
-    }
+    },
+    printArea: 'A1:I39'
   };
 
   // ============= PROTECCIÓN DE HOJA =============
@@ -1468,9 +1635,9 @@ export const generarFormularioTemperaturaCamaras = async (datos = null, mes = nu
   const workbook = new ExcelJS.Workbook();
 
   // Filtrar datos por cámara si existen
-  const datosCamara1 = datos ? datos.filter(item => item.camara_nombre === 'Cámara 1' || item.camara_id === 1) : null;
-  const datosCamara2 = datos ? datos.filter(item => item.camara_nombre === 'Cámara 2' || item.camara_id === 2) : null;
-  const datosCamara3 = datos ? datos.filter(item => item.camara_nombre === 'Cámara 3' || item.camara_id === 3) : null;
+  const datosCamara1 = datos ? datos.filter(item => item.camara_id === 1) : null;
+  const datosCamara2 = datos ? datos.filter(item => item.camara_id === 2) : null;
+  const datosCamara3 = datos ? datos.filter(item => item.camara_id === 3) : null;
 
   // CÁMARA 1 - REFRIGERACIÓN
   crearHojaTemperatura(
@@ -1839,12 +2006,9 @@ export const exportarTemperaturaCamaras = async (datos, mes, anio) => {
 // FUNCIONES LEGACY (mantener compatibilidad)
 // =====================================================
 
-export const exportarRecepcionMercaderia = async (datos, mes, anio, tipo = 'FRUTAS_VERDURAS') => {
-  if (tipo === 'ABARROTES') {
-    return await exportarRecepcionAbarrotes(datos, mes, anio);
-  } else {
-    return await exportarRecepcionFrutasVerduras(datos, mes, anio);
-  }
+export const exportarRecepcionMercaderia = async (datos, mes, anio) => {
+  // Usar siempre el formato unificado de frutas y verduras
+  return await exportarRecepcionFrutasVerduras(datos, mes, anio);
 };
 export const exportarAsistencias = async (datos, mes, anio) => {
   try {

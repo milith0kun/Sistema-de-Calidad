@@ -43,6 +43,10 @@ class FichadoViewModel /* @Inject constructor( */ (
     init {
         // Observar eventos de token expirado
         observeTokenExpiredEvents()
+        
+        // Sincronizar configuración GPS al inicializar
+        android.util.Log.i("FichadoViewModel", "Inicializando ViewModel - Sincronizando GPS automáticamente")
+        sincronizarConfiguracionGPS()
     }
     
     /**
@@ -285,7 +289,7 @@ class FichadoViewModel /* @Inject constructor( */ (
      */
     fun sincronizarConfiguracionGPS() {
         viewModelScope.launch {
-            android.util.Log.d("FichadoViewModel", "Sincronizando configuración GPS del backend...")
+            android.util.Log.i("FichadoViewModel", "Sincronizando configuración GPS del backend...")
             
             val token = getAuthToken()
             if (token == null) {
@@ -331,7 +335,7 @@ class FichadoViewModel /* @Inject constructor( */ (
             }
         }
     }
-    
+
     /**
      * Limpiar mensajes de error
      */

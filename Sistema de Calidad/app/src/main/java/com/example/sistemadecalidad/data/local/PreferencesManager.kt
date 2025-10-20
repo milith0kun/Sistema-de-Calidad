@@ -63,10 +63,17 @@ class PreferencesManager /* @Inject constructor */ (
      * Guardar datos del usuario
      */
     suspend fun saveUser(user: User) {
+        android.util.Log.d("PreferencesManager", "=== GUARDANDO USUARIO ===")
+        android.util.Log.d("PreferencesManager", "Usuario a guardar: $user")
+        android.util.Log.d("PreferencesManager", "JSON a guardar: ${gson.toJson(user)}")
+        
         dataStore.edit { preferences ->
             preferences[USER_DATA_KEY] = gson.toJson(user)
             preferences[IS_LOGGED_IN_KEY] = "true"
         }
+        
+        android.util.Log.d("PreferencesManager", "Usuario guardado exitosamente")
+        android.util.Log.d("PreferencesManager", "========================")
     }
     
     /**
@@ -75,13 +82,23 @@ class PreferencesManager /* @Inject constructor */ (
     fun getUser(): Flow<User?> {
         return dataStore.data.map { preferences ->
             val userJson = preferences[USER_DATA_KEY]
+            android.util.Log.d("PreferencesManager", "=== RECUPERANDO USUARIO ===")
+            android.util.Log.d("PreferencesManager", "JSON recuperado: $userJson")
+            
             if (userJson != null) {
                 try {
-                    gson.fromJson(userJson, User::class.java)
+                    val user = gson.fromJson(userJson, User::class.java)
+                    android.util.Log.d("PreferencesManager", "Usuario deserializado: $user")
+                    android.util.Log.d("PreferencesManager", "===========================")
+                    user
                 } catch (e: Exception) {
+                    android.util.Log.e("PreferencesManager", "Error deserializando usuario: ${e.message}")
+                    android.util.Log.d("PreferencesManager", "===========================")
                     null
                 }
             } else {
+                android.util.Log.d("PreferencesManager", "No hay datos de usuario guardados")
+                android.util.Log.d("PreferencesManager", "===========================")
                 null
             }
         }
@@ -133,6 +150,19 @@ class PreferencesManager /* @Inject constructor */ (
         }
     }
     
+    /**
+     * Limpiar configuración GPS guardada para forzar nueva sincronización
+     */
+    suspend fun clearLocationConfig() {
+        dataStore.edit { preferences ->
+            preferences.remove(TARGET_LATITUDE_KEY)
+            preferences.remove(TARGET_LONGITUDE_KEY)
+            preferences.remove(ALLOWED_RADIUS_KEY)
+            preferences.remove(GPS_VALIDATION_ENABLED_KEY)
+        }
+        android.util.Log.i("PreferencesManager", "🧹 Configuración GPS limpiada - se usarán valores por defecto hasta nueva sincronización")
+    }
+
     fun getLocationConfig(): Flow<LocationConfig?> {
         return dataStore.data.map { preferences ->
             val lat = preferences[TARGET_LATITUDE_KEY]?.toDoubleOrNull()

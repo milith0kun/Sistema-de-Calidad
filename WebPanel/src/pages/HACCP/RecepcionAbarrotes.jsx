@@ -39,7 +39,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import haccpService from '../../services/api';
+import api, { haccpService } from '../../services/api';
 import { exportarRecepcionAbarrotes } from '../../utils/exportExcel';
 
 const RecepcionAbarrotes = () => {
@@ -55,8 +55,8 @@ const RecepcionAbarrotes = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState('mes'); // 'dia', 'mes', 'anio'
   const [fechaEspecifica, setFechaEspecifica] = useState('');
-  const [mes, setMes] = useState(new Date().getMonth() + 1);
-  const [anio, setAnio] = useState(new Date().getFullYear());
+  const [mes, setMes] = useState(new Date().getMonth() + 1); // Mes actual
+  const [anio, setAnio] = useState(new Date().getFullYear()); // Año actual
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState('');
   const [productoSeleccionado, setProductoSeleccionado] = useState('');
   
@@ -94,16 +94,20 @@ const RecepcionAbarrotes = () => {
   const loadData = async () => {
     try {
       setLoading(true);
+      setError('');
       
-      // Preparar parámetros de filtro
-      let params = {};
+      // Construir parámetros solo cuando hay filtros activos
+      const params = {};
       
+      // Solo agregar filtros de fecha si el usuario los ha aplicado explícitamente
       if (filtroTipo === 'dia' && fechaEspecifica) {
         params.fecha = fechaEspecifica;
-      } else if (filtroTipo === 'mes') {
+      } else if (filtroTipo === 'mes' && showFilters) {
+        // Solo aplicar filtro de mes/año si los filtros están visibles (usuario los activó)
         params.mes = mes;
         params.anio = anio;
-      } else if (filtroTipo === 'anio') {
+      } else if (filtroTipo === 'anio' && showFilters) {
+        // Solo aplicar filtro de año si los filtros están visibles
         params.anio = anio;
       }
       
@@ -112,10 +116,13 @@ const RecepcionAbarrotes = () => {
       if (productoSeleccionado) params.producto = productoSeleccionado;
       
       const [registrosRes, supervisoresRes, proveedoresRes, productosRes] = await Promise.all([
-        haccpService.get('/haccp/recepcion-abarrotes', { params }),
-        haccpService.get('/haccp/supervisores'),
-        haccpService.get('/haccp/proveedores'),
-        haccpService.get('/haccp/productos-abarrotes'),
+        // Si no hay filtros activos, llamar sin parámetros para obtener todos los registros
+        showFilters ? 
+          haccpService.getRecepcionAbarrotes(params.mes, params.anio) : 
+          haccpService.getRecepcionAbarrotes(),
+        haccpService.getSupervisores(),
+        api.get('/haccp/proveedores'),
+        api.get('/haccp/productos-abarrotes'),
       ]);
 
       console.log('Registros abarrotes response:', registrosRes);
@@ -236,7 +243,7 @@ const RecepcionAbarrotes = () => {
 
       console.log('Enviando datos:', data);
 
-      const response = await haccpService.post('/haccp/recepcion-abarrotes', data);
+      const response = await api.post('/haccp/recepcion-abarrotes', data);
 
       if (response && response.success) {
         setSuccess('Registro guardado exitosamente');
@@ -281,8 +288,8 @@ const RecepcionAbarrotes = () => {
   };
 
   const getChipColor = (value) => {
-    if (value === 'SI' || value === 'CONFORME') return 'success';
-    if (value === 'NO' || value === 'NO CONFORME') return 'error';
+    if (value === 'Conforme' || value === 'SI') return 'success';
+    if (value === 'No Conforme' || value === 'NO') return 'error';
     return 'default';
   };
 
@@ -346,28 +353,53 @@ const RecepcionAbarrotes = () => {
         </Box>
 
         <Collapse in={showFilters}>
-          <Grid container spacing={3}>
+          <Grid container spacing={3} alignItems="flex-start">
             {/* Tipo de Filtro */}
             <Grid item xs={12} md={3}>
-              <ButtonGroup variant="outlined" fullWidth>
+              <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
+                Período
+              </Typography>
+              <ButtonGroup 
+                variant="outlined" 
+                fullWidth
+                sx={{
+                  height: '56px',
+                  display: 'flex',
+                  '& .MuiButton-root': {
+                    flex: 1,
+                    height: '56px',
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    fontWeight: 500,
+                    textTransform: 'none',
+                    borderRadius: '8px',
+                    '&:hover': {
+                      backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                    },
+                    '&.MuiButton-contained': {
+                      backgroundColor: 'primary.main',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: 'primary.dark',
+                      }
+                    }
+                  }
+                }}
+              >
                 <Button
                   variant={filtroTipo === 'dia' ? 'contained' : 'outlined'}
                   onClick={() => setFiltroTipo('dia')}
-                  size="small"
                 >
                   Día
                 </Button>
                 <Button
                   variant={filtroTipo === 'mes' ? 'contained' : 'outlined'}
                   onClick={() => setFiltroTipo('mes')}
-                  size="small"
                 >
                   Mes
                 </Button>
                 <Button
                   variant={filtroTipo === 'anio' ? 'contained' : 'outlined'}
                   onClick={() => setFiltroTipo('anio')}
-                  size="small"
                 >
                   Año
                 </Button>
@@ -377,14 +409,27 @@ const RecepcionAbarrotes = () => {
             {/* Fecha específica (solo para día) */}
             {filtroTipo === 'dia' && (
               <Grid item xs={12} md={3}>
+                <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
+                  Fecha Específica
+                </Typography>
                 <TextField
-                  label="Fecha"
                   type="date"
                   value={fechaEspecifica}
                   onChange={(e) => setFechaEspecifica(e.target.value)}
                   fullWidth
                   InputLabelProps={{ shrink: true }}
-                  size="small"
+                  sx={{
+                    height: '56px',
+                    '& .MuiOutlinedInput-root': {
+                      height: '56px',
+                      fontSize: '0.875rem',
+                      borderRadius: '8px',
+                      backgroundColor: '#fff',
+                      '& input': {
+                        padding: '16.5px 14px',
+                      }
+                    }
+                  }}
                 />
               </Grid>
             )}
@@ -394,25 +439,51 @@ const RecepcionAbarrotes = () => {
               <>
                 {filtroTipo === 'mes' && (
                   <Grid item xs={12} md={2}>
+                    <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
+                      Mes
+                    </Typography>
                     <TextField
-                      label="Mes"
                       type="number"
                       value={mes}
                       onChange={(e) => setMes(parseInt(e.target.value))}
                       inputProps={{ min: 1, max: 12 }}
                       fullWidth
-                      size="small"
+                      sx={{
+                        height: '56px',
+                        '& .MuiOutlinedInput-root': {
+                          height: '56px',
+                          fontSize: '0.875rem',
+                          borderRadius: '8px',
+                          backgroundColor: '#fff',
+                          '& input': {
+                            padding: '16.5px 14px',
+                          }
+                        }
+                      }}
                     />
                   </Grid>
                 )}
                 <Grid item xs={12} md={2}>
+                  <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
+                    Año
+                  </Typography>
                   <TextField
-                    label="Año"
                     type="number"
                     value={anio}
                     onChange={(e) => setAnio(parseInt(e.target.value))}
                     fullWidth
-                    size="small"
+                    sx={{
+                      height: '56px',
+                      '& .MuiOutlinedInput-root': {
+                        height: '56px',
+                        fontSize: '0.875rem',
+                        borderRadius: '8px',
+                        backgroundColor: '#fff',
+                        '& input': {
+                          padding: '16.5px 14px',
+                        }
+                      }
+                    }}
                   />
                 </Grid>
               </>
@@ -420,6 +491,9 @@ const RecepcionAbarrotes = () => {
 
             {/* Proveedor */}
             <Grid item xs={12} md={3}>
+              <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
+                Proveedor
+              </Typography>
               <Autocomplete
                 options={proveedores}
                 getOptionLabel={(option) => option.nombre || option}
@@ -428,9 +502,19 @@ const RecepcionAbarrotes = () => {
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Proveedor"
-                    size="small"
                     fullWidth
+                    sx={{
+                      height: '56px',
+                      '& .MuiOutlinedInput-root': {
+                        height: '56px',
+                        fontSize: '0.875rem',
+                        borderRadius: '8px',
+                        backgroundColor: '#fff',
+                        '& input': {
+                          padding: '16.5px 14px',
+                        }
+                      }
+                    }}
                   />
                 )}
                 freeSolo
@@ -439,6 +523,9 @@ const RecepcionAbarrotes = () => {
 
             {/* Producto */}
             <Grid item xs={12} md={3}>
+              <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
+                Producto
+              </Typography>
               <Autocomplete
                 options={productos}
                 getOptionLabel={(option) => option.nombre || option}
@@ -447,27 +534,47 @@ const RecepcionAbarrotes = () => {
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Producto"
-                    size="small"
                     fullWidth
+                    sx={{
+                      height: '56px',
+                      '& .MuiOutlinedInput-root': {
+                        height: '56px',
+                        fontSize: '0.875rem',
+                        borderRadius: '8px',
+                        backgroundColor: '#fff',
+                        '& input': {
+                          padding: '16.5px 14px',
+                        }
+                      }
+                    }}
                   />
                 )}
                 freeSolo
               />
             </Grid>
 
-
-
             {/* Botones de acción */}
             <Grid item xs={12} md={3}>
+              <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500, visibility: 'hidden' }}>
+                Acciones
+              </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button
                   variant="contained"
                   startIcon={<FilterListIcon />}
                   onClick={loadData}
                   disabled={loading}
-                  size="small"
-                  sx={{ flex: 1 }}
+                  sx={{ 
+                    flex: 1,
+                    height: '56px',
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    textTransform: 'none',
+                    borderRadius: '8px',
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                    }
+                  }}
                 >
                   Buscar
                 </Button>
@@ -476,8 +583,17 @@ const RecepcionAbarrotes = () => {
                   startIcon={<ClearIcon />}
                   onClick={limpiarFiltros}
                   disabled={loading}
-                  size="small"
-                  sx={{ flex: 1 }}
+                  sx={{ 
+                    flex: 1,
+                    height: '56px',
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    textTransform: 'none',
+                    borderRadius: '8px',
+                    '&:hover': {
+                      backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                    }
+                  }}
                 >
                   Limpiar
                 </Button>
@@ -499,7 +615,31 @@ const RecepcionAbarrotes = () => {
         </Alert>
       )}
 
-      <TableContainer component={Paper} sx={{ borderRadius: '12px', overflow: 'auto' }}>
+      <TableContainer 
+          component={Paper} 
+          className="custom-scrollbar"
+          sx={{ 
+            borderRadius: '12px', 
+            overflow: 'auto',
+            maxHeight: '70vh',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+              height: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f1f3f4',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              borderRadius: '4px',
+              border: '1px solid #f1f3f4',
+            },
+            '&::-webkit-scrollbar-thumb:hover': {
+              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+            },
+          }}
+        >
         <Table>
           <TableHead>
             <TableRow>
@@ -508,17 +648,16 @@ const RecepcionAbarrotes = () => {
               <TableCell>Proveedor</TableCell>
               <TableCell>Producto</TableCell>
               <TableCell>Cantidad</TableCell>
-              <TableCell>Reg. Sanitario</TableCell>
-              <TableCell>Vencimiento</TableCell>
-              <TableCell>Empaque</TableCell>
+              <TableCell>Uniforme</TableCell>
+              <TableCell>Transporte</TableCell>
+              <TableCell>Puntualidad</TableCell>
               <TableCell>Supervisor</TableCell>
-              <TableCell align="center">Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {registros.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} align="center">
+                <TableCell colSpan={9} align="center">
                   <Typography color="text.secondary" py={3}>
                     No hay registros disponibles
                   </Typography>
@@ -527,45 +666,48 @@ const RecepcionAbarrotes = () => {
             ) : (
               registros.map((registro) => (
                 <TableRow key={registro.id} hover>
-                  <TableCell>{format(new Date(registro.fecha), 'dd/MM/yyyy')}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      try {
+                        // Convertir fecha dd/MM/yyyy a formato válido para JavaScript
+                        const [day, month, year] = registro.fecha.split('/');
+                        const fechaValida = new Date(year, month - 1, day);
+                        return format(fechaValida, 'dd/MM/yyyy');
+                      } catch (error) {
+                        // Si hay error, mostrar la fecha original
+                        return registro.fecha;
+                      }
+                    })()}
+                  </TableCell>
                   <TableCell>{registro.hora}</TableCell>
                   <TableCell>{registro.nombre_proveedor}</TableCell>
                   <TableCell>{registro.nombre_producto}</TableCell>
                   <TableCell>{registro.cantidad_solicitada}</TableCell>
                   <TableCell>
                     <Chip
-                      label={registro.registro_sanitario_vigente}
-                      color={getChipColor(registro.registro_sanitario_vigente)}
+                      label={registro.uniforme_completo}
+                      color={getChipColor(registro.uniforme_completo)}
                       size="small"
                       sx={{ borderRadius: '12px' }}
                     />
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={registro.evaluacion_vencimiento}
-                      color={getChipColor(registro.evaluacion_vencimiento)}
+                      label={registro.transporte_adecuado}
+                      color={getChipColor(registro.transporte_adecuado)}
                       size="small"
                       sx={{ borderRadius: '12px' }}
                     />
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={registro.conformidad_empaque}
-                      color={getChipColor(registro.conformidad_empaque)}
+                      label={registro.puntualidad}
+                      color={getChipColor(registro.puntualidad)}
                       size="small"
                       sx={{ borderRadius: '12px' }}
                     />
                   </TableCell>
                   <TableCell>{registro.supervisor_nombre}</TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      size="small"
-                      onClick={() => handleOpenDialog(registro)}
-                      color="primary"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -660,8 +802,10 @@ const RecepcionAbarrotes = () => {
                   onChange={handleChange}
                   label="Evaluación Vencimiento"
                 >
-                  <MenuItem value="CONFORME">CONFORME</MenuItem>
-                  <MenuItem value="NO CONFORME">NO CONFORME</MenuItem>
+                  <MenuItem value="Excelente">Excelente</MenuItem>
+                  <MenuItem value="Bueno">Bueno</MenuItem>
+                  <MenuItem value="Regular">Regular</MenuItem>
+                  <MenuItem value="Malo">Malo</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -675,8 +819,10 @@ const RecepcionAbarrotes = () => {
                   onChange={handleChange}
                   label="Conformidad Empaque"
                 >
-                  <MenuItem value="CONFORME">CONFORME</MenuItem>
-                  <MenuItem value="NO CONFORME">NO CONFORME</MenuItem>
+                  <MenuItem value="Excelente">Excelente</MenuItem>
+                  <MenuItem value="Bueno">Bueno</MenuItem>
+                  <MenuItem value="Regular">Regular</MenuItem>
+                  <MenuItem value="Malo">Malo</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -690,8 +836,8 @@ const RecepcionAbarrotes = () => {
                   onChange={handleChange}
                   label="Uniforme Completo"
                 >
-                  <MenuItem value="SI">SI</MenuItem>
-                  <MenuItem value="NO">NO</MenuItem>
+                  <MenuItem value="C">C</MenuItem>
+                  <MenuItem value="NC">NC</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -705,8 +851,8 @@ const RecepcionAbarrotes = () => {
                   onChange={handleChange}
                   label="Transporte Adecuado"
                 >
-                  <MenuItem value="SI">SI</MenuItem>
-                  <MenuItem value="NO">NO</MenuItem>
+                  <MenuItem value="C">C</MenuItem>
+                  <MenuItem value="NC">NC</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -720,8 +866,8 @@ const RecepcionAbarrotes = () => {
                   onChange={handleChange}
                   label="Puntualidad"
                 >
-                  <MenuItem value="SI">SI</MenuItem>
-                  <MenuItem value="NO">NO</MenuItem>
+                  <MenuItem value="C">C</MenuItem>
+                  <MenuItem value="NC">NC</MenuItem>
                 </Select>
               </FormControl>
             </Grid>

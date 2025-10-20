@@ -128,4 +128,64 @@ router.post('/log', authenticateToken, async (req, res) => {
     }
 });
 
+// =====================================================
+// OBTENER FILTROS PARA AUDITORÍA
+// =====================================================
+router.get('/filtros', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        // Obtener usuarios únicos
+        const usuarios = await db.all(`
+            SELECT DISTINCT u.id, u.nombre, u.apellido, u.email
+            FROM usuarios u
+            INNER JOIN logs_auditoria l ON u.id = l.usuario_id
+            ORDER BY u.nombre, u.apellido
+        `);
+
+        // Obtener acciones únicas
+        const acciones = await db.all(`
+            SELECT DISTINCT accion
+            FROM logs_auditoria
+            WHERE accion IS NOT NULL
+            ORDER BY accion
+        `);
+
+        // Obtener módulos únicos (tablas)
+        const tablas = await db.all(`
+            SELECT DISTINCT modulo as tabla
+            FROM logs_auditoria
+            WHERE modulo IS NOT NULL
+            ORDER BY modulo
+        `);
+
+        res.json({
+            success: true,
+            data: {
+                usuarios: usuarios || [],
+                acciones: acciones.map(row => row.accion) || [],
+                tablas: tablas.map(row => row.tabla) || []
+            }
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo filtros:', error);
+        
+        // Si la tabla no existe, devolver arrays vacíos
+        if (error.message && error.message.includes('no such table')) {
+            return res.json({
+                success: true,
+                data: {
+                    usuarios: [],
+                    acciones: [],
+                    tablas: []
+                }
+            });
+        }
+
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener filtros'
+        });
+    }
+});
+
 module.exports = router;

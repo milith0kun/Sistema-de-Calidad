@@ -22,7 +22,8 @@ class AutoNetworkDetector(private val context: Context) {
         private const val CONNECTION_TIMEOUT = 5000L // 5 segundos
         private const val SERVER_PORT = "3000"
         
-        // AWS Producción - ÚNICA URL válida
+        // URLs disponibles para prueba
+        private const val LOCAL_SERVER_URL = "http://192.168.1.67:3000/api/"
         private const val AWS_PRODUCTION_URL = "http://18.118.212.247/api/"
     }
     
@@ -34,35 +35,35 @@ class AutoNetworkDetector(private val context: Context) {
     
     /**
      * Detecta automáticamente la mejor URL del servidor
-     * SIMPLIFICADO: Siempre usa AWS en producción
+     * Prueba primero el servidor local, luego AWS como respaldo
      * @return URL del servidor que responde, o null si ninguna funciona
      */
     suspend fun detectBestServerUrl(): String? = withContext(Dispatchers.IO) {
-        Log.d(TAG, "🚀 Conectando a servidor AWS Production...")
+        Log.d(TAG, "🚀 Detectando mejor servidor disponible...")
         
-        // Siempre usar AWS en dispositivos reales
-        val url = AWS_PRODUCTION_URL
+        val urlsToTest = listOf(LOCAL_SERVER_URL, AWS_PRODUCTION_URL)
         
-        Log.d(TAG, "Probando conexión a: $url")
-        
-        // Probar conexión a AWS
-        return@withContext if (testServerConnection(url)) {
-            Log.d(TAG, "✅ Servidor AWS conectado exitosamente: $url")
-            url
-        } else {
-            Log.e(TAG, "❌ Error: No se pudo conectar al servidor AWS")
-            // Retornar AWS de todas formas para que la app intente usarlo
-            url
+        for (url in urlsToTest) {
+            Log.d(TAG, "Probando conexión a: $url")
+            
+            if (testServerConnection(url)) {
+                Log.d(TAG, "✅ Servidor conectado exitosamente: $url")
+                return@withContext url
+            }
         }
+        
+        Log.e(TAG, "❌ Error: No se pudo conectar a ningún servidor")
+        // Retornar servidor local como fallback
+        return@withContext LOCAL_SERVER_URL
     }
     
     /**
      * Genera URLs dinámicas basadas en la configuración de red actual
-     * SIMPLIFICADO: Solo AWS Production
+     * Prioriza servidor local para desarrollo
      */
     private fun getDynamicServerUrls(): List<String> {
-        Log.d(TAG, "🌐 Usando AWS Production URL: $AWS_PRODUCTION_URL")
-        return listOf(AWS_PRODUCTION_URL)
+        Log.d(TAG, "🌐 URLs disponibles: Local y AWS Production")
+        return listOf(LOCAL_SERVER_URL, AWS_PRODUCTION_URL)
     }
     
     /**

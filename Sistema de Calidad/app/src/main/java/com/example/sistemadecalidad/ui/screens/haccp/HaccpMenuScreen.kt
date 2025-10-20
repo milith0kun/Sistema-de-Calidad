@@ -22,8 +22,8 @@ fun HaccpMenuScreen(
     val formularios = listOf(
         FormularioHaccp(
             id = "recepcion_mercaderia",
-            titulo = "Recepción de Mercadería",
-            descripcion = "Control de frutas, verduras y abarrotes",
+            titulo = "Recepción de Frutas y Verduras",
+            descripcion = "Control de calidad en recepción de frutas y verduras",
             icono = Icons.Default.LocalShipping,
             color = MaterialTheme.colorScheme.primaryContainer
         ),

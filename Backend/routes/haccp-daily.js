@@ -34,11 +34,20 @@ router.get('/today', authenticateToken, async (req, res) => {
         console.log('Fecha de consulta:', fechaConsulta);
 
         // Obtener datos de cada tabla para la fecha especificada
-        const recepcionMercaderia = await db.all(`
-            SELECT * FROM control_recepcion_mercaderia_temp 
-            WHERE DATE(timestamp_creacion) = ?
-            ORDER BY timestamp_creacion DESC
+        const recepcionAbarrotes = await db.all(`
+            SELECT *, 'ABARROTES' as tipo_control FROM control_recepcion_abarrotes 
+            WHERE fecha = ?
+            ORDER BY fecha DESC, hora DESC
         `, [fechaConsulta]);
+
+        const recepcionFrutasVerduras = await db.all(`
+            SELECT *, 'FRUTAS_VERDURAS' as tipo_control FROM control_recepcion_frutas_verduras 
+            WHERE fecha = ?
+            ORDER BY fecha DESC, hora DESC
+        `, [fechaConsulta]);
+
+        // Combinar ambos tipos de recepción
+        const recepcionMercaderia = [...recepcionAbarrotes, ...recepcionFrutasVerduras];
 
         const controlCoccion = await db.all(`
             SELECT * FROM control_coccion 
@@ -125,17 +134,32 @@ router.get('/recepcion-mercaderia', authenticateToken, async (req, res) => {
         const { fecha, tipo_control } = req.query;
         const fechaConsulta = fecha || formatDateForDB();
         
-        let query = `SELECT * FROM control_recepcion_mercaderia_temp WHERE fecha = ?`;
-        let params = [fechaConsulta];
+        let registros = [];
 
-        if (tipo_control) {
-            query += ` AND tipo_control = ?`;
-            params.push(tipo_control);
+        if (!tipo_control || tipo_control === 'TODOS') {
+            // Obtener datos de ambas tablas
+            const abarrotes = await db.all(`
+                SELECT *, 'ABARROTES' as tipo_control FROM control_recepcion_abarrotes 
+                WHERE fecha = ? ORDER BY fecha DESC, hora DESC
+            `, [fechaConsulta]);
+
+            const frutasVerduras = await db.all(`
+                SELECT *, 'FRUTAS_VERDURAS' as tipo_control FROM control_recepcion_frutas_verduras 
+                WHERE fecha = ? ORDER BY fecha DESC, hora DESC
+            `, [fechaConsulta]);
+
+            registros = [...abarrotes, ...frutasVerduras];
+        } else if (tipo_control === 'ABARROTES') {
+            registros = await db.all(`
+                SELECT *, 'ABARROTES' as tipo_control FROM control_recepcion_abarrotes 
+                WHERE fecha = ? ORDER BY fecha DESC, hora DESC
+            `, [fechaConsulta]);
+        } else if (tipo_control === 'FRUTAS_VERDURAS') {
+            registros = await db.all(`
+                SELECT *, 'FRUTAS_VERDURAS' as tipo_control FROM control_recepcion_frutas_verduras 
+                WHERE fecha = ? ORDER BY fecha DESC, hora DESC
+            `, [fechaConsulta]);
         }
-
-        query += ` ORDER BY timestamp_creacion DESC`;
-
-        const registros = await db.all(query, params);
 
         res.json({
             success: true,
@@ -289,7 +313,8 @@ router.get('/resumen', authenticateToken, async (req, res) => {
         
         // Contar registros por tabla
         const conteos = await Promise.all([
-            db.get(`SELECT COUNT(*) as count FROM control_recepcion_mercaderia_temp WHERE fecha = ?`, [fechaConsulta]),
+            db.get(`SELECT COUNT(*) as count FROM control_recepcion_abarrotes WHERE fecha = ?`, [fechaConsulta]),
+            db.get(`SELECT COUNT(*) as count FROM control_recepcion_frutas_verduras WHERE fecha = ?`, [fechaConsulta]),
             db.get(`SELECT COUNT(*) as count FROM control_coccion WHERE fecha = ?`, [fechaConsulta]),
             db.get(`SELECT COUNT(*) as count FROM control_lavado_desinfeccion_frutas WHERE fecha = ?`, [fechaConsulta]),
             db.get(`SELECT COUNT(*) as count FROM control_lavado_manos WHERE fecha = ?`, [fechaConsulta]),
@@ -301,11 +326,13 @@ router.get('/resumen', authenticateToken, async (req, res) => {
             fecha: fechaConsulta,
             es_hoy: isToday(fechaConsulta),
             estadisticas: {
-                recepcion_mercaderia: conteos[0].count,
-                control_coccion: conteos[1].count,
-                lavado_frutas: conteos[2].count,
-                lavado_manos: conteos[3].count,
-                temperatura_camaras: conteos[4].count,
+                recepcion_abarrotes: conteos[0].count,
+                recepcion_frutas_verduras: conteos[1].count,
+                recepcion_mercaderia: conteos[0].count + conteos[1].count, // Total combinado
+                control_coccion: conteos[2].count,
+                lavado_frutas: conteos[3].count,
+                lavado_manos: conteos[4].count,
+                temperatura_camaras: conteos[5].count,
                 total_registros: conteos.reduce((sum, item) => sum + item.count, 0)
             },
             ultima_consulta: new Date().toISOString()
@@ -351,7 +378,8 @@ router.get('/usuarios', async (req, res) => {
 router.get('/estructura-tablas', async (req, res) => {
     try {
         const tablas = [
-            'control_recepcion_mercaderia_temp',
+            'control_recepcion_abarrotes',
+            'control_recepcion_frutas_verduras',
             'control_coccion', 
             'control_lavado_desinfeccion_frutas',
             'control_lavado_manos',
@@ -405,11 +433,20 @@ router.get('/today-test', async (req, res) => {
         // Obtener datos de todas las tablas HACCP para el día especificado
         const dayFilter = getDayFilterSQL(fechaConsulta);
         
-        // 1. Recepción de Mercadería
-        const recepcionMercaderia = await db.all(
-            `SELECT * FROM control_recepcion_mercaderia_temp WHERE ${dayFilter.query} ORDER BY timestamp_creacion DESC`,
+        // 1. Recepción de Mercadería - Abarrotes
+        const recepcionAbarrotes = await db.all(
+            `SELECT *, 'ABARROTES' as tipo_control FROM control_recepcion_abarrotes WHERE ${dayFilter.query} ORDER BY fecha DESC, hora DESC`,
             dayFilter.params
         );
+
+        // 1b. Recepción de Mercadería - Frutas y Verduras
+        const recepcionFrutasVerduras = await db.all(
+            `SELECT *, 'FRUTAS_VERDURAS' as tipo_control FROM control_recepcion_frutas_verduras WHERE ${dayFilter.query} ORDER BY fecha DESC, hora DESC`,
+            dayFilter.params
+        );
+
+        // Combinar ambos tipos de recepción
+        const recepcionMercaderia = [...recepcionAbarrotes, ...recepcionFrutasVerduras];
 
         // 2. Control de Cocción
         const controlCoccion = await db.all(
@@ -496,10 +533,19 @@ router.get('/test', async (req, res) => {
         const dayFilter = getDayFilterSQL(fechaConsulta);
         
         // Obtener un conteo simple de registros del día actual
-        const recepcionCount = await db.get(
-            `SELECT COUNT(*) as count FROM control_recepcion_mercaderia_temp WHERE ${dayFilter.query}`,
+        const recepcionAbarrotesCount = await db.get(
+            `SELECT COUNT(*) as count FROM control_recepcion_abarrotes WHERE ${dayFilter.query}`,
             dayFilter.params
         );
+
+        const recepcionFrutasVerdurasCount = await db.get(
+            `SELECT COUNT(*) as count FROM control_recepcion_frutas_verduras WHERE ${dayFilter.query}`,
+            dayFilter.params
+        );
+
+        const recepcionCount = {
+            count: recepcionAbarrotesCount.count + recepcionFrutasVerdurasCount.count
+        };
 
         const coccionCount = await db.get(
             `SELECT COUNT(*) as count FROM control_coccion WHERE ${dayFilter.query}`,

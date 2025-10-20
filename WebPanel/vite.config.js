@@ -5,16 +5,25 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 3000,
+    port: 5173,
     host: '0.0.0.0',
-    strictPort: true,
+    strictPort: true, // Usar puerto específico
     hmr: {
-      port: 3001
+      port: 5174
     },
     proxy: {
       '/api': {
-        target: 'http://localhost:80',
-        changeOrigin: true
+        target: process.env.VITE_BACKEND_URL || 'http://127.0.0.1:3000',
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('❌ Error de proxy:', err.message);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('🔄 Proxy request:', req.method, req.url);
+          });
+        }
       }
     }
   },

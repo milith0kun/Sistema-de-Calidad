@@ -32,10 +32,10 @@ object NetworkModule {
     
     private const val TAG = "NetworkModule"
     
-    // URL por defecto: AWS Production (SIEMPRE)
-    private const val DEFAULT_BASE_URL = "http://18.118.212.247/api/"
+    // URL por defecto: Servidor local para desarrollo
+    private const val DEFAULT_BASE_URL = "http://192.168.1.67:3000/api/"
 
-    // URL actual (por defecto AWS)
+    // URL actual (por defecto servidor local)
     @Volatile
     private var currentBaseUrl: String = DEFAULT_BASE_URL
 
@@ -112,9 +112,9 @@ object NetworkModule {
                     .build()
                 chain.proceed(newRequest)
             }
-            .connectTimeout(5, TimeUnit.SECONDS)     // Timeout de conexión - 5000ms
-            .readTimeout(5, TimeUnit.SECONDS)        // Timeout de lectura - 5000ms  
-            .writeTimeout(5, TimeUnit.SECONDS)       // Timeout de escritura - 5000ms
+            .connectTimeout(30, TimeUnit.SECONDS)     // Timeout de conexión - 30000ms
+            .readTimeout(30, TimeUnit.SECONDS)        // Timeout de lectura - 30000ms  
+            .writeTimeout(30, TimeUnit.SECONDS)       // Timeout de escritura - 30000ms
             .build()
     }
 

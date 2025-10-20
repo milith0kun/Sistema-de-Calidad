@@ -9,6 +9,7 @@ import android.location.LocationManager as AndroidLocationManager
 import android.os.Bundle
 import androidx.core.app.ActivityCompat
 import com.example.sistemadecalidad.data.local.PreferencesManager
+import com.example.sistemadecalidad.utils.NetworkConfig
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,30 +58,40 @@ class LocationManager(private val context: Context) {
     private var locationListener: LocationListener? = null
     
     init {
+        android.util.Log.e("LOCATION_DEBUG", "🏗️ CONSTRUCTOR - Inicializando LocationManager")
+        android.util.Log.e("LOCATION_DEBUG", "🏗️ CONSTRUCTOR - Context: $context")
         checkGpsStatus()
         checkLocationPermissions()
         loadLocationConfig()
+        android.util.Log.e("LOCATION_DEBUG", "🏗️ CONSTRUCTOR - LocationManager inicializado. GPS: ${_isGpsEnabled.value}, Permisos: ${_hasLocationPermission.value}")
     }
     
     /**
      * Cargar configuración de ubicación desde PreferencesManager
      */
     private fun loadLocationConfig() {
+        android.util.Log.i("LocationManager", "🔧 CONFIGURACIÓN GPS - Cargando configuración inicial...")
+        android.util.Log.i("LocationManager", "🔧 CONFIGURACIÓN GPS - Valores iniciales: lat=${KITCHEN_LATITUDE}, lon=${KITCHEN_LONGITUDE}, radio=${GPS_RADIUS_METERS}")
+        
         coroutineScope.launch {
             try {
-                val savedConfig = preferencesManager.getLocationConfig().first()
-                if (savedConfig != null) {
-                    KITCHEN_LATITUDE = savedConfig.latitude
-                    KITCHEN_LONGITUDE = savedConfig.longitude
-                    GPS_RADIUS_METERS = savedConfig.radius
+                val config = preferencesManager.getLocationConfig().first()
+                if (config != null && config.latitude != 0.0 && config.longitude != 0.0) {
+                    KITCHEN_LATITUDE = config.latitude
+                    KITCHEN_LONGITUDE = config.longitude
+                    GPS_RADIUS_METERS = config.radius
+                    android.util.Log.i("LocationManager", "🔧 CONFIGURACIÓN GPS - Valores actualizados desde PreferencesManager: lat=${KITCHEN_LATITUDE}, lon=${KITCHEN_LONGITUDE}, radio=${GPS_RADIUS_METERS}")
                     
-                    // Re-validar ubicación actual con las nuevas coordenadas
+                    // Validar ubicación actual si está disponible
                     _currentLocation.value?.let { location ->
-                        validateLocation(location)
+                        validateLocation(location.latitude, location.longitude)
                     }
+                } else {
+                    android.util.Log.i("LocationManager", "🔧 CONFIGURACIÓN GPS - Usando valores por defecto de NetworkConfig")
                 }
             } catch (e: Exception) {
-                // Si hay error, usar valores por defecto de NetworkConfig
+                android.util.Log.e("LocationManager", "❌ Error al cargar configuración GPS: ${e.message}")
+                android.util.Log.i("LocationManager", "🔧 CONFIGURACIÓN GPS - Usando valores por defecto de NetworkConfig")
             }
         }
     }
@@ -113,22 +124,31 @@ class LocationManager(private val context: Context) {
      * Iniciar seguimiento de ubicación
      */
     fun startLocationTracking() {
+        android.util.Log.i("LocationManager", "🚀 INICIO TRACKING - Iniciando seguimiento de ubicación")
+        android.util.Log.i("LocationManager", "🚀 INICIO TRACKING - Permisos: ${_hasLocationPermission.value}")
+        
         if (!_hasLocationPermission.value) {
+            android.util.Log.w("LocationManager", "❌ INICIO TRACKING - Sin permisos de ubicación")
             return
         }
         
         locationListener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
+                android.util.Log.i("LocationManager", "📍 UBICACIÓN CAMBIADA - Nueva ubicación recibida: lat=${location.latitude}, lon=${location.longitude}")
                 _currentLocation.value = location
                 validateLocation(location)
             }
             
             @Deprecated("Deprecated in Java")
-            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+                android.util.Log.i("LocationManager", "📡 ESTADO PROVEEDOR - Provider: $provider, Status: $status")
+            }
             override fun onProviderEnabled(provider: String) {
+                android.util.Log.i("LocationManager", "✅ PROVEEDOR HABILITADO - Provider: $provider")
                 checkGpsStatus()
             }
             override fun onProviderDisabled(provider: String) {
+                android.util.Log.w("LocationManager", "❌ PROVEEDOR DESHABILITADO - Provider: $provider")
                 checkGpsStatus()
             }
         }
@@ -136,28 +156,36 @@ class LocationManager(private val context: Context) {
         try {
             // Intentar obtener ubicación del GPS primero
             if (locationManager.isProviderEnabled(AndroidLocationManager.GPS_PROVIDER)) {
+                android.util.Log.i("LocationManager", "🛰️ GPS HABILITADO - Solicitando actualizaciones GPS")
                 locationManager.requestLocationUpdates(
                     AndroidLocationManager.GPS_PROVIDER,
                     5000L, // 5 segundos
                     10f,   // 10 metros
                     locationListener!!
                 )
+            } else {
+                android.util.Log.w("LocationManager", "❌ GPS DESHABILITADO - GPS provider no disponible")
             }
             
             // También usar red como respaldo
             if (locationManager.isProviderEnabled(AndroidLocationManager.NETWORK_PROVIDER)) {
+                android.util.Log.i("LocationManager", "📶 NETWORK HABILITADO - Solicitando actualizaciones de red")
                 locationManager.requestLocationUpdates(
                     AndroidLocationManager.NETWORK_PROVIDER,
                     5000L,
                     10f,
                     locationListener!!
                 )
+            } else {
+                android.util.Log.w("LocationManager", "❌ NETWORK DESHABILITADO - Network provider no disponible")
             }
             
             // Obtener última ubicación conocida
+            android.util.Log.i("LocationManager", "🔍 ÚLTIMA UBICACIÓN - Obteniendo última ubicación conocida")
             getLastKnownLocation()
             
         } catch (e: SecurityException) {
+            android.util.Log.e("LocationManager", "❌ ERROR PERMISOS - SecurityException: ${e.message}")
             // Permisos no concedidos
             _hasLocationPermission.value = false
         }
@@ -216,6 +244,33 @@ class LocationManager(private val context: Context) {
             KITCHEN_LATITUDE,
             KITCHEN_LONGITUDE
         )
+        
+        android.util.Log.i("LocationManager", "🎯 VALIDACIÓN GPS - Ubicación actual: lat=${location.latitude}, lon=${location.longitude}")
+        android.util.Log.i("LocationManager", "🎯 VALIDACIÓN GPS - Ubicación objetivo: lat=${KITCHEN_LATITUDE}, lon=${KITCHEN_LONGITUDE}")
+        android.util.Log.i("LocationManager", "🎯 VALIDACIÓN GPS - Radio permitido: ${GPS_RADIUS_METERS} metros")
+        android.util.Log.i("LocationManager", "🎯 VALIDACIÓN GPS - Distancia calculada: ${distance} metros")
+        android.util.Log.i("LocationManager", "🎯 VALIDACIÓN GPS - ¿Dentro del rango?: ${distance <= GPS_RADIUS_METERS}")
+        
+        _distanceToKitchen.value = distance
+        _isLocationValid.value = distance <= GPS_RADIUS_METERS
+    }
+    
+    /**
+     * Validar ubicación con coordenadas específicas
+     */
+    private fun validateLocation(latitude: Double, longitude: Double) {
+        val distance = calculateDistance(
+            latitude,
+            longitude,
+            KITCHEN_LATITUDE,
+            KITCHEN_LONGITUDE
+        )
+        
+        android.util.Log.i("LocationManager", "🎯 VALIDACIÓN GPS - Ubicación específica: lat=${latitude}, lon=${longitude}")
+        android.util.Log.i("LocationManager", "🎯 VALIDACIÓN GPS - Ubicación objetivo: lat=${KITCHEN_LATITUDE}, lon=${KITCHEN_LONGITUDE}")
+        android.util.Log.i("LocationManager", "🎯 VALIDACIÓN GPS - Radio permitido: ${GPS_RADIUS_METERS} metros")
+        android.util.Log.i("LocationManager", "🎯 VALIDACIÓN GPS - Distancia calculada: ${distance} metros")
+        android.util.Log.i("LocationManager", "🎯 VALIDACIÓN GPS - ¿Dentro del rango?: ${distance <= GPS_RADIUS_METERS}")
         
         _distanceToKitchen.value = distance
         _isLocationValid.value = distance <= GPS_RADIUS_METERS

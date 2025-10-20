@@ -5,6 +5,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.sistemadecalidad.data.api.Empleado
+import com.example.sistemadecalidad.data.model.User
 import com.example.sistemadecalidad.utils.TimeUtils
 import java.util.Calendar
 
@@ -79,16 +83,44 @@ fun LavadoManosScreen(
     var procedimientoCorrecto by remember { mutableStateOf("C") } // C = Conforme, NC = No Conforme
     var accionesCorrectivas by remember { mutableStateOf("") }
     
+    // Estados para el selector de supervisor
+    var supervisorSeleccionado by remember { mutableStateOf<Empleado?>(null) }
+    var expandedSupervisor by remember { mutableStateOf(false) }
+    
     val uiState by haccpViewModel.uiState.collectAsState()
     val usuario by preferencesManager.getUser().collectAsState(initial = null)
+    val supervisores by haccpViewModel.supervisores.collectAsState()
     
     var showSuccessDialog by remember { mutableStateOf(false) }
     
     val scrollState = rememberScrollState()
     
+    // DEBUG: Agregar logs para depurar el problema del usuario
+    LaunchedEffect(usuario) {
+        android.util.Log.d("LavadoManosScreen", "=== DEBUG USUARIO ===")
+        android.util.Log.d("LavadoManosScreen", "Usuario recibido: $usuario")
+        usuario?.let { user ->
+            android.util.Log.d("LavadoManosScreen", "ID: ${user.id}")
+            android.util.Log.d("LavadoManosScreen", "Nombre: ${user.nombre}")
+            android.util.Log.d("LavadoManosScreen", "Apellido: ${user.apellido}")
+            android.util.Log.d("LavadoManosScreen", "NombreCompleto: ${user.nombreCompleto}")
+            android.util.Log.d("LavadoManosScreen", "Cargo: ${user.cargo}")
+            android.util.Log.d("LavadoManosScreen", "Area: ${user.area}")
+            android.util.Log.d("LavadoManosScreen", "Email: ${user.email}")
+            android.util.Log.d("LavadoManosScreen", "Rol: ${user.rol}")
+        } ?: android.util.Log.d("LavadoManosScreen", "Usuario es NULL")
+        android.util.Log.d("LavadoManosScreen", "===================")
+    }
+    
+    // Cargar supervisores al iniciar
+    LaunchedEffect(Unit) {
+        haccpViewModel.cargarSupervisores()
+    }
+    
     // Validación del formulario
     val isFormValid = areaEstacion.isNotEmpty() && 
                      turno.isNotEmpty() &&
+                     supervisorSeleccionado != null &&
                      // Si es NC, se requiere acciones correctivas
                      (procedimientoCorrecto == "C" || accionesCorrectivas.isNotEmpty())
     
@@ -197,6 +229,84 @@ fun LavadoManosScreen(
             
             Divider()
             
+            // SUPERVISOR
+            Text("SUPERVISOR *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(
+                "Seleccione el supervisor que supervisa este turno",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            
+            ExposedDropdownMenuBox(
+                expanded = expandedSupervisor,
+                onExpandedChange = { expandedSupervisor = !expandedSupervisor }
+            ) {
+                OutlinedTextField(
+                    value = supervisorSeleccionado?.nombre ?: "",
+                    onValueChange = { },
+                    readOnly = true,
+                    label = { Text("Supervisor *") },
+                    placeholder = { Text("Seleccione un supervisor") },
+                    trailingIcon = {
+                        Icon(
+                            Icons.Default.KeyboardArrowDown,
+                            contentDescription = null
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    supportingText = { 
+                        Text(
+                            if (supervisores.isEmpty()) 
+                                "Cargando supervisores..."
+                            else 
+                                "${supervisores.size} supervisores disponibles"
+                        )
+                    },
+                    isError = supervisorSeleccionado == null
+                )
+                
+                ExposedDropdownMenu(
+                    expanded = expandedSupervisor,
+                    onDismissRequest = { expandedSupervisor = false }
+                ) {
+                    if (supervisores.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text("No hay supervisores disponibles", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                            onClick = { },
+                            enabled = false
+                        )
+                    } else {
+                        supervisores.forEach { supervisor ->
+                            DropdownMenuItem(
+                                text = { 
+                                    Column {
+                                        Text(
+                                            supervisor.nombre,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Text(
+                                            supervisor.cargo ?: "Supervisor",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    supervisorSeleccionado = supervisor
+                                    expandedSupervisor = false
+                                },
+                                leadingIcon = if (supervisorSeleccionado?.id == supervisor.id) {
+                                    { Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                                } else null
+                            )
+                        }
+                    }
+                }
+            }
+            
+            Divider()
+            
             // PROCEDIMIENTO DE LAVADO
             Text("PROCEDIMIENTO DE LAVADO DE MANOS", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Text(
@@ -293,7 +403,7 @@ fun LavadoManosScreen(
                             firma = user.nombreCompleto,
                             procedimientoCorrecto = procedimientoCorrecto,
                             accionCorrectiva = accionesCorrectivas.ifEmpty { null },
-                            supervisorId = null
+                            supervisorId = supervisorSeleccionado?.id
                         )
                     }
                 },

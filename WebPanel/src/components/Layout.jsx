@@ -39,6 +39,7 @@ import Collapse from '@mui/material/Collapse';
 import Footer from './Footer';
 
 const drawerWidth = 280;
+const mobileDrawerWidth = 260; // Ancho más pequeño para móviles
 
 const Layout = () => {
   const navigate = useNavigate();
@@ -73,8 +74,8 @@ const Layout = () => {
   ];
 
   const haccpItems = [
-    { text: 'Recepción Mercadería', path: '/haccp/recepcion-mercaderia' },
     { text: 'Recepción Abarrotes', path: '/haccp/recepcion-abarrotes' },
+    { text: 'Recepción Mercadería (Legacy)', path: '/haccp/recepcion-mercaderia' },
     { text: 'Control Cocción', path: '/haccp/control-coccion' },
     { text: 'Lavado Frutas', path: '/haccp/lavado-frutas' },
     { text: 'Lavado Manos', path: '/haccp/lavado-manos' },
@@ -119,28 +120,38 @@ const Layout = () => {
       
       <List sx={{ px: 2, py: 1 }}>
         {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+          <ListItem key={item.text} disablePadding sx={{ mb: 0.25 }}>
             <ListItemButton
               selected={location.pathname === item.path}
               onClick={() => navigate(item.path)}
               sx={{
                 borderRadius: '8px',
-                color: location.pathname === item.path ? '#fff' : 'rgba(255,255,255,0.7)',
-                bgcolor: location.pathname === item.path ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
+                margin: '2px 8px',
+                padding: '8px 16px',
+                color: location.pathname === item.path ? '#fff' : 'rgba(255,255,255,0.8)',
+                bgcolor: location.pathname === item.path ? 'rgba(79, 70, 229, 0.2)' : 'transparent',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
-                  bgcolor: location.pathname === item.path ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255,255,255,0.05)',
+                  bgcolor: location.pathname === item.path ? 'rgba(79, 70, 229, 0.3)' : 'rgba(255,255,255,0.08)',
+                  transform: 'translateX(4px)',
                 },
                 '&.Mui-selected': {
-                  bgcolor: 'rgba(99, 102, 241, 0.2)',
-                  borderLeft: '3px solid #6366F1',
+                  bgcolor: 'rgba(79, 70, 229, 0.2)',
+                  borderLeft: '3px solid #4f46e5',
                   '&:hover': {
-                    bgcolor: 'rgba(99, 102, 241, 0.3)',
+                    bgcolor: 'rgba(79, 70, 229, 0.3)',
                   }
                 }
               }}
             >
-              <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: 500 }} />
+              <ListItemIcon sx={{ 
+                color: 'inherit', 
+                minWidth: 36,
+                '& .MuiSvgIcon-root': {
+                  fontSize: '1.25rem',
+                },
+              }}>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: 500 }} />
             </ListItemButton>
           </ListItem>
         ))}
@@ -151,16 +162,26 @@ const Layout = () => {
             onClick={() => setHaccpOpen(!haccpOpen)}
             sx={{
               borderRadius: '8px',
-              color: 'rgba(255,255,255,0.7)',
+              margin: '2px 8px',
+              padding: '8px 16px',
+              color: 'rgba(255,255,255,0.8)',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
               '&:hover': {
-                bgcolor: 'rgba(255,255,255,0.05)',
+                bgcolor: 'rgba(255,255,255,0.08)',
+                transform: 'translateX(4px)',
               }
             }}
           >
-            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>
+            <ListItemIcon sx={{ 
+              color: 'inherit', 
+              minWidth: 36,
+              '& .MuiSvgIcon-root': {
+                fontSize: '1.25rem',
+              },
+            }}>
               <AssignmentIcon />
             </ListItemIcon>
-            <ListItemText primary="HACCP" primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: 500 }} />
+            <ListItemText primary="HACCP" primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: 500 }} />
             {haccpOpen ? <ExpandLess sx={{ color: 'inherit' }} /> : <ExpandMore sx={{ color: 'inherit' }} />}
           </ListItemButton>
         </ListItem>
@@ -170,14 +191,24 @@ const Layout = () => {
               <ListItemButton
                 key={item.text}
                 sx={{ 
-                  pl: 5,
-                  py: 0.75,
+                  pl: 4,
+                  py: 0.5,
                   borderRadius: '8px',
-                  color: location.pathname === item.path ? '#fff' : 'rgba(255,255,255,0.6)',
-                  bgcolor: location.pathname === item.path ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-                  mb: 0.25,
+                  margin: '1px 8px 1px 16px',
+                  padding: '6px 16px 6px 24px',
+                  color: location.pathname === item.path ? '#fff' : 'rgba(255,255,255,0.7)',
+                  bgcolor: location.pathname === item.path ? 'rgba(79, 70, 229, 0.15)' : 'transparent',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                   '&:hover': {
-                    bgcolor: location.pathname === item.path ? 'rgba(99, 102, 241, 0.25)' : 'rgba(255,255,255,0.05)',
+                    bgcolor: location.pathname === item.path ? 'rgba(79, 70, 229, 0.25)' : 'rgba(255,255,255,0.06)',
+                    transform: 'translateX(2px)',
+                  },
+                  '&.Mui-selected': {
+                    bgcolor: 'rgba(79, 70, 229, 0.15)',
+                    borderLeft: '2px solid #4f46e5',
+                    '&:hover': {
+                      bgcolor: 'rgba(79, 70, 229, 0.25)',
+                    }
                   }
                 }}
                 selected={location.pathname === item.path}
@@ -185,7 +216,7 @@ const Layout = () => {
               >
                 <ListItemText 
                   primary={item.text} 
-                  primaryTypographyProps={{ fontSize: '0.85rem' }}
+                  primaryTypographyProps={{ fontSize: '0.8125rem', fontWeight: 400 }}
                 />
               </ListItemButton>
             ))}
@@ -193,32 +224,45 @@ const Layout = () => {
         </Collapse>
       </List>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', my: 1 }} />
+      <Divider sx={{ 
+        borderColor: 'rgba(255,255,255,0.12)', 
+        margin: '8px 12px',
+      }} />
 
       <List sx={{ px: 2 }}>
         {bottomMenuItems.map((item) => (
-          <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+          <ListItem key={item.text} disablePadding sx={{ mb: 0.25 }}>
             <ListItemButton
               selected={location.pathname === item.path}
               onClick={() => navigate(item.path)}
               sx={{
                 borderRadius: '8px',
-                color: location.pathname === item.path ? '#fff' : 'rgba(255,255,255,0.7)',
-                bgcolor: location.pathname === item.path ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
+                margin: '2px 8px',
+                padding: '8px 16px',
+                color: location.pathname === item.path ? '#fff' : 'rgba(255,255,255,0.8)',
+                bgcolor: location.pathname === item.path ? 'rgba(79, 70, 229, 0.2)' : 'transparent',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
-                  bgcolor: location.pathname === item.path ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255,255,255,0.05)',
+                  bgcolor: location.pathname === item.path ? 'rgba(79, 70, 229, 0.3)' : 'rgba(255,255,255,0.08)',
+                  transform: 'translateX(4px)',
                 },
                 '&.Mui-selected': {
-                  bgcolor: 'rgba(99, 102, 241, 0.2)',
-                  borderLeft: '3px solid #6366F1',
+                  bgcolor: 'rgba(79, 70, 229, 0.2)',
+                  borderLeft: '3px solid #4f46e5',
                   '&:hover': {
-                    bgcolor: 'rgba(99, 102, 241, 0.3)',
+                    bgcolor: 'rgba(79, 70, 229, 0.3)',
                   }
                 }
               }}
             >
-              <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: 500 }} />
+              <ListItemIcon sx={{ 
+                color: 'inherit', 
+                minWidth: 36,
+                '& .MuiSvgIcon-root': {
+                  fontSize: '1.25rem',
+                },
+              }}>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: 500 }} />
             </ListItemButton>
           </ListItem>
         ))}
@@ -311,7 +355,11 @@ const Layout = () => {
           }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: mobileDrawerWidth,
+              maxWidth: '85vw', // Máximo 85% del ancho de la pantalla
+            },
           }}
         >
           {drawer}
@@ -319,8 +367,17 @@ const Layout = () => {
         <Drawer
           variant="permanent"
           sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            display: { xs: 'none', sm: 'block' }, // Solo mostrar en desktop
+            width: drawerWidth,
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+              backgroundColor: '#1e293b',
+              color: 'white',
+              borderRight: 'none',
+              boxShadow: '2px 0 8px rgba(0, 0, 0, 0.1)', // Sombra más sutil
+            },
           }}
           open
         >

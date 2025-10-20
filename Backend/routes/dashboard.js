@@ -268,7 +268,7 @@ router.get('/admin', authenticateToken, requireAdmin, (req, res) => {
                 END), 2) as promedio_horas_hoy
             FROM usuarios u
             LEFT JOIN asistencia a ON u.id = a.usuario_id AND a.fecha = ?
-            WHERE u.rol = 'EMPLEADO' AND u.activo = 1
+            WHERE u.rol = 'Supervisor' AND u.activo = 1
         `;
 
         db.get(statsHoyQuery, [fecha], (err, statsHoy) => {
@@ -302,7 +302,7 @@ router.get('/admin', authenticateToken, requireAdmin, (req, res) => {
                     END as estado
                 FROM usuarios u
                 LEFT JOIN asistencia a ON u.id = a.usuario_id AND a.fecha = ?
-                WHERE u.rol = 'EMPLEADO' AND u.activo = 1
+                WHERE u.rol = 'Supervisor' AND u.activo = 1
                 ORDER BY u.nombre
             `;
 

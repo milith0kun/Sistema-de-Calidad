@@ -43,7 +43,11 @@ import {
 } from '@mui/icons-material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { reportesService } from '../services/api';
-import { exportarResumenNC } from '../utils/exportExcel';
+import { 
+  exportarResumenNC,
+  exportarFormularioVacioFrutasVerduras,
+  exportarRecepcionFrutasVerduras
+} from '../utils/exportExcel';
 
 const Reportes = () => {
   const [loading, setLoading] = useState(false);
@@ -219,6 +223,13 @@ const Reportes = () => {
   const exportarPlantillaVacia = async (tipoFormulario) => {
     try {
       setLoading(true);
+      
+      // Manejar casos especiales con funciones locales
+      if (tipoFormulario === 'frutas-verduras') {
+        await exportarFormularioVacioFrutasVerduras(mes, anio);
+        return;
+      }
+      
       await descargarFormularioVacio(tipoFormulario);
     } catch (error) {
       setError('Error al descargar la plantilla');
@@ -291,6 +302,26 @@ const Reportes = () => {
     try {
       setLoading(true);
       setError('');
+      
+      // Manejar casos especiales con funciones locales
+      if (tipo === 'frutas-verduras') {
+        // Obtener datos del endpoint específico de frutas y verduras
+        const response = await fetch(`/api/recepcion-frutas-verduras?mes=${mes}&anio=${anio}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const datos = await response.json();
+          await exportarRecepcionFrutasVerduras(datos, mes, anio);
+        } else {
+          // Si no hay datos, exportar plantilla vacía
+          await exportarFormularioVacioFrutasVerduras(mes, anio);
+        }
+        return;
+      }
       
       const response = await fetch(`/api/formularios-haccp/reporte/${tipo}/${mes}/${anio}`, {
         method: 'GET',
@@ -394,6 +425,12 @@ const Reportes = () => {
             startIcon={<FileDownloadIcon />}
             onClick={() => exportarPlantillaVacia('general')}
             disabled={loading}
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 500,
+              minHeight: '36px'
+            }}
           >
             Plantilla Vacía
           </Button>
@@ -402,6 +439,12 @@ const Reportes = () => {
             startIcon={<FileDownloadIcon />}
             onClick={handleExportar}
             disabled={loading || noConformidades.length === 0}
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 500,
+              minHeight: '36px'
+            }}
           >
             {noConformidades.length === 0 ? 'Exportar Plantilla' : `Exportar ${tipoReporte.charAt(0).toUpperCase() + tipoReporte.slice(1)}`}
           </Button>
@@ -528,6 +571,12 @@ const Reportes = () => {
                   startIcon={<FilterListIcon />}
                   onClick={cargarReportes}
                   disabled={loading}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '36px'
+                  }}
                 >
                   Aplicar Filtros
                 </Button>
@@ -536,6 +585,12 @@ const Reportes = () => {
                   startIcon={<ClearIcon />}
                   onClick={limpiarFiltros}
                   disabled={loading}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '36px'
+                  }}
                 >
                   Limpiar
                 </Button>
@@ -574,6 +629,12 @@ const Reportes = () => {
               onClick={cargarReportes}
               disabled={loading}
               startIcon={<AssessmentIcon />}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 500,
+                minHeight: '36px'
+              }}
             >
               Generar Reporte
             </Button>
@@ -616,6 +677,12 @@ const Reportes = () => {
                   startIcon={<DescriptionIcon />}
                   onClick={() => exportarPlantillaVacia('abarrotes')}
                   disabled={loading}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '32px'
+                  }}
                 >
                   Plantilla
                 </Button>
@@ -625,6 +692,12 @@ const Reportes = () => {
                   onClick={() => descargarReporte('abarrotes')}
                   disabled={loading}
                   variant="contained"
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '32px'
+                  }}
                 >
                   Con Datos
                 </Button>
@@ -638,7 +711,7 @@ const Reportes = () => {
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
                   <DescriptionIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Recepción de Mercadería</Typography>
+                  <Typography variant="h6">Recepción de Frutas y Verduras</Typography>
                 </Box>
                 <Typography variant="body2" color="text.secondary">
                   Control de recepción de productos frescos, frutas y verduras
@@ -648,17 +721,29 @@ const Reportes = () => {
                 <Button
                   size="small"
                   startIcon={<DescriptionIcon />}
-                  onClick={() => exportarPlantillaVacia('mercaderia')}
+                  onClick={() => exportarPlantillaVacia('frutas-verduras')}
                   disabled={loading}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '32px'
+                  }}
                 >
                   Plantilla
                 </Button>
                 <Button
                   size="small"
                   startIcon={<GetAppIcon />}
-                  onClick={() => descargarReporte('mercaderia')}
+                  onClick={() => descargarReporte('frutas-verduras')}
                   disabled={loading}
                   variant="contained"
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '32px'
+                  }}
                 >
                   Con Datos
                 </Button>
@@ -684,6 +769,12 @@ const Reportes = () => {
                   startIcon={<DescriptionIcon />}
                   onClick={() => exportarPlantillaVacia('coccion')}
                   disabled={loading}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '32px'
+                  }}
                 >
                   Plantilla
                 </Button>
@@ -693,6 +784,12 @@ const Reportes = () => {
                   onClick={() => descargarReporte('coccion')}
                   disabled={loading}
                   variant="contained"
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '32px'
+                  }}
                 >
                   Con Datos
                 </Button>
@@ -718,6 +815,12 @@ const Reportes = () => {
                   startIcon={<DescriptionIcon />}
                   onClick={() => exportarPlantillaVacia('temperatura')}
                   disabled={loading}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '32px'
+                  }}
                 >
                   Plantilla
                 </Button>
@@ -727,6 +830,12 @@ const Reportes = () => {
                   onClick={() => descargarReporte('temperatura')}
                   disabled={loading}
                   variant="contained"
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '32px'
+                  }}
                 >
                   Con Datos
                 </Button>
@@ -752,6 +861,12 @@ const Reportes = () => {
                   startIcon={<DescriptionIcon />}
                   onClick={() => exportarPlantillaVacia('lavado-manos')}
                   disabled={loading}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '32px'
+                  }}
                 >
                   Plantilla
                 </Button>
@@ -761,6 +876,12 @@ const Reportes = () => {
                   onClick={() => descargarReporte('lavado-manos')}
                   disabled={loading}
                   variant="contained"
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '32px'
+                  }}
                 >
                   Con Datos
                 </Button>
@@ -786,6 +907,12 @@ const Reportes = () => {
                   startIcon={<DescriptionIcon />}
                   onClick={() => exportarPlantillaVacia('lavado-frutas')}
                   disabled={loading}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '32px'
+                  }}
                 >
                   Plantilla
                 </Button>
@@ -795,6 +922,12 @@ const Reportes = () => {
                   onClick={() => descargarReporte('lavado-frutas')}
                   disabled={loading}
                   variant="contained"
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '32px'
+                  }}
                 >
                   Con Datos
                 </Button>

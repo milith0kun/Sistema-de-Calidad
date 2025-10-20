@@ -1,17 +1,29 @@
 package com.example.sistemadecalidad.ui.screens.haccp
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+// import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.sistemadecalidad.data.local.PreferencesManager
+import com.example.sistemadecalidad.data.model.User
+import com.example.sistemadecalidad.data.api.Empleado
 import com.example.sistemadecalidad.ui.viewmodel.HaccpViewModel
 import com.example.sistemadecalidad.ui.components.ValidatedTextField
 import com.example.sistemadecalidad.ui.components.FieldValidators
@@ -19,507 +31,745 @@ import com.example.sistemadecalidad.ui.components.ErrorMessage
 import com.example.sistemadecalidad.ui.components.SuccessMessage
 import com.example.sistemadecalidad.ui.components.LoadingMessage
 import com.example.sistemadecalidad.utils.TimeUtils
+import kotlinx.coroutines.delay
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecepcionMercaderiaScreen(
-    haccpViewModel: HaccpViewModel,
-    preferencesManager: PreferencesManager,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    haccpViewModel: HaccpViewModel, // = hiltViewModel()
+    usuario: User? = null,
+    preferencesManager: PreferencesManager? = null
 ) {
-    // ViewModel states
-    val uiState by haccpViewModel.uiState.collectAsStateWithLifecycle()
-    val supervisores by haccpViewModel.supervisores.collectAsStateWithLifecycle()
-    
-    var tipoControl by remember { mutableStateOf("FRUTAS_VERDURAS") }
+    // Estados para los campos del formulario - Solo para Frutas y Verduras
     var nombreProveedor by remember { mutableStateOf("") }
     var nombreProducto by remember { mutableStateOf("") }
     var cantidadSolicitada by remember { mutableStateOf("") }
-    var pesoRecibido by remember { mutableStateOf("") }
-    var unidadMedida by remember { mutableStateOf("KG") }
+    var unidadMedida by remember { mutableStateOf("") }
     
-    // Campos para Frutas y Verduras
-    var estadoProducto by remember { mutableStateOf("EXCELENTE") }
-    var conformidadIntegridad by remember { mutableStateOf("EXCELENTE") }
+    // Campos específicos para Frutas y Verduras
+    var estadoProducto by remember { mutableStateOf("") }
+    var conformidadIntegridad by remember { mutableStateOf("") }
     
-    // Campos para Abarrotes
-    var registroSanitario by remember { mutableStateOf(true) }
-    var fechaVencimiento by remember { mutableStateOf("") }
-    var evaluacionVencimiento by remember { mutableStateOf("EXCELENTE") }
-    var conformidadEmpaque by remember { mutableStateOf("EXCELENTE") }
+    // Campos comunes
+    var uniformeCompleto by remember { mutableStateOf("") }
+    var transporteAdecuado by remember { mutableStateOf("") }
+    var puntualidad by remember { mutableStateOf("") }
     
-    // Evaluaciones comunes
-    var uniformeCompleto by remember { mutableStateOf("C") }
-    var transporteAdecuado by remember { mutableStateOf("C") }
-    var puntualidad by remember { mutableStateOf("C") }
-    
-    // Supervisor
-    var supervisorSeleccionado by remember { mutableStateOf<Int?>(null) }
-    var supervisorMenuExpanded by remember { mutableStateOf(false) }
-    
+    // Campos opcionales
+    var supervisorSeleccionado by remember { mutableStateOf<Empleado?>(null) }
     var observaciones by remember { mutableStateOf("") }
     var accionCorrectiva by remember { mutableStateOf("") }
     var productoRechazado by remember { mutableStateOf(false) }
     
-    var showSuccessDialog by remember { mutableStateOf(false) }
+    // Estados de UI
+    var showSupervisorDialog by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var showSuccessMessage by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     
-    val scrollState = rememberScrollState()
-    val currentPeruDate = TimeUtils.getCurrentPeruDate()
-    val peruCalendar = Calendar.getInstance(TimeUtils.getPeruTimeZone())
-    peruCalendar.time = currentPeruDate
+    // Observar estados del ViewModel
+    val uiState by haccpViewModel.uiState.collectAsState()
+    val supervisores by haccpViewModel.supervisores.collectAsState()
     
     // Cargar supervisores al iniciar
     LaunchedEffect(Unit) {
-        haccpViewModel.cargarSupervisores(area = null) // Todos los supervisores
+        haccpViewModel.cargarSupervisores()
     }
     
-    // Mostrar diálogo de éxito
-    LaunchedEffect(uiState.successMessage) {
-        if (uiState.successMessage != null) {
-            showSuccessDialog = true
+    // Manejar estados del registro
+    LaunchedEffect(uiState.isFormSuccess) {
+        if (uiState.isFormSuccess) {
+            showSuccessMessage = true
+            // Limpiar formulario después del éxito
+            nombreProveedor = ""
+            nombreProducto = ""
+            cantidadSolicitada = ""
+            unidadMedida = ""
+            estadoProducto = ""
+            conformidadIntegridad = ""
+            uniformeCompleto = ""
+            transporteAdecuado = ""
+            puntualidad = ""
+            supervisorSeleccionado = null
+            observaciones = ""
+            accionCorrectiva = ""
+            productoRechazado = false
+            
+            // Resetear el estado de éxito en el ViewModel para evitar que se quede "pegado"
+            haccpViewModel.resetFormSuccess()
         }
     }
     
+    // Actualizar estados de carga y error
+    LaunchedEffect(uiState.isLoading) {
+        isLoading = uiState.isLoading
+    }
+    
+    LaunchedEffect(uiState.error) {
+        errorMessage = uiState.error
+    }
+    
+    // Función de validación específica para frutas y verduras
+    fun validarFormulario(): String? {
+        if (nombreProveedor.isBlank()) return "El nombre del proveedor es obligatorio"
+        if (nombreProducto.isBlank()) return "El nombre del producto es obligatorio"
+        if (cantidadSolicitada.isBlank()) return "La cantidad solicitada es obligatoria"
+        
+        // Validaciones específicas para frutas y verduras
+        if (estadoProducto.isBlank()) return "El estado del producto es obligatorio"
+        if (conformidadIntegridad.isBlank()) return "La conformidad e integridad es obligatoria"
+        
+        // Validaciones comunes
+        if (uniformeCompleto.isBlank()) return "La evaluación de uniforme completo es obligatoria"
+        if (transporteAdecuado.isBlank()) return "La evaluación de transporte adecuado es obligatoria"
+        if (puntualidad.isBlank()) return "La evaluación de puntualidad es obligatoria"
+        
+        return null
+    }
+    
+    // Función para registrar
+    fun registrar() {
+        val error = validarFormulario()
+        if (error != null) {
+            errorMessage = error
+            return
+        }
+        
+        // Obtener fecha y hora actuales
+        val currentPeruDate = TimeUtils.getCurrentPeruDate()
+        val peruCalendar = Calendar.getInstance(TimeUtils.getPeruTimeZone())
+        peruCalendar.time = currentPeruDate
+        val mes = peruCalendar.get(Calendar.MONTH) + 1
+        val anio = peruCalendar.get(Calendar.YEAR)
+        val fecha = TimeUtils.formatDateForBackend(currentPeruDate)
+        val hora = TimeUtils.formatTimeForBackend(currentPeruDate)
+        
+        haccpViewModel.registrarRecepcionFrutasVerduras(
+            mes = mes,
+            anio = anio,
+            fecha = fecha,
+            hora = hora,
+            tipoControl = "FRUTAS_VERDURAS",
+            nombreProveedor = nombreProveedor,
+            nombreProducto = nombreProducto,
+            cantidadSolicitada = cantidadSolicitada,
+            pesoUnidadRecibido = "0.0", // Valor por defecto como texto ya que no se usa peso recibido
+            unidadMedida = unidadMedida,
+            cNc = "C", // Valor por defecto de conformidad general
+            estadoProducto = estadoProducto,
+            conformidadIntegridad = conformidadIntegridad,
+            uniformeCompleto = uniformeCompleto,
+            transporteAdecuado = transporteAdecuado,
+            puntualidad = puntualidad,
+            supervisorId = supervisorSeleccionado?.id,
+            observaciones = observaciones.ifBlank { null },
+            accionCorrectiva = accionCorrectiva.ifBlank { null },
+            productoRechazado = productoRechazado
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Recepción de Mercadería") },
+                title = { 
+                    Text(
+                        "Recepción de Frutas y Verduras",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, "Volver")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    // Validaciones mejoradas
-                    val errors = mutableMapOf<String, String>()
-                    
-                    // Validar campos obligatorios
-                    if (nombreProveedor.isBlank()) {
-                        errors["proveedor"] = "El nombre del proveedor es obligatorio"
-                    }
-                    
-                    if (nombreProducto.isBlank()) {
-                        errors["producto"] = "El nombre del producto es obligatorio"
-                    }
-                    
-                    // Validar peso
-                    val pesoDouble = pesoRecibido.toDoubleOrNull()
-                    when {
-                        pesoRecibido.isBlank() -> errors["peso"] = "El peso es obligatorio"
-                        pesoDouble == null -> errors["peso"] = "El peso debe ser un número válido"
-                        pesoDouble <= 0 -> errors["peso"] = "El peso debe ser mayor a 0"
-                        pesoDouble > 1000 -> errors["peso"] = "El peso no puede ser mayor a 1000 kg"
-                    }
-                    
-                    // Validar cantidad solicitada si no está vacía
-                    if (cantidadSolicitada.isNotBlank()) {
-                        val cantidadDouble = cantidadSolicitada.toDoubleOrNull()
-                        if (cantidadDouble == null || cantidadDouble <= 0) {
-                            errors["cantidad"] = "La cantidad debe ser un número válido mayor a 0"
-                        }
-                    }
-                    
-                    // Validar campos de evaluación para frutas y verduras
-                    if (tipoControl == "FRUTAS_VERDURAS") {
-                        if (estadoProducto.isBlank()) {
-                            errors["estado"] = "El estado del producto es obligatorio"
-                        }
-                        if (conformidadIntegridad.isBlank()) {
-                            errors["conformidad"] = "La conformidad de integridad es obligatoria"
-                        }
-                    }
-                    
-                    // Validar campos de evaluación para abarrotes
-                    if (tipoControl == "ABARROTES") {
-                        if (evaluacionVencimiento.isBlank()) {
-                            errors["vencimiento"] = "La evaluación de vencimiento es obligatoria"
-                        }
-                        if (conformidadEmpaque.isBlank()) {
-                            errors["empaque"] = "La conformidad del empaque es obligatoria"
-                        }
-                    }
-                    
-                    // Validar campos comunes
-                    if (uniformeCompleto.isBlank()) {
-                        errors["uniforme"] = "La evaluación del uniforme es obligatoria"
-                    }
-                    if (transporteAdecuado.isBlank()) {
-                        errors["transporte"] = "La evaluación del transporte es obligatoria"
-                    }
-                    if (puntualidad.isBlank()) {
-                        errors["puntualidad"] = "La evaluación de puntualidad es obligatoria"
-                    }
-                    
-                    // Si hay errores, mostrar mensaje y no enviar
-                    if (errors.isNotEmpty()) {
-                        val errorMessage = "Por favor corrija los siguientes errores:\n" + 
-                            errors.values.joinToString("\n• ", "• ")
-                        // Aquí podrías mostrar un diálogo de error o usar el sistema de errores del ViewModel
-                        return@FloatingActionButton
-                    }
-                    
-                    // Verificar que pesoDouble no sea null antes de proceder
-                    if (pesoDouble == null) {
-                        return@FloatingActionButton
-                    }
-                    
-                    haccpViewModel.registrarRecepcionFrutasVerduras(
-                        mes = peruCalendar.get(Calendar.MONTH) + 1,
-                        anio = peruCalendar.get(Calendar.YEAR),
-                        fecha = TimeUtils.formatDateForBackend(currentPeruDate),
-                        hora = TimeUtils.formatTimeForBackend(currentPeruDate),
-                        tipoControl = tipoControl,
-                        nombreProveedor = nombreProveedor,
-                        nombreProducto = nombreProducto,
-                        cantidadSolicitada = cantidadSolicitada,
-                        pesoUnidadRecibido = pesoDouble,
-                        unidadMedida = unidadMedida,
-                        estadoProducto = estadoProducto,
-                        conformidadIntegridad = conformidadIntegridad,
-                        uniformeCompleto = uniformeCompleto,
-                        transporteAdecuado = transporteAdecuado,
-                        puntualidad = puntualidad,
-                        observaciones = observaciones.ifEmpty { null },
-                        accionCorrectiva = accionCorrectiva.ifEmpty { null },
-                        productoRechazado = productoRechazado,
-                        supervisorId = supervisorSeleccionado
-                    )
-                }
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimaryContainer)
-                } else {
-                    Icon(Icons.Default.Check, "Guardar")
-                }
-            }
         }
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(scrollState)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Mostrar mensajes de estado
-            if (uiState.isLoading) {
-                LoadingMessage("Guardando registro...")
-            }
-            
-            uiState.error?.let { errorMessage ->
-                ErrorMessage(
-                    message = errorMessage,
-                    onDismiss = { haccpViewModel.clearMessages() }
-                )
-            }
-            
-            uiState.successMessage?.let { successMessage ->
-                SuccessMessage(
-                    message = successMessage,
-                    onDismiss = { haccpViewModel.clearMessages() }
-                )
-            }
-            
-            Text(
-                text = "Información de Recepción",
-                style = MaterialTheme.typography.titleLarge
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Tipo de Control
-            Text("Tipo de Control", style = MaterialTheme.typography.labelMedium)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                FilterChip(
-                    selected = tipoControl == "FRUTAS_VERDURAS",
-                    onClick = { tipoControl = "FRUTAS_VERDURAS" },
-                    label = { Text("Frutas y Verduras") },
-                    modifier = Modifier.weight(1f)
-                )
-                FilterChip(
-                    selected = tipoControl == "ABARROTES",
-                    onClick = { tipoControl = "ABARROTES" },
-                    label = { Text("Abarrotes") },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Datos del Proveedor y Producto
-            ValidatedTextField(
-                value = nombreProveedor,
-                onValueChange = { nombreProveedor = it },
-                label = "Proveedor",
-                isRequired = true,
-                validator = FieldValidators.required("Proveedor"),
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            ValidatedTextField(
-                value = nombreProducto,
-                onValueChange = { nombreProducto = it },
-                label = "Producto",
-                isRequired = true,
-                validator = FieldValidators.required("Producto"),
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ValidatedTextField(
-                    value = cantidadSolicitada,
-                    onValueChange = { cantidadSolicitada = it },
-                    label = "Cantidad Solicitada",
-                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
-                    validator = { value ->
-                        if (value.isNotBlank()) {
-                            val number = value.toDoubleOrNull()
-                            when {
-                                number == null -> "Debe ser un número válido"
-                                number <= 0 -> "Debe ser mayor a 0"
-                                else -> null
-                            }
-                        } else null
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-                ValidatedTextField(
-                    value = pesoRecibido,
-                    onValueChange = { pesoRecibido = it },
-                    label = "Peso Recibido",
-                    isRequired = true,
-                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
-                    validator = FieldValidators.positiveNumber("Peso Recibido", 1000.0),
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Unidad de Medida
-            Text("Unidad de Medida", style = MaterialTheme.typography.labelMedium)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                listOf("KG", "UNIDAD", "CAJA", "GRAMOS", "LITROS").forEach { unidad ->
-                    FilterChip(
-                        selected = unidadMedida == unidad,
-                        onClick = { unidadMedida = unidad },
-                        label = { Text(unidad, style = MaterialTheme.typography.bodySmall) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Campos específicos según tipo de control
-            if (tipoControl == "FRUTAS_VERDURAS") {
-                Text(
-                    text = "Evaluación de Frutas y Verduras",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                EvaluacionField(
-                    label = "Estado del Producto",
-                    value = estadoProducto,
-                    onValueChange = { estadoProducto = it }
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                EvaluacionField(
-                    label = "Conformidad e Integridad",
-                    value = conformidadIntegridad,
-                    onValueChange = { conformidadIntegridad = it }
-                )
-            } else {
-                Text(
-                    text = "Evaluación de Abarrotes",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    Checkbox(
-                        checked = registroSanitario,
-                        onCheckedChange = { registroSanitario = it }
-                    )
-                    Text("Registro Sanitario Vigente")
+            // Mensaje de estado
+            item {
+                if (showSuccessMessage) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Text(
+                            text = "✓ Registro guardado exitosamente",
+                            modifier = Modifier.padding(16.dp),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 }
                 
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                OutlinedTextField(
-                    value = fechaVencimiento,
-                    onValueChange = { fechaVencimiento = it },
-                    label = { Text("Fecha de Vencimiento (YYYY-MM-DD)") },
+                errorMessage?.let { error ->
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Text(
+                            text = error,
+                            modifier = Modifier.padding(16.dp),
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+            }
+
+            // Responsables del Registro y Supervisión - MOVIDO AL INICIO
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
                     modifier = Modifier.fillMaxWidth()
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                EvaluacionField(
-                    label = "Evaluación Vencimiento",
-                    value = evaluacionVencimiento,
-                    onValueChange = { evaluacionVencimiento = it }
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                EvaluacionField(
-                    label = "Conformidad Empaque",
-                    value = conformidadEmpaque,
-                    onValueChange = { conformidadEmpaque = it }
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Evaluaciones Comunes
-            Text(
-                text = "Evaluaciones del Proveedor",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            ConformidadField(
-                label = "Uniforme Completo",
-                value = uniformeCompleto,
-                onValueChange = { uniformeCompleto = it }
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            ConformidadField(
-                label = "Transporte Adecuado",
-                value = transporteAdecuado,
-                onValueChange = { transporteAdecuado = it }
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            ConformidadField(
-                label = "Puntualidad",
-                value = puntualidad,
-                onValueChange = { puntualidad = it }
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Supervisor de área
-            Text("Supervisor de Área (Opcional)", style = MaterialTheme.typography.labelMedium)
-            Spacer(modifier = Modifier.height(4.dp))
-            ExposedDropdownMenuBox(
-                expanded = supervisorMenuExpanded,
-                onExpandedChange = { supervisorMenuExpanded = it }
-            ) {
-                OutlinedTextField(
-                    value = supervisorSeleccionado?.let { id ->
-                        supervisores.find { it.id == id }?.nombre
-                    } ?: "Seleccionar supervisor",
-                    onValueChange = {},
-                    readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = supervisorMenuExpanded) },
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth(),
-                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
-                )
-                
-                ExposedDropdownMenu(
-                    expanded = supervisorMenuExpanded,
-                    onDismissRequest = { supervisorMenuExpanded = false }
                 ) {
-                    supervisores.forEach { supervisor ->
-                        DropdownMenuItem(
-                            text = { 
-                                Column {
-                                    Text(supervisor.nombre)
-                                    Text(
-                                        text = "${supervisor.cargo} - ${supervisor.area}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Responsables",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        
+                        // Responsable de Registro (usuario logueado)
+                        OutlinedTextField(
+                            value = usuario?.nombreCompleto ?: "Usuario no identificado",
+                            onValueChange = { },
+                            label = { Text("Responsable de Registro") },
+                            modifier = Modifier.fillMaxWidth(),
+                            readOnly = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                                disabledBorderColor = MaterialTheme.colorScheme.outline,
+                                disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
+                        
+                        // Selector de Supervisor
+                        ExposedDropdownMenuBox(
+                            expanded = showSupervisorDialog,
+                            onExpandedChange = { showSupervisorDialog = !showSupervisorDialog }
+                        ) {
+                            OutlinedTextField(
+                                value = supervisorSeleccionado?.nombre ?: "",
+                                onValueChange = { },
+                                readOnly = true,
+                                label = { Text("Responsable de la Supervisión *") },
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = showSupervisorDialog)
+                                },
+                                modifier = Modifier
+                                    .menuAnchor()
+                                    .fillMaxWidth(),
+                                placeholder = { Text("Seleccionar supervisor") }
+                            )
+                            ExposedDropdownMenu(
+                                expanded = showSupervisorDialog,
+                                onDismissRequest = { showSupervisorDialog = false }
+                            ) {
+                                supervisores.forEach { supervisor ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Column {
+                                                Text(
+                                                    text = supervisor.nombre,
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                            }
+                                        },
+                                        onClick = {
+                                            supervisorSeleccionado = supervisor
+                                            showSupervisorDialog = false
+                                        },
+                                        leadingIcon = if (supervisorSeleccionado?.id == supervisor.id) {
+                                            { Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                                        } else null
                                     )
                                 }
-                            },
-                            onClick = {
-                                supervisorSeleccionado = supervisor.id
-                                supervisorMenuExpanded = false
                             }
+                        }
+                    }
+                }
+            }
+
+            // Información del producto
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Información del Producto",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        
+                        OutlinedTextField(
+                            value = nombreProveedor,
+                            onValueChange = { nombreProveedor = it },
+                            label = { Text("Proveedor *") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                focusedLabelColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                        
+                        OutlinedTextField(
+                            value = nombreProducto,
+                            onValueChange = { nombreProducto = it },
+                            label = { Text("Producto *") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                focusedLabelColor = MaterialTheme.colorScheme.primary
+                            )
                         )
                     }
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Observaciones
-            ValidatedTextField(
-                value = observaciones,
-                onValueChange = { observaciones = it },
-                label = "Observaciones",
-                maxLines = 3,
-                validator = FieldValidators.maxLength("Observaciones", 500),
-                placeholder = "Ingrese observaciones adicionales (opcional)",
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            ValidatedTextField(
-                value = accionCorrectiva,
-                onValueChange = { accionCorrectiva = it },
-                label = "Acción Correctiva",
-                maxLines = 2,
-                validator = FieldValidators.maxLength("Acción Correctiva", 300),
-                placeholder = "Describa las acciones correctivas tomadas (opcional)",
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-            ) {
-                Checkbox(
-                    checked = productoRechazado,
-                    onCheckedChange = { productoRechazado = it }
-                )
-                Text("Producto Rechazado")
+            // Información de cantidad y peso
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Cantidad y Peso",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        
+                        OutlinedTextField(
+                            value = cantidadSolicitada,
+                            onValueChange = { cantidadSolicitada = it },
+                            label = { Text("Cantidad Solicitada *") },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            placeholder = { Text("Ej: 100") },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.secondary,
+                                focusedLabelColor = MaterialTheme.colorScheme.secondary
+                            )
+                        )
+                        
+                        // Selector de tipo de medida
+                        var tipoMedida by remember { mutableStateOf("peso") } // "peso" o "unidad"
+                        var showTipoMedidaDropdown by remember { mutableStateOf(false) }
+                        
+                        ExposedDropdownMenuBox(
+                            expanded = showTipoMedidaDropdown,
+                            onExpandedChange = { showTipoMedidaDropdown = !showTipoMedidaDropdown }
+                        ) {
+                            OutlinedTextField(
+                                value = if (tipoMedida == "peso") "Peso" else "Unidad",
+                                onValueChange = { },
+                                readOnly = true,
+                                label = { Text("Tipo de Medida *") },
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = showTipoMedidaDropdown)
+                                },
+                                modifier = Modifier
+                                    .menuAnchor()
+                                    .fillMaxWidth(),
+                                placeholder = { Text("Seleccionar tipo") },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.secondary,
+                                    focusedLabelColor = MaterialTheme.colorScheme.secondary
+                                )
+                            )
+                            ExposedDropdownMenu(
+                                expanded = showTipoMedidaDropdown,
+                                onDismissRequest = { showTipoMedidaDropdown = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Peso") },
+                                    onClick = {
+                                        tipoMedida = "peso"
+                                        showTipoMedidaDropdown = false
+                                    },
+                                    leadingIcon = if (tipoMedida == "peso") {
+                                        { Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                                    } else null
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Unidad") },
+                                    onClick = {
+                                        tipoMedida = "unidad"
+                                        showTipoMedidaDropdown = false
+                                    },
+                                    leadingIcon = if (tipoMedida == "unidad") {
+                                        { Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                                    } else null
+                                )
+                            }
+                        }
+                        
+                        // Conformidad de Cantidad/Peso
+                        var conformidadCantidad by remember { mutableStateOf("") }
+                        
+                        Text(
+                            text = "Conformidad de Cantidad/Peso",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            FilterChip(
+                                selected = conformidadCantidad == "C",
+                                onClick = { conformidadCantidad = "C" },
+                                label = { Text("C - Conforme") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f),
+                                    selectedLabelColor = MaterialTheme.colorScheme.tertiary
+                                ),
+                                modifier = Modifier.weight(1f)
+                            )
+                            FilterChip(
+                                selected = conformidadCantidad == "NC",
+                                onClick = { conformidadCantidad = "NC" },
+                                label = { Text("NC - No Conforme") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.3f),
+                                    selectedLabelColor = MaterialTheme.colorScheme.error
+                                ),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
             }
             
-            Spacer(modifier = Modifier.height(80.dp)) // Espacio para FAB
+            // Estado de Conformidad (C-NC)
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Estado de Conformidad (C-NC)",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                        
+                        var conformidadGeneral by remember { mutableStateOf("") }
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f).clickable { conformidadGeneral = "Conforme" }
+                            ) {
+                                RadioButton(
+                                    selected = conformidadGeneral == "Conforme",
+                                    onClick = { conformidadGeneral = "Conforme" },
+                                    colors = RadioButtonDefaults.colors(
+                                        selectedColor = MaterialTheme.colorScheme.tertiary
+                                    )
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Conforme (C)",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                )
+                            }
+                            
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f).clickable { conformidadGeneral = "No Conforme" }
+                            ) {
+                                RadioButton(
+                                    selected = conformidadGeneral == "No Conforme",
+                                    onClick = { conformidadGeneral = "No Conforme" },
+                                    colors = RadioButtonDefaults.colors(
+                                        selectedColor = MaterialTheme.colorScheme.error
+                                    )
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "No Conforme (NC)",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            // Evaluaciones específicas para Frutas y Verduras
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Evaluación de Calidad",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        EvaluacionField(
+                            label = "Estado del Producto *",
+                            value = estadoProducto,
+                            onValueChange = { estadoProducto = it }
+                        )
+                    }
+                }
+            }
+            
+            item {
+                ConformidadField(
+                    label = "Conformidad e Integridad *",
+                    value = conformidadIntegridad,
+                    onValueChange = { conformidadIntegridad = it }
+                )
+            }
+
+            // Evaluaciones comunes
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Evaluación General",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        
+                        ConformidadField(
+                            label = "Uniforme Completo *",
+                            value = uniformeCompleto,
+                            onValueChange = { uniformeCompleto = it }
+                        )
+                        
+                        ConformidadField(
+                            label = "Transporte Adecuado *",
+                            value = transporteAdecuado,
+                            onValueChange = { transporteAdecuado = it }
+                        )
+                        
+                        ConformidadField(
+                            label = "Puntualidad *",
+                            value = puntualidad,
+                            onValueChange = { puntualidad = it }
+                        )
+                    }
+                }
+            }
+
+            // Observaciones y Acciones
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Observaciones y Acciones",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        
+                        OutlinedTextField(
+                            value = observaciones,
+                            onValueChange = { observaciones = it },
+                            label = { Text("Observaciones") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 3,
+                            maxLines = 5,
+                            placeholder = { Text("Ingrese observaciones adicionales...") },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.error,
+                                focusedLabelColor = MaterialTheme.colorScheme.error
+                            )
+                        )
+                        
+                        OutlinedTextField(
+                            value = accionCorrectiva,
+                            onValueChange = { accionCorrectiva = it },
+                            label = { Text("Acciones Correctivas") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 3,
+                            maxLines = 5,
+                            placeholder = { Text("Describa las acciones correctivas necesarias...") },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.error,
+                                focusedLabelColor = MaterialTheme.colorScheme.error
+                            )
+                        )
+                    }
+                }
+            }
+            
+            item {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = productoRechazado,
+                        onCheckedChange = { productoRechazado = it }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Producto Rechazado")
+                }
+            }
+
+            // Botón de registro
+            item {
+                Button(
+                    onClick = { registrar() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    enabled = !isLoading,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    } else {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(
+                        text = "Registrar Recepción",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+
+    // Diálogo de selección de supervisor
+    if (showSupervisorDialog) {
+        AlertDialog(
+            onDismissRequest = { showSupervisorDialog = false },
+            title = { Text("Seleccionar Supervisor") },
+            text = {
+                LazyColumn {
+                    items(supervisores) { supervisor ->
+                        TextButton(
+                            onClick = {
+                                supervisorSeleccionado = supervisor
+                                showSupervisorDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = supervisor.nombre,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSupervisorDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    // Limpiar mensaje de éxito después de un tiempo
+    LaunchedEffect(showSuccessMessage) {
+        if (showSuccessMessage) {
+            delay(3000)
+            showSuccessMessage = false
         }
     }
     
-    // Navegar de vuelta automáticamente después del éxito
-    LaunchedEffect(uiState.successMessage) {
-        if (uiState.successMessage != null) {
-            kotlinx.coroutines.delay(2000) // Esperar 2 segundos para que el usuario vea el mensaje
-            haccpViewModel.clearMessages()
-            onNavigateBack()
+    // Limpiar mensaje de error después de un tiempo
+    LaunchedEffect(errorMessage) {
+        if (errorMessage != null) {
+            delay(5000)
+            errorMessage = null
         }
     }
 }
@@ -564,22 +814,39 @@ fun ConformidadField(
     value: String,
     onValueChange: (String) -> Unit
 ) {
-    Row(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(label, modifier = Modifier.weight(1f))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             FilterChip(
                 selected = value == "C",
                 onClick = { onValueChange("C") },
-                label = { Text("✓ Conforme") }
+                label = { Text("✓ Conforme") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f),
+                    selectedLabelColor = MaterialTheme.colorScheme.tertiary
+                ),
+                modifier = Modifier.weight(1f)
             )
             FilterChip(
                 selected = value == "NC",
                 onClick = { onValueChange("NC") },
-                label = { Text("✗ No Conforme") }
+                label = { Text("✗ No Conforme") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.3f),
+                    selectedLabelColor = MaterialTheme.colorScheme.error
+                ),
+                modifier = Modifier.weight(1f)
             )
         }
     }

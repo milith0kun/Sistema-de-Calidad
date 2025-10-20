@@ -1,3 +1,5 @@
+@import './styles/buttons.css';
+
 * {
   margin: 0;
   padding: 0;
@@ -35,24 +37,58 @@ code {
   border: 1px solid rgba(0,0,0,0.05);
 }
 
-/* Scrollbar minimalista y elegante */
+/* Scrollbar personalizado mejorado */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #6366f1 #f8f9fa;
+}
+
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {
   background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #cbd5e0 0%, #a0aec0 100%);
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   border-radius: 6px;
   border: 2px solid #f8f9fa;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #a0aec0 0%, #718096 100%);
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, #3730a3 0%, #6b21a8 100%);
+}
+
+::-webkit-scrollbar-corner {
+  background: #f8f9fa;
+}
+
+/* Scrollbar para elementos específicos con clase */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f3f4;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 4px;
+  border: 1px solid #f1f3f4;
 }
 
 /* Animaciones suaves */
@@ -79,4 +115,42 @@ code {
 .hover-lift:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Mejoras responsive para el dashboard */
+@media (max-width: 768px) {
+  .MuiGrid-container {
+    margin: 0 !important;
+    width: 100% !important;
+  }
+  
+  .MuiGrid-item {
+    padding: 8px !important;
+  }
+  
+  .MuiCard-root {
+    margin-bottom: 12px;
+  }
+  
+  .MuiTypography-h4 {
+    font-size: 1.5rem !important;
+  }
+  
+  .MuiTypography-h6 {
+    font-size: 1.1rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .MuiTypography-h4 {
+    font-size: 1.25rem !important;
+  }
+  
+  .MuiCardContent-root {
+    padding: 12px !important;
+  }
+  
+  .MuiBox-root {
+    padding: 8px !important;
+  }
 }

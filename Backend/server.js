@@ -4,9 +4,10 @@ const dotenv = require('dotenv');
 const axios = require('axios');
 const os = require('os');
 const { initializeDatabase } = require('./utils/database');
-const { config, displayConfig } = require('./config-app-universal');
+const { config, getEnvironmentConfig, displayConfig } = require('./config-app-universal');
 const { getPeruTimestamp } = require('./utils/timeUtils');
 const { iniciarCronJobs } = require('./utils/cronJobs');
+const { environmentDetector } = require('./utils/environmentDetector');
 
 // Cargar variables de entorno
 dotenv.config();
@@ -17,39 +18,7 @@ const app = express();
 let PUBLIC_IP = null;
 let IS_AWS = false;
 let DETECTED_PORT = null;
-
-// Función para detectar si estamos en AWS
-async function detectEnvironment() {
-    try {
-        // Paso 1: Obtener token IMDSv2 para AWS EC2
-        const tokenResponse = await axios.put(
-            'http://169.254.169.254/latest/api/token',
-            null,
-            {
-                timeout: 2000,
-                headers: { 'X-aws-ec2-metadata-token-ttl-seconds': '21600' }
-            }
-        );
-        
-        const token = tokenResponse.data;
-        
-        // Paso 2: Usar el token para obtener la IP pública
-        const ipResponse = await axios.get(
-            'http://169.254.169.254/latest/meta-data/public-ipv4',
-            {
-                timeout: 2000,
-                headers: { 'X-aws-ec2-metadata-token': token }
-            }
-        );
-        
-        if (ipResponse.data && /^(\d{1,3}\.){3}\d{1,3}$/.test(ipResponse.data)) {
-            return { isAWS: true, ip: ipResponse.data.trim() };
-        }
-    } catch (error) {
-        // No es AWS o no tiene acceso a metadata (error 404 o timeout)
-    }
-    return { isAWS: false, ip: null };
-}
+let ENVIRONMENT_INFO = null;
 
 // Función para detectar puerto disponible automáticamente
 async function detectAvailablePort() {
@@ -149,6 +118,46 @@ app.get('/health', (req, res) => {
     }
 });
 
+// Endpoint para configuración del entorno (para WebPanel)
+app.get('/api/config/environment', (req, res) => {
+    try {
+        const envConfig = getEnvironmentConfig(IS_AWS);
+        const recommendedConfig = ENVIRONMENT_INFO ? 
+            environmentDetector.getRecommendedConfig(ENVIRONMENT_INFO) : null;
+        
+        res.json({
+            success: true,
+            data: {
+                environment: IS_AWS ? 'aws' : 'local',
+                isAWS: IS_AWS,
+                server: {
+                    host: PUBLIC_IP || HOST,
+                    port: PORT,
+                    publicUrl: `http://${PUBLIC_IP || HOST}${PORT === 80 ? '' : ':' + PORT}`
+                },
+                config: {
+                    corsOrigins: envConfig.server.corsOrigins,
+                    allowedHosts: envConfig.server.allowedHosts
+                },
+                detection: ENVIRONMENT_INFO ? {
+                    region: ENVIRONMENT_INFO.region,
+                    instanceId: ENVIRONMENT_INFO.instanceId,
+                    availabilityZone: ENVIRONMENT_INFO.availabilityZone,
+                    networkInterfaces: ENVIRONMENT_INFO.networkInterfaces,
+                    recommendedConfig: recommendedConfig
+                } : null,
+                timestamp: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('Error en /api/config/environment:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 // Ruta raíz eliminada: no exponer información pública. Las rutas disponibles comienzan en /api/*
 
 // Middleware para manejo de errores
@@ -241,25 +250,35 @@ const startServer = async () => {
     try {
         console.log('🔄 Inicializando servidor HACCP Wino...');
         
-        // Detectar entorno AWS e IP pública
-        const envInfo = await detectEnvironment();
-        IS_AWS = envInfo.isAWS;
-        if (IS_AWS && envInfo.ip) {
-            PUBLIC_IP = envInfo.ip;
-        } else {
-            PUBLIC_IP = await detectPublicIP();
-        }
+        // Detectar entorno usando el nuevo detector
+        ENVIRONMENT_INFO = await environmentDetector.detectEnvironment();
+        IS_AWS = ENVIRONMENT_INFO.isAWS;
+        PUBLIC_IP = ENVIRONMENT_INFO.publicIP;
+        
+        console.log(`📍 Entorno detectado: ${IS_AWS ? 'AWS' : 'LOCAL'}`);
+        console.log(`🏷️  Región: ${ENVIRONMENT_INFO.region || 'N/A'}`);
+        console.log(`🆔 Instance ID: ${ENVIRONMENT_INFO.instanceId || 'N/A'}`);
+        
+        // Obtener configuración específica del entorno
+        const envConfig = getEnvironmentConfig(IS_AWS);
         
         // Detectar puerto disponible automáticamente
         if (!process.env.PORT) {
-            PORT = await detectAvailablePort();
-            console.log(`🔧 Puerto detectado automáticamente: ${PORT}`);
+            PORT = envConfig.server.defaultPort;
+            console.log(`🔧 Puerto por defecto para ${envConfig.currentEnvironment}: ${PORT}`);
         } else {
             PORT = parseInt(process.env.PORT);
             console.log(`🔧 Puerto configurado manualmente: ${PORT}`);
         }
         
         DETECTED_PORT = PORT;
+        
+        // Mostrar configuración recomendada
+        const recommendedConfig = environmentDetector.getRecommendedConfig(ENVIRONMENT_INFO);
+        console.log('\n📋 Configuración recomendada:');
+        console.log(`   • Host: ${recommendedConfig.host}`);
+        console.log(`   • Puerto: ${recommendedConfig.port}`);
+        console.log(`   • CORS Origins: ${recommendedConfig.corsOrigins.join(', ')}`);
         
         console.log('📊 Inicializando base de datos...');
         await initializeDatabase();
@@ -268,6 +287,9 @@ const startServer = async () => {
         console.log('⏰ Inicializando cron jobs...');
         iniciarCronJobs();
         console.log('✅ Cron jobs configurados correctamente');
+        
+        // Mostrar configuración del entorno
+        displayConfig(IS_AWS);
 
         // Iniciar servidor en HOST y PORT configurados - Forzar 0.0.0.0 para AWS
         const LISTEN_HOST = '0.0.0.0'; // Forzar para acceso externo

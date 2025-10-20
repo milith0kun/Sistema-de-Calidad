@@ -10,6 +10,8 @@ import {
   Paper,
   Button,
   Chip,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -55,6 +57,9 @@ const StatCard = ({ title, value, icon, color }) => (
 );
 
 const Dashboard = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -135,15 +140,40 @@ const Dashboard = () => {
   }
 
   return (
-    <Box>
-      {/* Header con controles */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" gutterBottom fontWeight="bold">
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+      {/* Header con controles mejorado */}
+      <Box 
+        display="flex" 
+        flexDirection={{ xs: 'column', sm: 'row' }}
+        justifyContent="space-between" 
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        gap={{ xs: 2, sm: 3 }}
+        mb={{ xs: 2, sm: 3 }}
+        sx={{
+          backgroundColor: 'background.paper',
+          borderRadius: 2,
+          p: { xs: 2, sm: 3 },
+          boxShadow: 1
+        }}
+      >
+        <Box sx={{ flex: 1 }}>
+          <Typography 
+            variant="h4" 
+            gutterBottom 
+            fontWeight="bold"
+            sx={{ 
+              fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' },
+              mb: 1
+            }}
+          >
             Dashboard
           </Typography>
-          <Box display="flex" alignItems="center" gap={2}>
-            <Typography variant="body2" color="text.secondary">
+          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'flex-start', sm: 'center' }} gap={{ xs: 1, sm: 2 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+            >
               Resumen general del sistema
             </Typography>
             {ultimaActualizacion && (
@@ -152,38 +182,62 @@ const Dashboard = () => {
                 label={`Actualizado: ${ultimaActualizacion.toLocaleTimeString()}`}
                 size="small"
                 variant="outlined"
+                sx={{ 
+                  fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                  height: { xs: 24, sm: 32 }
+                }}
               />
             )}
           </Box>
         </Box>
-        <Box display="flex" gap={2}>
+        <Box 
+          className="dashboard-controls"
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 1, sm: 2 },
+            width: { xs: '100%', sm: 'auto' },
+            minWidth: { sm: 'fit-content' }
+          }}
+        >
           <Button
             variant={autoRefresh ? "contained" : "outlined"}
             color={autoRefresh ? "success" : "primary"}
             onClick={() => setAutoRefresh(!autoRefresh)}
             startIcon={<TrendingUpIcon />}
-            size="small"
+            className={`dashboard-button ${autoRefresh ? 'auto-refresh-on' : 'auto-refresh-off'}`}
+            fullWidth={isMobile}
+            sx={{ 
+              minWidth: { sm: 140 },
+              fontSize: { xs: '0.875rem', sm: '1rem' }
+            }}
           >
             Auto-refresh {autoRefresh ? 'ON' : 'OFF'}
           </Button>
           <Button
-            variant="outlined"
+            variant="contained"
             onClick={loadDashboard}
             disabled={loading}
             startIcon={<RefreshIcon />}
-            size="small"
+            className="dashboard-button refresh-btn"
+            fullWidth={isMobile}
+            sx={{ 
+              minWidth: { sm: 120 },
+              fontSize: { xs: '0.875rem', sm: '1rem' }
+            }}
           >
             Actualizar
           </Button>
         </Box>
       </Box>
 
-      <Grid container spacing={3} mb={4}>
+      {/* Grid de tarjetas estadísticas mejorado */}
+      <Grid container spacing={{ xs: 2, sm: 3 }} mb={{ xs: 3, sm: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Empleados Presentes Hoy"
             value={data?.empleados_presentes_hoy || 0}
-            icon={<PeopleIcon sx={{ fontSize: 30 }} />}
+            icon={<PeopleIcon sx={{ fontSize: { xs: 24, sm: 30 } }} />}
             color="#4caf50"
           />
         </Grid>
@@ -191,7 +245,7 @@ const Dashboard = () => {
           <StatCard
             title="Controles HACCP Hoy"
             value={data?.controles_haccp_hoy || 0}
-            icon={<AssignmentIcon sx={{ fontSize: 30 }} />}
+            icon={<AssignmentIcon sx={{ fontSize: { xs: 24, sm: 30 } }} />}
             color="#2196f3"
           />
         </Grid>

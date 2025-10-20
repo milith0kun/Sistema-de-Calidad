@@ -108,34 +108,43 @@ fun MarcacionesScreen(
         
         // Sincronizar configuración GPS del backend
         // Esta configuración es establecida por Admin/Supervisor desde el WebPanel
+        android.util.Log.d("MarcacionesScreen", "🔄 Iniciando sincronización GPS...")
         fichadoViewModel.sincronizarConfiguracionGPS()
         
-        // Esperar un momento para que se sincronice y luego cargar
-        delay(500)
+        // Esperar más tiempo para asegurar que la sincronización termine
+        delay(2000)
         
         // Cargar configuración de ubicación guardada (ahora viene del backend)
         try {
             val savedConfig = preferencesManager.getLocationConfig().first()
             if (savedConfig != null) {
+                android.util.Log.i("MarcacionesScreen", "✅ Configuración GPS cargada: lat=${savedConfig.latitude}, lon=${savedConfig.longitude}, radio=${savedConfig.radius}")
                 targetLatitude = savedConfig.latitude
                 targetLongitude = savedConfig.longitude
                 allowedRadius = savedConfig.radius
+            } else {
+                android.util.Log.w("MarcacionesScreen", "⚠️ No hay configuración GPS guardada, usando valores por defecto")
             }
         } catch (e: Exception) {
+            android.util.Log.e("MarcacionesScreen", "❌ Error al cargar configuración GPS: ${e.message}")
             // Usar valores por defecto
         }
         
         // Solicitar permisos si no los tiene
         if (!hasLocationPermission) {
+            android.util.Log.i("MarcacionesScreen", "🔑 Solicitando permisos de ubicación")
             locationPermissionLauncher.launch(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.ACCESS_COARSE_LOCATION
                 )
             )
-        } else {
-            locationManager.startLocationTracking()
         }
+        
+        // Iniciar tracking de ubicación independientemente de los permisos
+        // Si no hay permisos, LocationManager manejará internamente esta situación
+        android.util.Log.i("MarcacionesScreen", "🚀 Iniciando tracking de ubicación desde LaunchedEffect")
+        locationManager.startLocationTracking()
     }
     
     // Sincronización periódica y detección de lifecycle
@@ -145,11 +154,44 @@ fun MarcacionesScreen(
             android.util.Log.d("MarcacionesScreen", "App resumed - Sincronizando configuración GPS")
             fichadoViewModel.sincronizarConfiguracionGPS()
             
+            // Esperar a que termine la sincronización y recargar configuración
+            delay(2000)
+            
+            // Recargar configuración después de sincronizar
+            try {
+                val savedConfig = preferencesManager.getLocationConfig().first()
+                if (savedConfig != null) {
+                    android.util.Log.i("MarcacionesScreen", "✅ Configuración GPS actualizada: lat=${savedConfig.latitude}, lon=${savedConfig.longitude}, radio=${savedConfig.radius}")
+                    targetLatitude = savedConfig.latitude
+                    targetLongitude = savedConfig.longitude
+                    allowedRadius = savedConfig.radius
+                    
+                    // Recargar configuración en LocationManager
+                    locationManager.reloadLocationConfig()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("MarcacionesScreen", "❌ Error al recargar configuración GPS: ${e.message}")
+            }
+            
             // Sincronización periódica cada 5 minutos mientras la app está activa
             while (true) {
                 delay(5 * 60 * 1000) // 5 minutos
                 android.util.Log.d("MarcacionesScreen", "Sincronización periódica - Actualizando configuración GPS")
                 fichadoViewModel.sincronizarConfiguracionGPS()
+                
+                // Recargar configuración después de cada sincronización periódica
+                delay(2000)
+                try {
+                    val savedConfig = preferencesManager.getLocationConfig().first()
+                    if (savedConfig != null) {
+                        targetLatitude = savedConfig.latitude
+                        targetLongitude = savedConfig.longitude
+                        allowedRadius = savedConfig.radius
+                        locationManager.reloadLocationConfig()
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("MarcacionesScreen", "Error en sincronización periódica: ${e.message}")
+                }
             }
         }
     }

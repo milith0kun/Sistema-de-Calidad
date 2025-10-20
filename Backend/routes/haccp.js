@@ -13,10 +13,175 @@ const { getCurrentPeruDate, formatDateForDB, formatTimeForDB } = require('../uti
 // 1. RECEPCIÓN DE MERCADERÍA
 // =====================================================
 
-router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
-    console.log('=== INICIO POST /recepcion-mercaderia ===');
+// POST /recepcion-frutas-verduras - Endpoint específico para frutas y verduras
+router.post('/recepcion-frutas-verduras', authenticateToken, async (req, res) => {
+    console.log('=== INICIO POST /recepcion-frutas-verduras ===');
     console.log('Body recibido:', JSON.stringify(req.body, null, 2));
     
+    try {
+        const {
+            nombre_proveedor,
+            nombre_producto,
+            cantidad_solicitada,
+            peso_unidad_recibido,
+            c_nc, // Campo de conformidad general
+            estado_producto,
+            conformidad_integridad_producto,
+            uniforme_completo,
+            transporte_adecuado,
+            puntualidad,
+            observaciones,
+            accion_correctiva,
+            supervisor_id
+        } = req.body;
+
+        // Verificar si c_nc viene en el body, si no, usar valor por defecto
+        const conformidadGeneral = c_nc || "C"; // Valor por defecto si no viene
+        
+        console.log('Campo c_nc recibido:', c_nc);
+        console.log('Conformidad general a usar:', conformidadGeneral);
+
+        const responsableRegistro = req.usuario; // Usuario logueado
+        
+        if (!responsableRegistro) {
+            console.error('ERROR: req.usuario es undefined');
+            return res.status(401).json({ success: false, error: 'Usuario no autenticado' });
+        }
+
+        console.log('Responsable del registro:', responsableRegistro.nombre, responsableRegistro.apellido);
+
+        // Buscar supervisor si se proporcionó ID
+        let supervisorNombre = '';
+        if (supervisor_id) {
+            const supervisor = await db.get(
+                'SELECT nombre, apellido, cargo FROM usuarios WHERE id = ? AND activo = 1',
+                [supervisor_id]
+            );
+            if (supervisor) {
+                supervisorNombre = `${supervisor.nombre} ${supervisor.apellido || ''} - ${supervisor.cargo || ''}`.trim();
+                console.log('Supervisor encontrado:', supervisorNombre);
+            }
+        }
+
+        // Obtener fecha y hora actual de Perú
+        const fechaActual = getCurrentPeruDate();
+        const fecha = formatDateForDB(fechaActual);
+        const hora = formatTimeForDB(fechaActual);
+        const mes = fechaActual.getMonth() + 1;
+        const anio = fechaActual.getFullYear();
+
+        // Nombre completo del responsable de registro
+        const responsableRegistroNombre = `${responsableRegistro.nombre} ${responsableRegistro.apellido || ''} - ${responsableRegistro.cargo || ''}`.trim();
+
+        console.log('=== INSERTANDO REGISTRO FRUTAS Y VERDURAS ===');
+        console.log('Fecha:', fecha, 'Hora:', hora);
+        console.log('Proveedor:', nombre_proveedor);
+        console.log('Producto:', nombre_producto);
+
+        const query = `
+            INSERT INTO control_recepcion_frutas_verduras (
+                mes, anio, fecha, hora,
+                nombre_proveedor, nombre_producto,
+                cantidad_solicitada, peso_unidad, c_nc,
+                estado_producto, conformidad_integridad_producto,
+                uniforme_completo, transporte_adecuado, puntualidad,
+                nombre_responsable_registro, observaciones, accion_correctiva,
+                nombre_responsable_supervision
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const params = [
+            mes, anio, fecha, hora,
+            nombre_proveedor, nombre_producto,
+            cantidad_solicitada, peso_unidad_recibido, conformidadGeneral,
+            estado_producto, conformidad_integridad_producto,
+            uniforme_completo, transporte_adecuado, puntualidad,
+            responsableRegistroNombre, observaciones, accion_correctiva,
+            supervisorNombre
+        ];
+
+        console.log('Parámetros del INSERT:', params);
+
+        const result = await db.run(query, params);
+
+        console.log('✅ Recepción de frutas y verduras registrada exitosamente, ID:', result.lastID);
+
+        res.json({
+            success: true,
+            message: 'Recepción de frutas y verduras registrada correctamente',
+            data: {
+                id: result.lastID,
+                fecha, hora, nombre_proveedor, nombre_producto
+            }
+        });
+
+    } catch (error) {
+        console.error('Error al registrar recepción de frutas y verduras:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al registrar recepción de frutas y verduras'
+        });
+    }
+});
+
+// GET /recepcion-frutas-verduras - Obtener historial de recepciones de frutas y verduras
+router.get('/recepcion-frutas-verduras', authenticateToken, async (req, res) => {
+    try {
+        const { mes, anio, fecha, fecha_inicio, fecha_fin, limite = 100 } = req.query;
+
+        let query = 'SELECT * FROM control_recepcion_frutas_verduras WHERE 1=1';
+        const params = [];
+
+        // Filtros de fecha
+        if (fecha) {
+            query += ' AND fecha = ?';
+            params.push(fecha);
+        } else if (mes && anio) {
+            query += ' AND mes = ? AND anio = ?';
+            params.push(parseInt(mes));
+            params.push(parseInt(anio));
+        } else if (fecha_inicio && fecha_fin) {
+            query += ' AND fecha >= ? AND fecha <= ?';
+            params.push(fecha_inicio);
+            params.push(fecha_fin);
+        }
+
+        query += ' ORDER BY fecha DESC, hora DESC LIMIT ?';
+        params.push(parseInt(limite));
+
+        console.log('Query recepcion-frutas-verduras:', query);
+        console.log('Params:', params);
+
+        const registros = await db.all(query, params);
+
+        res.json({
+            success: true,
+            data: registros,
+            total: registros.length
+        });
+
+    } catch (error) {
+        console.error('Error al obtener recepciones de frutas y verduras:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener recepciones de frutas y verduras'
+        });
+    }
+});
+
+// ENDPOINT OBSOLETO - Reemplazado por endpoints específicos /recepcion-abarrotes y /recepcion-frutas-verduras
+router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
+    res.status(410).json({ 
+        error: 'Endpoint obsoleto', 
+        message: 'Use POST /recepcion-abarrotes o POST /recepcion-frutas-verduras según corresponda',
+        endpoints_disponibles: {
+            abarrotes: '/api/haccp/recepcion-abarrotes',
+            frutas_verduras: '/api/haccp/recepcion-frutas-verduras'
+        }
+});
+
+// CÓDIGO COMENTADO - ENDPOINT POST OBSOLETO
+/*
     try {
         const {
             mes, anio, fecha, hora, tipo_control,
@@ -108,11 +273,12 @@ router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
                 console.log('Producto encontrado:', nombre_producto, '-> ID:', finalProductoId);
             } else {
                 console.log('Producto no encontrado en BD:', nombre_producto);
-                // Crear producto temporal
+                // Crear producto temporal con unidad_medida
                 const categoriaId = tipo_control === 'FRUTAS_VERDURAS' ? 1 : 3; // 1=Frutas Frescas, 3=Granos y Cereales
+                const unidadMedidaDefault = tipo_control === 'FRUTAS_VERDURAS' ? 'KG' : 'UNIDAD';
                 const result = await db.run(
-                    'INSERT INTO productos (nombre, categoria_id, activo) VALUES (?, ?, 1)',
-                    [nombre_producto, categoriaId]
+                    'INSERT INTO productos (nombre, categoria_id, unidad_medida, activo) VALUES (?, ?, ?, 1)',
+                    [nombre_producto, categoriaId, unidadMedidaDefault]
                 );
                 finalProductoId = result.lastID;
                 console.log('Creado producto temporal ID:', finalProductoId);
@@ -131,8 +297,8 @@ router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
             } else {
                 // Crear un producto por defecto si no existe ninguno
                 const result = await db.run(
-                    'INSERT INTO productos (nombre, categoria_id, activo) VALUES (?, ?, 1)',
-                    ['Producto Genérico', 3] // 3=Granos y Cereales como categoría general
+                    'INSERT INTO productos (nombre, categoria_id, unidad_medida, activo) VALUES (?, ?, ?, 1)',
+                    ['Producto Genérico', 3, 'UNIDAD'] // 3=Granos y Cereales como categoría general
                 );
                 finalProductoId = result.lastID;
                 console.log('Creado producto por defecto ID:', finalProductoId);
@@ -161,39 +327,46 @@ router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
             ? `${supervisor.nombre} ${supervisor.apellido || ''} - ${supervisor.cargo || ''}`.trim()
             : responsableRegistroNombre; // Fallback si no hay supervisor
 
+        // Mapear valores del frontend a los valores esperados por la base de datos
+        const mapearEstadoProducto = (valor) => {
+            // Mantener los valores originales del frontend (EXCELENTE, REGULAR, PESIMO)
+            // ya que estos son los valores correctos que debe mostrar el panel web
+            return valor;
+        };
+
+        const mapearConformidad = (valor) => {
+            switch(valor) {
+                case 'C': return 'Conforme';
+                case 'NC': return 'No Conforme';
+                default: return valor; // Mantener el valor original si ya está correcto
+            }
+        };
+
+        // Aplicar mapeo a los valores
+        const estadoProductoMapeado = estado_producto ? mapearEstadoProducto(estado_producto) : null;
+        const conformidadIntegridadMapeada = conformidad_integridad_producto ? mapearConformidad(conformidad_integridad_producto) : null;
+
         const query = `
             INSERT INTO control_recepcion_mercaderia_temp (
                 mes, anio, fecha, hora, tipo_control,
                 proveedor_id, nombre_proveedor, producto_id, nombre_producto,
                 cantidad_solicitada, peso_unidad_recibido, unidad_medida,
                 estado_producto, conformidad_integridad_producto,
-                registro_sanitario_vigente, fecha_vencimiento_vigente, empaque_integro,
-                conformidad_general,
+                uniforme_completo, transporte_adecuado, puntualidad,
+                registro_sanitario_vigente, evaluacion_vencimiento, conformidad_empaque_primario,
                 responsable_registro_id, responsable_registro_nombre,
                 responsable_supervision_id, responsable_supervision_nombre,
                 observaciones, accion_correctiva
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-
-        // Determinar conformidad general basada en los controles
-        let conformidad_general = 'CONFORME';
-        if (tipo_control === 'FRUTAS_VERDURAS') {
-            if (estado_producto === 'Pésimo' || conformidad_integridad_producto === 'Pésimo') {
-                conformidad_general = 'NO_CONFORME';
-            }
-        } else if (tipo_control === 'ABARROTES') {
-            if (registro_sanitario_vigente === 'NO' || fecha_vencimiento_producto === 'NO' || conformidad_empaque_primario === 'NO') {
-                conformidad_general = 'NO_CONFORME';
-            }
-        }
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         const result = await db.run(query, [
             mes, anio, fecha, hora, tipo_control,
             finalProveedorId || null, nombre_proveedor,
             finalProductoId || null, nombre_producto,
             cantidad_solicitada, peso_unidad_recibido, unidad_medida,
-            estado_producto, conformidad_integridad_producto,
+            estadoProductoMapeado, conformidadIntegridadMapeada,
+            uniforme_completo || null, transporte_adecuado || null, puntualidad || null,
             registro_sanitario_vigente, fecha_vencimiento_producto, conformidad_empaque_primario,
-            conformidad_general,
             responsableRegistro.id, responsableRegistroNombre,
             supervisor ? supervisor.id : responsableRegistro.id, responsableSupervisionNombre,
             observaciones || null, accion_correctiva || null
@@ -217,31 +390,39 @@ router.post('/recepcion-mercaderia', authenticateToken, async (req, res) => {
             error: 'Error al registrar recepción de mercadería'
         });
     }
-});
+*/
 
-// Obtener historial de recepciones
-router.get('/recepcion-mercaderia', authenticateToken, async (req, res) => {
+// ENDPOINT OBSOLETO - Reemplazado por endpoints específicos /recepcion-abarrotes y /recepcion-frutas-verduras
+// router.get('/recepcion-mercaderia', authenticateToken, async (req, res) => {
+//     // Este endpoint ha sido reemplazado por endpoints especializados
+//     res.status(410).json({ 
+//         error: 'Endpoint obsoleto', 
+//         message: 'Use /recepcion-abarrotes o /recepcion-frutas-verduras según corresponda' 
+//     });
+// });
+// CÓDIGO COMENTADO - ENDPOINT OBSOLETO
+/*
     try {
-        const { tipo, tipo_control, mes, anio, fecha_inicio, fecha_fin, limite = 100 } = req.query;
+        const { mes, anio, fecha, fecha_inicio, fecha_fin, limite = 100 } = req.query;
 
         let query = 'SELECT * FROM control_recepcion_mercaderia_temp WHERE 1=1';
         const params = [];
 
-        // Filtrar por tipo (tipo_control o tipo - ambos aceptados)
-        const tipoFiltro = tipo || tipo_control;
-        if (tipoFiltro) {
-            query += ' AND tipo_control = ?';
-            params.push(tipoFiltro);
+        // Prioridad 1: Filtrar por fecha específica (día)
+        if (fecha) {
+            query += ' AND fecha = ?';
+            params.push(fecha);
         }
-
-        // Filtrar por mes y año (prioridad)
-        if (mes && anio) {
+        // Prioridad 2: Filtrar por mes y año
+        else if (mes && anio) {
             // Convertir mes y año a formato de fecha
             const mesStr = String(mes).padStart(2, '0');
             query += ' AND strftime("%m", fecha) = ? AND strftime("%Y", fecha) = ?';
             params.push(mesStr);
             params.push(String(anio));
-        } else if (fecha_inicio && fecha_fin) {
+        } 
+        // Prioridad 3: Filtrar por rango de fechas
+        else if (fecha_inicio && fecha_fin) {
             // Fallback: filtrar por rango de fechas
             query += ' AND fecha >= ? AND fecha <= ?';
             params.push(fecha_inicio);
@@ -275,6 +456,7 @@ router.get('/recepcion-mercaderia', authenticateToken, async (req, res) => {
             error: 'Error al obtener recepciones'
         });
     }
+*/
 });
 
 // POST /recepcion-abarrotes - Endpoint específico para recepción de abarrotes
@@ -333,10 +515,10 @@ router.post('/recepcion-abarrotes', authenticateToken, async (req, res) => {
                 console.log('Producto encontrado:', nombreProducto, '-> ID:', finalProductoId);
             } else {
                 console.log('Producto no encontrado en BD:', nombreProducto);
-                // Crear producto temporal
+                // Crear producto temporal con unidad_medida
                 const result = await db.run(
-                    'INSERT INTO productos (nombre, categoria_id, activo) VALUES (?, ?, 1)',
-                    [nombreProducto, 3] // 3=Granos y Cereales para abarrotes
+                    'INSERT INTO productos (nombre, categoria_id, unidad_medida, activo) VALUES (?, ?, ?, 1)',
+                    [nombreProducto, 3, 'UNIDAD'] // 3=Granos y Cereales para abarrotes
                 );
                 finalProductoId = result.lastID;
                 console.log('Creado producto temporal ID:', finalProductoId);
@@ -355,8 +537,8 @@ router.post('/recepcion-abarrotes', authenticateToken, async (req, res) => {
             } else {
                 // Crear un producto por defecto si no existe ninguno
                 const result = await db.run(
-                    'INSERT INTO productos (nombre, categoria_id, activo) VALUES (?, ?, 1)',
-                    ['Producto Genérico', 3] // 3=Granos y Cereales como categoría general
+                    'INSERT INTO productos (nombre, categoria_id, unidad_medida, activo) VALUES (?, ?, ?, 1)',
+                    ['Producto Genérico', 3, 'UNIDAD'] // 3=Granos y Cereales como categoría general
                 );
                 finalProductoId = result.lastID;
                 console.log('Creado producto por defecto ID:', finalProductoId);
@@ -371,42 +553,39 @@ router.post('/recepcion-abarrotes', authenticateToken, async (req, res) => {
         // Por simplicidad, dejamos los IDs en NULL y solo guardamos nombres
         
         const query = `
-            INSERT INTO control_recepcion_mercaderia_temp (
-                mes, anio, fecha, hora, tipo_control,
+            INSERT INTO control_recepcion_abarrotes (
+                mes, anio, fecha, hora,
                 proveedor_id, nombre_proveedor, 
                 producto_id, nombre_producto,
                 cantidad_solicitada, peso_unidad_recibido, unidad_medida,
-                registro_sanitario_vigente, fecha_vencimiento_vigente, empaque_integro,
-                conformidad_general,
-                responsable_registro_id, responsable_registro_nombre,
-                responsable_supervision_id, responsable_supervision_nombre,
+                registro_sanitario_vigente, fecha_vencimiento_producto, empaque_integro,
+                uniforme_completo, transporte_adecuado, puntualidad,
+                nombre_responsable_registro, nombre_responsable_supervision,
                 observaciones, accion_correctiva
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-        // Convertir valores de evaluación a SI/NO
-        const evaluacionVencimientoSiNo = (evaluacionVencimiento === 'Excelente' || evaluacionVencimiento === 'Regular') ? 'SI' : 'NO';
-        const conformidadEmpaqueSiNo = (conformidadEmpaque === 'Excelente' || conformidadEmpaque === 'Regular') ? 'SI' : 'NO';
+        // Convertir valores de evaluación según restricciones CHECK de la nueva tabla
         const registroSanitarioSiNo = registroSanitarioVigente === true ? 'SI' : 'NO';
-
-        // Determinar conformidad general para abarrotes
-        let conformidad_general = 'CONFORME';
-        if (registroSanitarioSiNo === 'NO' || evaluacionVencimientoSiNo === 'NO' || conformidadEmpaqueSiNo === 'NO') {
-            conformidad_general = 'NO_CONFORME';
-        }
+        const empaqueIntegroSiNo = (conformidadEmpaque === 'Excelente' || conformidadEmpaque === 'Regular') ? 'SI' : 'NO';
+        const uniformeCompletoSiNo = uniformeCompleto === true ? 'SI' : 'NO';
+        const transporteAdecuadoSiNo = (transporteAdecuado === 'Refrigerado' || transporteAdecuado === 'Ambiente') ? 'SI' : 'NO';
+        const puntualidadSiNo = puntualidad === 'Puntual' ? 'SI' : 'NO';
 
         const result = await db.run(query, [
-            mes, anio, fecha, hora, 'ABARROTES',
+            mes, anio, fecha, hora,
             null, nombreProveedor,  // proveedor_id NULL, solo nombre
             finalProductoId, nombreProducto,   // producto_id con valor válido
             cantidadSolicitada || null,
             1.0,  // peso_unidad_recibido por defecto
             'unidad',  // unidad_medida por defecto
             registroSanitarioSiNo, 
-            evaluacionVencimientoSiNo, 
-            conformidadEmpaqueSiNo,
-            conformidad_general,
-            responsableRegistro.id, responsableRegistroNombre,
-            supervisor.id, responsableSupervisionNombre,
+            null, // fecha_vencimiento_producto
+            empaqueIntegroSiNo,
+            uniformeCompletoSiNo,
+            transporteAdecuadoSiNo,
+            puntualidadSiNo,
+            responsableRegistroNombre,
+            responsableSupervisionNombre,
             observaciones || null, accionCorrectiva || null
         ]);
 
@@ -439,17 +618,58 @@ router.post('/recepcion-abarrotes', authenticateToken, async (req, res) => {
 // GET /recepcion-abarrotes - Obtener registros de recepción de abarrotes
 router.get('/recepcion-abarrotes', authenticateToken, async (req, res) => {
     try {
-        const registros = await db.all(`
+        const { mes, anio, fecha, fecha_inicio, fecha_fin, proveedor, producto, limite = 100 } = req.query;
+
+        let query = `
             SELECT 
-                ra.*,
-                u.nombre || ' ' || u.apellido as responsable_nombre,
-                s.nombre || ' ' || s.apellido as supervisor_nombre
-            FROM recepcion_abarrotes ra
-            LEFT JOIN usuarios u ON ra.responsable_registro_id = u.id
-            LEFT JOIN usuarios s ON ra.supervisor_id = s.id
-            ORDER BY ra.fecha DESC, ra.hora DESC
-            LIMIT 100
-        `);
+                cra.*
+            FROM control_recepcion_abarrotes cra
+            WHERE 1=1
+        `;
+        const params = [];
+
+        // Solo aplicar filtros de fecha si se proporcionan explícitamente
+        // Prioridad 1: Filtrar por fecha específica (día)
+        if (fecha) {
+            query += ' AND cra.fecha = ?';
+            params.push(fecha);
+        }
+        // Prioridad 2: Filtrar por mes y año (solo si ambos están presentes)
+        else if (mes && anio) {
+            const mesStr = String(mes).padStart(2, '0');
+            query += ' AND strftime("%m", cra.fecha) = ? AND strftime("%Y", cra.fecha) = ?';
+            params.push(mesStr);
+            params.push(String(anio));
+        } 
+        // Prioridad 3: Filtrar por rango de fechas
+        else if (fecha_inicio && fecha_fin) {
+            query += ' AND cra.fecha >= ? AND cra.fecha <= ?';
+            params.push(fecha_inicio);
+            params.push(fecha_fin);
+        } else if (fecha_inicio) {
+            query += ' AND cra.fecha >= ?';
+            params.push(fecha_inicio);
+        } else if (fecha_fin) {
+            query += ' AND cra.fecha <= ?';
+            params.push(fecha_fin);
+        }
+        // Si no hay filtros de fecha, mostrar todos los registros
+
+        // Filtros adicionales
+        if (proveedor) {
+            query += ' AND cra.nombre_proveedor LIKE ?';
+            params.push(`%${proveedor}%`);
+        }
+
+        if (producto) {
+            query += ' AND cra.nombre_producto LIKE ?';
+            params.push(`%${producto}%`);
+        }
+
+        query += ' ORDER BY cra.fecha DESC, cra.hora DESC LIMIT ?';
+        params.push(parseInt(limite));
+
+        const registros = await db.all(query, params);
 
         res.json({
             success: true,
@@ -579,18 +799,25 @@ router.post('/control-coccion', authenticateToken, (req, res) => {
 // Obtener historial de cocciones
 router.get('/control-coccion', authenticateToken, async (req, res) => {
     try {
-        const { mes, anio, fecha_inicio, fecha_fin, limite = 100 } = req.query;
+        const { mes, anio, fecha, fecha_inicio, fecha_fin, limite = 100 } = req.query;
 
         let query = 'SELECT * FROM control_coccion WHERE 1=1';
         const params = [];
 
-        // Filtrar por mes y año (prioridad)
-        if (mes && anio) {
+        // Prioridad 1: Filtrar por fecha específica (día)
+        if (fecha) {
+            query += ' AND fecha = ?';
+            params.push(fecha);
+        }
+        // Prioridad 2: Filtrar por mes y año
+        else if (mes && anio) {
             const mesStr = String(mes).padStart(2, '0');
             query += ' AND strftime("%m", fecha) = ? AND strftime("%Y", fecha) = ?';
             params.push(mesStr);
             params.push(String(anio));
-        } else if (fecha_inicio && fecha_fin) {
+        } 
+        // Prioridad 3: Filtrar por rango de fechas
+        else if (fecha_inicio && fecha_fin) {
             query += ' AND fecha >= ? AND fecha <= ?';
             params.push(fecha_inicio);
             params.push(fecha_fin);
@@ -641,7 +868,7 @@ router.post('/lavado-frutas', authenticateToken, (req, res) => {
             desinfeccion_producto_quimico,
             concentracion_correcta,
             tiempo_desinfeccion_minutos,
-            acciones_correctivas
+            accion_correctiva
         } = req.body;
 
         const usuario = req.usuario;
@@ -666,7 +893,7 @@ router.post('/lavado-frutas', authenticateToken, (req, res) => {
                 nombre_fruta_verdura,
                 lavado_agua_potable, desinfeccion_producto_quimico,
                 concentracion_correcta, tiempo_desinfeccion_minutos,
-                acciones_correctivas,
+                accion_correctiva,
                 supervisor_id, supervisor_nombre
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
@@ -675,7 +902,7 @@ router.post('/lavado-frutas', authenticateToken, (req, res) => {
             mes, anio, dia, fecha, hora,
             producto_quimico, concentracion_producto, nombre_fruta_verdura,
             lavado_agua_potable, desinfeccion_producto_quimico, concentracion_correcta,
-            tiempo_desinfeccion_minutos, acciones_correctivas,
+            tiempo_desinfeccion_minutos, accion_correctiva,
             supervisor_id: usuario.id,
             supervisor_nombre: `${usuario.nombre} ${usuario.apellido} - ${usuario.cargo}`
         });
@@ -686,7 +913,7 @@ router.post('/lavado-frutas', authenticateToken, (req, res) => {
             nombre_fruta_verdura,
             lavado_agua_potable, desinfeccion_producto_quimico,
             concentracion_correcta, tiempo_desinfeccion_minutos,
-            acciones_correctivas,
+            accion_correctiva,
             usuario.id, `${usuario.nombre} ${usuario.apellido} - ${usuario.cargo}`
         ], function(err) {
             if (err) {
@@ -729,18 +956,25 @@ router.post('/lavado-frutas', authenticateToken, (req, res) => {
 // Obtener historial de lavado de frutas
 router.get('/lavado-frutas', authenticateToken, (req, res) => {
     try {
-        const { mes, anio, fecha_inicio, fecha_fin, limite = 100 } = req.query;
+        const { mes, anio, fecha, fecha_inicio, fecha_fin, limite = 100 } = req.query;
 
         let query = 'SELECT * FROM control_lavado_desinfeccion_frutas WHERE 1=1';
         const params = [];
 
-        // Filtrar por mes y año (prioridad)
-        if (mes && anio) {
+        // Prioridad 1: Filtrar por fecha específica (día)
+        if (fecha) {
+            query += ' AND fecha = ?';
+            params.push(fecha);
+        }
+        // Prioridad 2: Filtrar por mes y año
+        else if (mes && anio) {
             const mesStr = String(mes).padStart(2, '0');
             query += ' AND strftime("%m", fecha) = ? AND strftime("%Y", fecha) = ?';
             params.push(mesStr);
             params.push(String(anio));
-        } else if (fecha_inicio && fecha_fin) {
+        } 
+        // Prioridad 3: Filtrar por rango de fechas
+        else if (fecha_inicio && fecha_fin) {
             query += ' AND fecha >= ? AND fecha <= ?';
             params.push(fecha_inicio);
             params.push(fecha_fin);
@@ -844,15 +1078,14 @@ router.post('/lavado-manos', authenticateToken, (req, res) => {
         const hora = formatTimeForDB();
 
         // Determinar turno automáticamente según hora si no se proporciona
+        // Mañana: 00:00 - 12:00, Tarde: 12:00 - 24:00
         let turnoFinal = turno;
         if (!turnoFinal) {
             const hora24 = peruDate.getHours();
-            if (hora24 >= 6 && hora24 < 14) {
-                turnoFinal = 'MAÑANA';
-            } else if (hora24 >= 14 && hora24 < 22) {
-                turnoFinal = 'TARDE';
+            if (hora24 >= 0 && hora24 < 12) {
+                turnoFinal = 'Mañana';
             } else {
-                turnoFinal = 'NOCHE';
+                turnoFinal = 'Tarde';
             }
         }
 
@@ -889,20 +1122,18 @@ router.post('/lavado-manos', authenticateToken, (req, res) => {
             
             const query = `
                 INSERT INTO control_lavado_manos (
-                    mes, anio, fecha, hora,
-                    area_estacion, turno,
-                    empleado_id, nombres_apellidos, firma,
-                    procedimiento_correcto, accion_correctiva,
-                    supervisor_id, supervisor_nombre
+                    mes, anio, dia, fecha, hora,
+                    empleado_id, empleado_nombre, area_trabajo, turno, procedimiento_correcto,
+                    supervisor_id, supervisor_nombre, accion_correctiva
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             
+            const dia = peruDate.getDate();
+            
             const params = [
-                mes, anio, fecha, hora,
-                area_estacion, turnoFinal,
-                empleado.id, nombresApellidos, firma || 'FIRMA_PENDIENTE',
-                procedimiento_correcto, accion_correctiva,
-                supervisor_id || null, supervisorNombre
+                mes, anio, dia, fecha, hora,
+                empleado.id, nombresApellidos, area_estacion, turnoFinal, procedimiento_correcto,
+                supervisor_id || null, supervisorNombre, accion_correctiva
             ];
             
             console.log('Parámetros del INSERT:', JSON.stringify(params));
@@ -953,18 +1184,28 @@ router.post('/lavado-manos', authenticateToken, (req, res) => {
 // Obtener historial de lavado de manos
 router.get('/lavado-manos', authenticateToken, (req, res) => {
     try {
-        const { mes, anio, fecha_inicio, fecha_fin, area_estacion, limite = 100 } = req.query;
+        const { mes, anio, fecha, fecha_inicio, fecha_fin, area_estacion, limite = 100 } = req.query;
 
-        let query = 'SELECT * FROM control_lavado_manos WHERE 1=1';
+        let query = `SELECT 
+            id, fecha, hora, empleado_nombre, area_trabajo, turno, 
+            procedimiento_correcto, accion_correctiva, supervisor_nombre
+            FROM control_lavado_manos WHERE 1=1`;
         const params = [];
 
-        // Filtrar por mes y año (prioridad)
-        if (mes && anio) {
+        // Prioridad 1: Filtrar por fecha específica (día)
+        if (fecha) {
+            query += ' AND fecha = ?';
+            params.push(fecha);
+        }
+        // Prioridad 2: Filtrar por mes y año
+        else if (mes && anio) {
             const mesStr = String(mes).padStart(2, '0');
             query += ' AND strftime("%m", fecha) = ? AND strftime("%Y", fecha) = ?';
             params.push(mesStr);
             params.push(String(anio));
-        } else if (fecha_inicio && fecha_fin) {
+        } 
+        // Prioridad 3: Filtrar por rango de fechas
+        else if (fecha_inicio && fecha_fin) {
             query += ' AND fecha >= ? AND fecha <= ?';
             params.push(fecha_inicio);
             params.push(fecha_fin);
@@ -977,7 +1218,7 @@ router.get('/lavado-manos', authenticateToken, (req, res) => {
         }
 
         if (area_estacion) {
-            query += ' AND area_estacion = ?';
+            query += ' AND area_trabajo = ?';
             params.push(area_estacion);
         }
 
@@ -1031,7 +1272,68 @@ router.get('/camaras', authenticateToken, (req, res) => {
     });
 });
 
+// Verificar si ya existe registro de temperatura para una cámara en el día actual
+router.get('/temperatura-camaras/verificar/:camara_id', authenticateToken, (req, res) => {
+    try {
+        const { camara_id } = req.params;
+        const fecha = formatDateForDB();
+
+        db.get(
+            `SELECT id, responsable_manana_nombre, responsable_tarde_nombre, 
+                    temperatura_manana, temperatura_tarde, fecha, 
+                    timestamp_creacion
+             FROM control_temperatura_camaras 
+             WHERE camara_id = ? AND fecha = ?`,
+            [camara_id, fecha],
+            (err, registro) => {
+                if (err) {
+                    console.error('Error verificando registro de temperatura:', err);
+                    return res.status(500).json({ 
+                        success: false, 
+                        error: 'Error al verificar registro' 
+                    });
+                }
+
+                if (registro) {
+                    // Ya existe un registro para esta cámara hoy
+                    res.json({
+                        success: true,
+                        existe_registro: true,
+                        mensaje: 'Ya existe un registro de temperatura para esta cámara en el día de hoy',
+                        registro: {
+                            id: registro.id,
+                            fecha: registro.fecha,
+                            responsable: registro.responsable_manana_nombre || registro.responsable_tarde_nombre,
+                            temperatura_manana: registro.temperatura_manana,
+                            temperatura_tarde: registro.temperatura_tarde,
+                            timestamp_creacion: registro.timestamp_creacion
+                        }
+                    });
+                } else {
+                    // No existe registro, se puede crear uno nuevo
+                    res.json({
+                        success: true,
+                        existe_registro: false,
+                        mensaje: 'No existe registro para esta cámara hoy, se puede crear uno nuevo',
+                        fecha_actual: fecha
+                    });
+                }
+            }
+        );
+
+    } catch (error) {
+        console.error('Error al verificar registro de temperatura:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al verificar registro de temperatura'
+        });
+    }
+});
+
 router.post('/temperatura-camaras', authenticateToken, (req, res) => {
+    console.log('=== INICIO POST /temperatura-camaras ===');
+    console.log('Body recibido:', JSON.stringify(req.body, null, 2));
+    
     try {
         const {
             camara_id,
@@ -1040,6 +1342,7 @@ router.post('/temperatura-camaras', authenticateToken, (req, res) => {
         } = req.body;
 
         const usuario = req.usuario;
+        console.log('Usuario autenticado:', JSON.stringify(usuario, null, 2));
         
         // Generar fecha automáticamente usando timeUtils
         const peruDate = getCurrentPeruDate();
@@ -1048,14 +1351,31 @@ router.post('/temperatura-camaras', authenticateToken, (req, res) => {
         const dia = String(peruDate.getDate()).padStart(2, '0');
         const fecha = formatDateForDB();
 
-        // Verificar si ya existe registro para esta cámara hoy
+        // Verificar si ya existe registro para esta cámara hoy (CONTROL ÚNICO DIARIO)
         db.get(
-            'SELECT id FROM control_temperatura_camaras WHERE camara_id = ? AND fecha = ?',
+            'SELECT id, responsable_manana_nombre, responsable_tarde_nombre FROM control_temperatura_camaras WHERE camara_id = ? AND fecha = ?',
             [camara_id, fecha],
             (err, existente) => {
                 if (err) {
                     console.error('Error verificando registro existente:', err);
                     return res.status(500).json({ success: false, error: 'Error al verificar registro' });
+                }
+
+                // NUEVA VALIDACIÓN: Si ya existe un registro, no permitir otro registro
+                if (existente) {
+                    console.log('❌ REGISTRO DUPLICADO - Ya existe registro para esta cámara hoy');
+                    console.log('Registro existente:', existente);
+                    return res.status(409).json({ 
+                        success: false, 
+                        error: 'Ya existe un registro de temperatura para esta cámara en el día de hoy',
+                        message: `Esta cámara ya fue registrada hoy por: ${existente.responsable_manana_nombre || existente.responsable_tarde_nombre || 'Usuario desconocido'}`,
+                        codigo: 'REGISTRO_DUPLICADO_DIA',
+                        registro_existente: {
+                            id: existente.id,
+                            fecha: fecha,
+                            responsable: existente.responsable_manana_nombre || existente.responsable_tarde_nombre
+                        }
+                    });
                 }
 
                 // Calcular conformidad basado en rangos de cámara
@@ -1072,79 +1392,52 @@ router.post('/temperatura-camaras', authenticateToken, (req, res) => {
                     const conformidadTarde = (temperatura_tarde != null && 
                         temperatura_tarde >= camara.temperatura_minima && 
                         temperatura_tarde <= camara.temperatura_maxima) ? 'C' : 'NC';
-
-                    if (existente) {
-                        // Actualizar registro existente
-                        const query = `
-                            UPDATE control_temperatura_camaras SET
-                                temperatura_manana = COALESCE(?, temperatura_manana),
-                                responsable_manana_id = COALESCE(?, responsable_manana_id),
-                                responsable_manana_nombre = COALESCE(?, responsable_manana_nombre),
-                                conformidad_manana = COALESCE(?, conformidad_manana),
-                                temperatura_tarde = COALESCE(?, temperatura_tarde),
-                                responsable_tarde_id = COALESCE(?, responsable_tarde_id),
-                                responsable_tarde_nombre = COALESCE(?, responsable_tarde_nombre),
-                                conformidad_tarde = COALESCE(?, conformidad_tarde),
-                                acciones_correctivas = ?,
-                                supervisor_id = ?,
-                                supervisor_nombre = ?,
-                                timestamp_modificacion = CURRENT_TIMESTAMP
-                            WHERE id = ?
-                        `;
-
-                        db.run(query, [
-                            temperatura_manana, usuario.id, `${usuario.nombre} ${usuario.apellido}`, conformidadManana,
-                            temperatura_tarde, usuario.id, `${usuario.nombre} ${usuario.apellido}`, conformidadTarde,
-                            acciones_correctivas, usuario.id, `${usuario.nombre} ${usuario.apellido}`,
-                            existente.id
-                        ], function(err) {
-                            if (err) {
-                                console.error('Error actualizando temperatura:', err);
-                                return res.status(500).json({ success: false, error: 'Error al actualizar' });
-                            }
-
-                            res.json({
-                                success: true,
-                                message: 'Temperatura de cámara actualizada correctamente',
-                                data: { id: existente.id, fecha, temperatura_manana, temperatura_tarde, updated: true }
-                            });
-                        });
-
-                    } else {
-                        // Crear nuevo registro
-                        const query = `
-                            INSERT INTO control_temperatura_camaras (
-                                mes, anio, dia, fecha, camara_id,
-                                hora_manana, temperatura_manana, responsable_manana_id, responsable_manana_nombre, conformidad_manana,
-                                hora_tarde, temperatura_tarde, responsable_tarde_id, responsable_tarde_nombre, conformidad_tarde,
-                                acciones_correctivas, supervisor_id, supervisor_nombre
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        `;
-
-                        db.run(query, [
+                    // Crear nuevo registro
+                    const query = `
+                        INSERT INTO control_temperatura_camaras (
                             mes, anio, dia, fecha, camara_id,
-                            '08:00', temperatura_manana, usuario.id, `${usuario.nombre} ${usuario.apellido}`, conformidadManana,
-                            '16:00', temperatura_tarde, usuario.id, `${usuario.nombre} ${usuario.apellido}`, conformidadTarde,
-                            acciones_correctivas, usuario.id, `${usuario.nombre} ${usuario.apellido}`
-                        ], function(err) {
-                            if (err) {
-                                console.error('Error insertando temperatura:', err);
-                                return res.status(500).json({ success: false, error: 'Error al registrar temperatura' });
-                            }
+                            hora_manana, temperatura_manana, responsable_manana_id, responsable_manana_nombre, conformidad_manana,
+                            hora_tarde, temperatura_tarde, responsable_tarde_id, responsable_tarde_nombre, conformidad_tarde,
+                            acciones_correctivas, supervisor_id, supervisor_nombre
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    `;
 
-                            res.json({
-                                success: true,
-                                message: 'Temperatura de cámara registrada correctamente',
-                                data: { id: this.lastID, fecha, temperatura_manana, temperatura_tarde, created: true }
-                            });
+                    db.run(query, [
+                        mes, anio, dia, fecha, camara_id,
+                        '08:00', temperatura_manana, usuario.id, `${usuario.nombre} ${usuario.apellido}`, conformidadManana,
+                        '16:00', temperatura_tarde, usuario.id, `${usuario.nombre} ${usuario.apellido}`, conformidadTarde,
+                        acciones_correctivas, usuario.id, `${usuario.nombre} ${usuario.apellido}`
+                    ], function(err) {
+                        if (err) {
+                            console.error('❌ Error insertando temperatura:', err);
+                            return res.status(500).json({ success: false, error: 'Error al registrar temperatura' });
+                        }
+
+                        console.log('✅ Temperatura de cámara registrada exitosamente, ID:', this.lastID);
+                        console.log('Datos registrados:', { 
+                            id: this.lastID, 
+                            fecha, 
+                            camara_id,
+                            temperatura_manana, 
+                            temperatura_tarde, 
+                            responsable: `${usuario.nombre} ${usuario.apellido}`,
+                            conformidad_manana: conformidadManana,
+                            conformidad_tarde: conformidadTarde
                         });
-                    }
+
+                        res.json({
+                            success: true,
+                            message: 'Temperatura de cámara registrada correctamente',
+                            data: { id: this.lastID, fecha, temperatura_manana, temperatura_tarde, created: true }
+                        });
+                    });
                 });
             }
         );
 
     } catch (error) {
-        console.error('Error al registrar temperatura de cámara:', error);
+        console.error('❌ Error general al registrar temperatura de cámara:', error);
+        console.error('Stack trace:', error.stack);
         res.status(500).json({
             success: false,
             error: 'Error al registrar temperatura de cámara'
@@ -1155,7 +1448,7 @@ router.post('/temperatura-camaras', authenticateToken, (req, res) => {
 // Obtener historial de temperaturas
 router.get('/temperatura-camaras', authenticateToken, (req, res) => {
     try {
-        const { mes, anio, fecha_inicio, fecha_fin, camara_id, limite = 100 } = req.query;
+        const { mes, anio, fecha, fecha_inicio, fecha_fin, camara_id, limite = 100 } = req.query;
 
         let query = `
             SELECT t.*, c.nombre as camara_nombre, c.tipo as camara_tipo,
@@ -1166,13 +1459,20 @@ router.get('/temperatura-camaras', authenticateToken, (req, res) => {
         `;
         const params = [];
 
-        // Filtrar por mes y año (prioridad)
-        if (mes && anio) {
+        // Prioridad 1: Filtrar por fecha específica (día)
+        if (fecha) {
+            query += ' AND t.fecha = ?';
+            params.push(fecha);
+        }
+        // Prioridad 2: Filtrar por mes y año
+        else if (mes && anio) {
             const mesStr = String(mes).padStart(2, '0');
             query += ' AND strftime("%m", t.fecha) = ? AND strftime("%Y", t.fecha) = ?';
             params.push(mesStr);
             params.push(String(anio));
-        } else if (fecha_inicio && fecha_fin) {
+        } 
+        // Prioridad 3: Filtrar por rango de fechas
+        else if (fecha_inicio && fecha_fin) {
             query += ' AND t.fecha >= ? AND t.fecha <= ?';
             params.push(fecha_inicio);
             params.push(fecha_fin);
@@ -1339,7 +1639,7 @@ router.get('/supervisores', authenticateToken, (req, res) => {
                 rol
             FROM usuarios 
             WHERE activo = 1 
-              AND rol = 'supervisor'
+              AND rol = 'Supervisor'
         `;
 
         const params = [];
@@ -1423,9 +1723,9 @@ router.get('/productos-abarrotes', authenticateToken, (req, res) => {
         console.log('📍 GET /haccp/productos-abarrotes - Obteniendo productos de abarrotes');
 
         const query = `
-            SELECT id, nombre, categoria, unidad_medida
+            SELECT id, nombre, categoria_id, unidad_medida
             FROM productos 
-            WHERE categoria = 'Abarrotes' 
+            WHERE categoria_id = 3
             AND activo = 1
             ORDER BY nombre ASC
         `;
@@ -1489,6 +1789,57 @@ router.get('/frutas-verduras', authenticateToken, (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Error al obtener frutas y verduras'
+        });
+    }
+});
+
+// GET /recepcion-frutas-verduras - Endpoint específico para obtener datos de recepción de frutas y verduras
+router.get('/recepcion-frutas-verduras', authenticateToken, (req, res) => {
+    try {
+        console.log('📍 GET /haccp/recepcion-frutas-verduras - Obteniendo datos de recepción de frutas y verduras');
+
+        const query = `
+            SELECT 
+                fecha,
+                hora,
+                nombre_proveedor,
+                nombre_producto,
+                cantidad_solicitada,
+                peso_unidad,
+                estado_producto,
+                conformidad_integridad_producto,
+                uniforme_completo,
+                transporte_adecuado,
+                puntualidad,
+                nombre_responsable_registro,
+                observaciones,
+                accion_correctiva,
+                nombre_responsable_supervision
+            FROM control_recepcion_frutas_verduras 
+            ORDER BY fecha DESC, hora DESC
+        `;
+
+        db.all(query, [], (err, rows) => {
+            if (err) {
+                console.error('❌ Error al obtener datos de recepción de frutas y verduras:', err);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Error al obtener datos de recepción de frutas y verduras'
+                });
+            }
+
+            console.log(`✅ Datos de recepción de frutas y verduras obtenidos: ${rows.length} registros encontrados`);
+            res.json({
+                success: true,
+                data: rows
+            });
+        });
+
+    } catch (error) {
+        console.error('Error al obtener datos de recepción de frutas y verduras:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener datos de recepción de frutas y verduras'
         });
     }
 });

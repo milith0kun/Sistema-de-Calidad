@@ -158,223 +158,528 @@ const TemperaturaCamaras = () => {
   };
 
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Control de Temperatura de Cámaras
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Monitoreo diario de temperaturas de cámaras refrigeradas y congeladas
-          </Typography>
-        </Box>
-        <Box display="flex" gap={1}>
-          <Button
-            variant="outlined"
-            startIcon={<FileDownloadIcon />}
-            onClick={handleExportarPlantilla}
-            disabled={loading}
-          >
-            Plantilla Vacía
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<FileDownloadIcon />}
-            onClick={handleExportar}
-            disabled={loading}
-          >
-            {registros.length > 0 ? 'Exportar Datos' : 'Exportar Plantilla'}
-          </Button>
-        </Box>
+    <Box sx={{ 
+      p: 3, 
+      backgroundColor: '#f8f9fa', 
+      minHeight: '100vh' 
+    }}>
+      {/* Encabezado de la página */}
+      <Box sx={{ 
+        mb: 4, 
+        pb: 3, 
+        borderBottom: '2px solid #e0e0e0' 
+      }}>
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            fontWeight: 700, 
+            color: '#1976d2', 
+            mb: 1,
+            fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif'
+          }}
+        >
+          Control de Temperatura de Cámaras
+        </Typography>
+        <Typography 
+          variant="subtitle1" 
+          sx={{ 
+            color: '#666', 
+            fontWeight: 400 
+          }}
+        >
+          Monitoreo diario de temperaturas de cámaras refrigeradas y congeladas
+        </Typography>
+      </Box>
+
+      {/* Botones de exportación */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'flex-end', 
+        mb: 3, 
+        gap: 2 
+      }}>
+        <Button
+          variant="outlined"
+          startIcon={<FileDownloadIcon />}
+          onClick={handleExportarPlantilla}
+          disabled={loading}
+          sx={{
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 600,
+            minHeight: 40
+          }}
+        >
+          Plantilla Vacía
+        </Button>
+        <Button
+          variant="contained"
+          startIcon={<FileDownloadIcon />}
+          onClick={handleExportar}
+          disabled={loading}
+          sx={{
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 600,
+            minHeight: 40
+          }}
+        >
+          {registros.length > 0 ? 'Exportar Datos' : 'Exportar Plantilla'}
+        </Button>
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+        <Alert 
+          severity="error" 
+          sx={{ 
+            mb: 3,
+            borderRadius: 2
+          }} 
+          onClose={() => setError(null)}
+        >
           {error}
         </Alert>
       )}
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FilterListIcon />
-          Filtros de Búsqueda
-        </Typography>
-        
-        <Grid container spacing={2} alignItems="center">
-          {/* Selector de tipo de filtro */}
-          <Grid item xs={12} sm={6} md={3}>
-            <ButtonGroup fullWidth variant="outlined">
-              <Button
-                variant={filtroTipo === 'dia' ? 'contained' : 'outlined'}
-                onClick={() => setFiltroTipo('dia')}
-              >
-                Día
-              </Button>
-              <Button
-                variant={filtroTipo === 'mes' ? 'contained' : 'outlined'}
-                onClick={() => setFiltroTipo('mes')}
-              >
-                Mes
-              </Button>
-              <Button
-                variant={filtroTipo === 'anio' ? 'contained' : 'outlined'}
-                onClick={() => setFiltroTipo('anio')}
-              >
-                Año
-              </Button>
-            </ButtonGroup>
-          </Grid>
+      {/* Filtros de búsqueda */}
+      <Paper 
+        sx={{ 
+          p: 3, 
+          mb: 3,
+          borderRadius: 3,
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          border: '1px solid #e0e0e0'
+        }}
+      >
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          mb: 3,
+          pb: 2,
+          borderBottom: '1px solid #e0e0e0'
+        }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 600, 
+              color: '#333',
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 1 
+            }}
+          >
+            <FilterListIcon />
+            Filtros de Búsqueda
+          </Typography>
+        </Box>
+         
+         <Grid container spacing={2} alignItems="flex-start">
+           {/* Período */}
+           <Grid item xs={12} sm={6} md={3}>
+             <Typography 
+               variant="subtitle2" 
+               sx={{ 
+                 fontWeight: 600, 
+                 color: '#333', 
+                 mb: 1,
+                 fontSize: '0.875rem'
+               }}
+             >
+               Período
+             </Typography>
+             <ButtonGroup 
+               fullWidth 
+               variant="outlined"
+               sx={{
+                 height: '56px',
+                 display: 'flex',
+                 '& .MuiButton-root': {
+                   flex: 1,
+                   height: '56px',
+                   fontSize: '0.875rem',
+                   fontWeight: 600,
+                   textTransform: 'none',
+                   borderRadius: '8px',
+                   '&:hover': {
+                     backgroundColor: 'primary.light',
+                     color: 'white'
+                   }
+                 }
+               }}
+             >
+               <Button
+                 variant={filtroTipo === 'dia' ? 'contained' : 'outlined'}
+                 onClick={() => setFiltroTipo('dia')}
+               >
+                 Día
+               </Button>
+               <Button
+                 variant={filtroTipo === 'mes' ? 'contained' : 'outlined'}
+                 onClick={() => setFiltroTipo('mes')}
+               >
+                 Mes
+               </Button>
+               <Button
+                 variant={filtroTipo === 'anio' ? 'contained' : 'outlined'}
+                 onClick={() => setFiltroTipo('anio')}
+               >
+                 Año
+               </Button>
+             </ButtonGroup>
+           </Grid>
+   
+           {/* Fecha Específica (solo para día) */}
+           {filtroTipo === 'dia' && (
+             <Grid item xs={12} sm={6} md={3}>
+               <Typography 
+                 variant="subtitle2" 
+                 sx={{ 
+                   fontWeight: 600, 
+                   color: '#333', 
+                   mb: 1,
+                   fontSize: '0.875rem'
+                 }}
+               >
+                 Fecha Específica
+               </Typography>
+               <TextField
+                 type="date"
+                 value={fechaEspecifica}
+                 onChange={(e) => setFechaEspecifica(e.target.value)}
+                 fullWidth
+                 InputLabelProps={{ shrink: true }}
+                 sx={{
+                   height: '56px',
+                   '& .MuiInputBase-root': {
+                     height: '56px'
+                   },
+                   '& .MuiInputBase-input': {
+                     fontSize: '0.875rem',
+                     padding: '14px 16px'
+                   },
+                   '& .MuiOutlinedInput-root': {
+                     borderRadius: '8px',
+                     '&:hover .MuiOutlinedInput-notchedOutline': {
+                       borderColor: 'primary.main',
+                       borderWidth: 2
+                     }
+                   }
+                 }}
+               />
+             </Grid>
+           )}
+   
+           {/* Mes (para filtro mes) */}
+           {filtroTipo === 'mes' && (
+             <Grid item xs={6} sm={3} md={2}>
+               <Typography 
+                 variant="subtitle2" 
+                 sx={{ 
+                   fontWeight: 600, 
+                   color: '#333', 
+                   mb: 1,
+                   fontSize: '0.875rem'
+                 }}
+               >
+                 Mes
+               </Typography>
+               <TextField
+                 type="number"
+                 value={mes}
+                 onChange={(e) => setMes(Number(e.target.value))}
+                 fullWidth
+                 inputProps={{ min: 1, max: 12 }}
+                 sx={{
+                   height: '56px',
+                   '& .MuiInputBase-root': {
+                     height: '56px'
+                   },
+                   '& .MuiInputBase-input': {
+                     fontSize: '0.875rem',
+                     padding: '14px 16px'
+                   },
+                   '& .MuiOutlinedInput-root': {
+                     borderRadius: '8px',
+                     '&:hover .MuiOutlinedInput-notchedOutline': {
+                       borderColor: 'primary.main',
+                       borderWidth: 2
+                     }
+                   }
+                 }}
+               />
+             </Grid>
+           )}
+   
+           {/* Año */}
+           {(filtroTipo === 'mes' || filtroTipo === 'anio') && (
+             <Grid item xs={6} sm={3} md={2}>
+               <Typography 
+                 variant="subtitle2" 
+                 sx={{ 
+                   fontWeight: 600, 
+                   color: '#333', 
+                   mb: 1,
+                   fontSize: '0.875rem'
+                 }}
+               >
+                 Año
+               </Typography>
+               <TextField
+                 type="number"
+                 value={anio}
+                 onChange={(e) => setAnio(Number(e.target.value))}
+                 fullWidth
+                 inputProps={{ min: 2020, max: 2030 }}
+                 sx={{
+                   height: '56px',
+                   '& .MuiInputBase-root': {
+                     height: '56px'
+                   },
+                   '& .MuiInputBase-input': {
+                     fontSize: '0.875rem',
+                     padding: '14px 16px'
+                   },
+                   '& .MuiOutlinedInput-root': {
+                     borderRadius: '8px',
+                     '&:hover .MuiOutlinedInput-notchedOutline': {
+                       borderColor: 'primary.main',
+                       borderWidth: 2
+                     }
+                   }
+                 }}
+               />
+             </Grid>
+           )}
+   
+           {/* Filtro por cámara */}
+           <Grid item xs={12} sm={8} md={3}>
+             <Typography 
+               variant="subtitle2" 
+               sx={{ 
+                 fontWeight: 600, 
+                 color: '#333', 
+                 mb: 1,
+                 fontSize: '0.875rem'
+               }}
+             >
+               Cámara
+             </Typography>
+             <Autocomplete
+               options={camaras}
+               getOptionLabel={(option) => option.nombre || ''}
+               value={camaras.find(c => c.id === camaraSeleccionada) || null}
+               onChange={(event, newValue) => {
+                 setCamaraSeleccionada(newValue ? newValue.id : '');
+               }}
+               renderInput={(params) => (
+                 <TextField
+                   {...params}
+                   placeholder="Todas las cámaras"
+                   sx={{
+                     height: '56px',
+                     '& .MuiInputBase-root': {
+                       height: '56px'
+                     },
+                     '& .MuiInputBase-input': {
+                       fontSize: '0.875rem',
+                       padding: '14px 16px'
+                     },
+                     '& .MuiOutlinedInput-root': {
+                       borderRadius: '8px',
+                       '&:hover .MuiOutlinedInput-notchedOutline': {
+                         borderColor: 'primary.main',
+                         borderWidth: 2
+                       }
+                     }
+                   }}
+                 />
+               )}
+             />
+           </Grid>
+   
+           {/* Botón Buscar */}
+           <Grid item xs={12} sm={4} md={1}>
+             <Typography 
+               variant="subtitle2" 
+               sx={{ 
+                 fontWeight: 600, 
+                 color: '#333', 
+                 mb: 1,
+                 fontSize: '0.875rem'
+               }}
+             >
+               &nbsp;
+             </Typography>
+             <Button
+               variant="contained"
+               onClick={cargarRegistros}
+               disabled={loading}
+               startIcon={<FilterListIcon />}
+               fullWidth
+               sx={{
+                 height: '56px',
+                 fontSize: '0.875rem',
+                 fontWeight: 600,
+                 borderRadius: '8px',
+                 textTransform: 'none',
+                 boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+                 '&:hover': {
+                   transform: 'translateY(-1px)',
+                   boxShadow: '0 6px 16px rgba(99, 102, 241, 0.5)'
+                 }
+               }}
+             >
+               Buscar
+             </Button>
+           </Grid>
+           
+           {/* Botón Limpiar */}
+           <Grid item xs={12} sm={4} md={1}>
+             <Typography 
+               variant="subtitle2" 
+               sx={{ 
+                 fontWeight: 600, 
+                 color: '#333', 
+                 mb: 1,
+                 fontSize: '0.875rem'
+               }}
+             >
+               &nbsp;
+             </Typography>
+             <Button
+               variant="outlined"
+               onClick={limpiarFiltros}
+               disabled={loading}
+               startIcon={<ClearIcon />}
+               fullWidth
+               sx={{
+                 height: '56px',
+                 fontSize: '0.875rem',
+                 fontWeight: 600,
+                 borderRadius: '8px',
+                 textTransform: 'none'
+               }}
+             >
+               Limpiar
+             </Button>
+           </Grid>
+         </Grid>
+       </Paper>
 
-          {/* Selector de fecha específica (solo para día) */}
-          {filtroTipo === 'dia' && (
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                label="Fecha Específica"
-                type="date"
-                value={fechaEspecifica}
-                onChange={(e) => setFechaEspecifica(e.target.value)}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-          )}
-
-          {/* Selectores de mes y año (para mes y año) */}
-          {(filtroTipo === 'mes' || filtroTipo === 'anio') && (
-            <>
-              {filtroTipo === 'mes' && (
-                <Grid item xs={12} sm={6} md={2}>
-                  <TextField
-                    label="Mes"
-                    type="number"
-                    value={mes}
-                    onChange={(e) => setMes(Number(e.target.value))}
-                    fullWidth
-                    InputProps={{ inputProps: { min: 1, max: 12 } }}
-                  />
-                </Grid>
-              )}
-              <Grid item xs={12} sm={6} md={2}>
-                <TextField
-                  label="Año"
-                  type="number"
-                  value={anio}
-                  onChange={(e) => setAnio(Number(e.target.value))}
-                  fullWidth
-                  InputProps={{ inputProps: { min: 2020, max: 2030 } }}
-                />
-              </Grid>
-            </>
-          )}
-
-          {/* Filtro por cámara */}
-          <Grid item xs={12} sm={6} md={2}>
-            <Autocomplete
-              options={camaras}
-              getOptionLabel={(option) => option.nombre || ''}
-              value={camaras.find(c => c.id === camaraSeleccionada) || null}
-              onChange={(event, newValue) => {
-                setCamaraSeleccionada(newValue ? newValue.id : '');
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Cámara"
-                  placeholder="Todas las cámaras"
-                />
-              )}
-            />
-          </Grid>
-
-
-
-          {/* Botones de acción */}
-          <Grid item xs={12} sm={6} md={2}>
-            <Box display="flex" gap={1}>
-              <Button
-                variant="contained"
-                onClick={cargarRegistros}
-                disabled={loading}
-                startIcon={<FilterListIcon />}
-                fullWidth
-              >
-                Buscar
-              </Button>
-            </Box>
-          </Grid>
+      {loading && (
+        <Box 
+          display="flex" 
+          justifyContent="center" 
+          alignItems="center" 
+          py={6}
+          sx={{
+            backgroundColor: '#fafafa',
+            borderRadius: 2,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      )}
+      
+      {!loading && (
+        <Paper 
+          elevation={2}
+          sx={{
+            borderRadius: 2,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            border: '1px solid #e0e0e0',
+            overflow: 'hidden'
+          }}
+        >
+          <Box 
+            sx={{
+              p: 2,
+              borderBottom: '1px solid #e0e0e0',
+              backgroundColor: '#f8f9fa'
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#2c3e50' }}>
+              Registros de Temperatura ({registros.length})
+            </Typography>
+          </Box>
           
-          <Grid item xs={12} sm={6} md={2}>
-            <Button
-              variant="outlined"
-              onClick={limpiarFiltros}
-              disabled={loading}
-              startIcon={<ClearIcon />}
-              fullWidth
-            >
-              Limpiar
-            </Button>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      <TableContainer component={Paper}>
-        <Table size="small">
-          <TableHead sx={{ bgcolor: '#f5f5f5' }}>
-            <TableRow>
-              <TableCell><strong>Fecha</strong></TableCell>
-              <TableCell><strong>Cámara</strong></TableCell>
-              <TableCell align="center"><strong>Temp. Mañana (°C)</strong></TableCell>
-              <TableCell align="center"><strong>Temp. Tarde (°C)</strong></TableCell>
-              <TableCell align="center"><strong>Conformidad Mañana</strong></TableCell>
-              <TableCell align="center"><strong>Conformidad Tarde</strong></TableCell>
-              <TableCell><strong>Acciones Correctivas</strong></TableCell>
-              <TableCell><strong>Supervisor</strong></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 5 }}>
-                  <CircularProgress />
-                </TableCell>
-              </TableRow>
-            ) : registros.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 5 }}>
-                  <Typography color="text.secondary">
-                    No hay registros para el período seleccionado
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              registros.map((row, index) => (
-                <TableRow key={index} hover>
-                  <TableCell>{format(new Date(row.fecha), 'dd/MM/yyyy')}</TableCell>
-                  <TableCell>{row.camara_nombre}</TableCell>
-                  <TableCell align="center">{row.temperatura_manana}°C</TableCell>
-                  <TableCell align="center">{row.temperatura_tarde}°C</TableCell>
-                  <TableCell align="center">
-                    <Chip
-                      label={row.conformidad_manana === 'C' ? 'Conforme' : 'No Conforme'}
-                      color={getConformidadColor(row.conformidad_manana)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Chip
-                      label={row.conformidad_tarde === 'C' ? 'Conforme' : 'No Conforme'}
-                      color={getConformidadColor(row.conformidad_tarde)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{row.acciones_correctivas || '-'}</TableCell>
-                  <TableCell>{row.supervisor_nombre || '-'}</TableCell>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                  <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Cámara</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Temp. Mañana (°C)</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Temp. Tarde (°C)</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Conformidad Mañana</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Conformidad Tarde</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Acciones Correctivas</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Supervisor</TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              </TableHead>
+              <TableBody>
+                {registros.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center">
+                      <Box py={4}>
+                        <Typography variant="body1" sx={{ fontSize: '1.1rem', fontWeight: 500, color: '#666' }}>
+                          No se encontraron registros
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  registros.map((row, index) => (
+                    <TableRow 
+                      key={index}
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: '#f8f9fa'
+                        }
+                      }}
+                    >
+                      <TableCell sx={{ fontWeight: 500 }}>
+                        {format(new Date(row.fecha), 'dd/MM/yyyy')}
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 500 }}>
+                        {row.camara_nombre}
+                      </TableCell>
+                      <TableCell>{row.temperatura_manana}°C</TableCell>
+                      <TableCell>{row.temperatura_tarde}°C</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={row.conformidad_manana === 'C' ? 'Conforme' : 'No Conforme'}
+                          color={getConformidadColor(row.conformidad_manana)}
+                          size="small"
+                          sx={{ 
+                            borderRadius: 2,
+                            fontWeight: 500
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={row.conformidad_tarde === 'C' ? 'Conforme' : 'No Conforme'}
+                          color={getConformidadColor(row.conformidad_tarde)}
+                          size="small"
+                          sx={{ 
+                            borderRadius: 2,
+                            fontWeight: 500
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>{row.acciones_correctivas || '-'}</TableCell>
+                      <TableCell>{row.supervisor_nombre || '-'}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
     </Box>
   );
 };

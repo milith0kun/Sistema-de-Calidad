@@ -19,11 +19,12 @@ object NetworkConfig {
     private const val KEY_ENVIRONMENT = "environment"
     
     val ENVIRONMENTS = mapOf(
-        "aws_production" to "http://18.118.212.247/api/" // AWS Producción (ÚNICO entorno)
+        "aws_production" to "http://18.216.180.19:3000/api/", // AWS Producción (EC2)
+        "local_development" to "http://192.168.1.67:3000/api/" // Servidor local
     )
     
-    // URL por defecto: AWS Producción
-    const val DEFAULT_BASE_URL = "http://18.118.212.247/api/"
+    // URL por defecto: Servidor local para desarrollo
+    const val DEFAULT_BASE_URL = "http://192.168.1.67:3000/api/"
     
     // Endpoints principales del backend HACCP según especificaciones
     object Endpoints {

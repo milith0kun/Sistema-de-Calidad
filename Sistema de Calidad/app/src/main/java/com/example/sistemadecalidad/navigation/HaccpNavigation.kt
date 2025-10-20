@@ -2,6 +2,7 @@ package com.example.sistemadecalidad.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -213,6 +214,7 @@ fun HaccpNavigation(
         composable(NavigationDestinations.RECEPCION_MERCADERIA) {
             RecepcionMercaderiaScreen(
                 haccpViewModel = haccpViewModel,
+                usuario = preferencesManager.getUser().collectAsState(initial = null).value,
                 preferencesManager = preferencesManager,
                 onNavigateBack = { navController.popBackStack() }
             )

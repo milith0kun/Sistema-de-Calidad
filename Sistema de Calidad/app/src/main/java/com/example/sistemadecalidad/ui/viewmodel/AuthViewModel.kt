@@ -77,13 +77,18 @@ class AuthViewModel /* @Inject constructor( */ (
      */
     fun login(email: String, password: String) {
         viewModelScope.launch {
-            android.util.Log.d("AuthViewModel", "Iniciando login para: $email")
+            android.util.Log.d("AuthViewModel", "=== INICIANDO LOGIN ===")
+            android.util.Log.d("AuthViewModel", "Email: $email")
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
             authRepository.login(email, password).collect { result ->
                 result.fold(
                     onSuccess = { loginResponse ->
-                        android.util.Log.d("AuthViewModel", "Login exitoso. Token: ${loginResponse.token?.take(20)}..., User: ${loginResponse.user?.nombre}")
+                        android.util.Log.d("AuthViewModel", "✅ Login exitoso desde API")
+                        android.util.Log.d("AuthViewModel", "Token recibido: ${loginResponse.token?.take(20)}...")
+                        android.util.Log.d("AuthViewModel", "Usuario recibido: ${loginResponse.user}")
+                        android.util.Log.d("AuthViewModel", "Nombre completo: ${loginResponse.user?.nombreCompleto}")
+                        android.util.Log.d("AuthViewModel", "Cargo: ${loginResponse.user?.cargo}")
                         
                         try {
                             // Guardar token y datos del usuario - ESPERAR a que termine
@@ -95,15 +100,21 @@ class AuthViewModel /* @Inject constructor( */ (
                             
                             loginResponse.user?.let { user ->
                                 android.util.Log.d("AuthViewModel", "Guardando datos de usuario...")
+                                android.util.Log.d("AuthViewModel", "Usuario a guardar: ID=${user.id}, Nombre=${user.nombre}, Apellido=${user.apellido}, Cargo=${user.cargo}")
                                 preferencesManager.saveUser(user)
                                 _currentUser.value = user
-                                android.util.Log.d("AuthViewModel", "Usuario guardado en DataStore")
+                                android.util.Log.d("AuthViewModel", "Usuario guardado en DataStore y actualizado en currentUser")
                             }
                             
                             // Verificar que se guardó correctamente
                             val isLoggedIn = preferencesManager.isLoggedIn().first()
                             val savedToken = preferencesManager.getToken().first()
-                            android.util.Log.d("AuthViewModel", "Verificación post-guardado: isLoggedIn=$isLoggedIn, token=${savedToken?.take(20)}...")
+                            val savedUser = preferencesManager.getUser().first()
+                            android.util.Log.d("AuthViewModel", "=== VERIFICACIÓN POST-GUARDADO ===")
+                            android.util.Log.d("AuthViewModel", "isLoggedIn: $isLoggedIn")
+                            android.util.Log.d("AuthViewModel", "Token guardado: ${savedToken?.take(20)}...")
+                            android.util.Log.d("AuthViewModel", "Usuario guardado: $savedUser")
+                            android.util.Log.d("AuthViewModel", "================================")
                             
                             // Actualizar estado de autenticación
                             _isAuthenticated.value = true
@@ -113,6 +124,7 @@ class AuthViewModel /* @Inject constructor( */ (
                                 isLoginSuccessful = true
                             )
                             android.util.Log.d("AuthViewModel", "✅ Login completado exitosamente - Estado de autenticación: isAuthenticated=true")
+                            android.util.Log.d("AuthViewModel", "======================")
                         } catch (e: Exception) {
                             android.util.Log.e("AuthViewModel", "❌ Error al guardar datos de sesión: ${e.message}", e)
                             _uiState.value = _uiState.value.copy(
@@ -122,7 +134,7 @@ class AuthViewModel /* @Inject constructor( */ (
                         }
                     },
                     onFailure = { exception ->
-                        android.util.Log.e("AuthViewModel", "Error en login: ${exception.message}")
+                        android.util.Log.e("AuthViewModel", "❌ Error en login: ${exception.message}")
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             errorMessage = exception.message ?: "Error desconocido"

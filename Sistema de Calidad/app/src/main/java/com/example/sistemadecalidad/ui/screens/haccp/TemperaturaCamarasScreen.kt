@@ -86,6 +86,20 @@ private fun CamaraFormulario(
     // Obtener usuario logueado
     val usuario by preferencesManager.getUser().collectAsState(initial = null)
     
+    // Estados para la verificación de registro existente
+    var registroExistente by remember { mutableStateOf(false) }
+    var mensajeRegistroExistente by remember { mutableStateOf<String?>(null) }
+    var verificacionRealizada by remember { mutableStateOf(false) }
+    
+    // Verificar si ya existe un registro para esta cámara hoy
+    LaunchedEffect(camara.id) {
+        haccpViewModel.verificarRegistroTemperaturaCamara(camara.id) { existe, mensaje ->
+            registroExistente = existe
+            mensajeRegistroExistente = mensaje
+            verificacionRealizada = true
+        }
+    }
+    
     // Generar lista de temperaturas según tipo de cámara
     val temperaturasDisponibles = remember(camara) {
         if (camara.tipo == "REFRIGERACION") {
@@ -131,6 +145,13 @@ private fun CamaraFormulario(
         }
     }
     
+    // Resetear el estado de éxito cuando se muestre el diálogo
+    LaunchedEffect(uiState.isFormSuccess) {
+        if (uiState.isFormSuccess) {
+            haccpViewModel.resetFormSuccess()
+        }
+    }
+    
     val scrollState = rememberScrollState()
     
     Column(
@@ -148,6 +169,39 @@ private fun CamaraFormulario(
         )
         
         Divider()
+        
+        // Mostrar mensaje si ya existe un registro
+        if (verificacionRealizada && registroExistente && mensajeRegistroExistente != null) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "⚠️ REGISTRO YA REALIZADO",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = mensajeRegistroExistente!!,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "No se puede realizar un nuevo registro para esta cámara hoy.",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+        }
+        
+        // Solo mostrar el formulario si no existe un registro
+        if (!registroExistente) {
         
         // DATOS DEL PERÍODO (Auto-generados)
         Card(
@@ -438,6 +492,36 @@ private fun CamaraFormulario(
                 )
             }
         }
+        
+        } // Cierre del if (!registroExistente)
+    }
+    
+    // Diálogo de éxito
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showSuccessDialog = false
+                haccpViewModel.clearMessages()
+            },
+            title = { Text("✅ Registro Exitoso") },
+            text = { 
+                Text(uiState.successMessage ?: "Control de temperatura registrado correctamente")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { 
+                        showSuccessDialog = false
+                        haccpViewModel.clearMessages()
+                        // Recargar la verificación para actualizar el estado
+                        haccpViewModel.verificarRegistroTemperaturaCamara(camara.id) { existe, mensaje ->
+                            // La verificación se actualizará automáticamente por el LaunchedEffect
+                        }
+                    }
+                ) {
+                    Text("Aceptar")
+                }
+            }
+        )
     }
     
     // Diálogo de éxito

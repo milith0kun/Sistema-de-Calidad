@@ -149,6 +149,16 @@ interface ApiService {
     ): Response<HaccpResponse>
     
     /**
+     * Verificar si ya existe un registro de temperatura para una cámara en el día actual
+     * GET /haccp/temperatura-camaras/verificar/{camara_id}
+     */
+    @GET("haccp/temperatura-camaras/verificar/{camara_id}")
+    suspend fun verificarRegistroTemperaturaCamara(
+        @Header("Authorization") token: String,
+        @Path("camara_id") camaraId: Int
+    ): Response<VerificacionTemperaturaResponse>
+    
+    /**
      * Obtener lista de cámaras frigoríficas
      * GET /haccp/camaras
      */
@@ -169,9 +179,9 @@ interface ApiService {
     
     /**
      * Registrar recepción de frutas y verduras
-     * POST /haccp/recepcion-mercaderia
+     * POST /haccp/recepcion-frutas-verduras
      */
-    @POST("haccp/recepcion-mercaderia")
+    @POST("haccp/recepcion-frutas-verduras")
     suspend fun registrarRecepcionMercaderia(
         @Header("Authorization") token: String,
         @Body request: RecepcionFrutasVerdurasRequest
@@ -313,7 +323,7 @@ data class LavadoFrutasRequest(
     @SerializedName("tiempo_desinfeccion_minutos")
     val tiempoDesinfeccionMinutos: Int,
     
-    @SerializedName("acciones_correctivas")
+    @SerializedName("accion_correctiva")
     val accionesCorrectivas: String?
 )
 
@@ -449,10 +459,13 @@ data class RecepcionFrutasVerdurasRequest(
     val cantidadSolicitada: String,
     
     @SerializedName("peso_unidad_recibido")
-    val pesoUnidadRecibido: Double,
+    val pesoUnidadRecibido: String,
     
     @SerializedName("unidad_medida")
     val unidadMedida: String,
+    
+    @SerializedName("c_nc")
+    val cNc: String, // C, NC - Campo de conformidad general
     
     @SerializedName("estado_producto")
     val estadoProducto: String, // EXCELENTE, REGULAR, PESIMO
@@ -628,6 +641,55 @@ data class ProveedoresResponse(
     
     @SerializedName("error")
     val error: String?
+)
+
+/**
+ * Respuesta para verificación de registro de temperatura de cámara
+ */
+data class VerificacionTemperaturaResponse(
+    @SerializedName("success")
+    val success: Boolean,
+    
+    @SerializedName("existe_registro")
+    val existeRegistro: Boolean,
+    
+    @SerializedName("data")
+    val data: RegistroTemperaturaExistente?,
+    
+    @SerializedName("message")
+    val message: String?,
+    
+    @SerializedName("error")
+    val error: String?
+)
+
+/**
+ * Datos del registro de temperatura existente
+ */
+data class RegistroTemperaturaExistente(
+    @SerializedName("id")
+    val id: Int,
+    
+    @SerializedName("camara_id")
+    val camaraId: Int,
+    
+    @SerializedName("fecha")
+    val fecha: String,
+    
+    @SerializedName("temperatura_manana")
+    val temperaturaManana: Double?,
+    
+    @SerializedName("temperatura_tarde")
+    val temperaturaTarde: Double?,
+    
+    @SerializedName("responsable")
+    val responsable: String?,
+    
+    @SerializedName("supervisor")
+    val supervisor: String?,
+    
+    @SerializedName("created_at")
+    val createdAt: String?
 )
 
 /**

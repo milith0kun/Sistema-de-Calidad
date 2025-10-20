@@ -4,6 +4,11 @@ const { config } = require('../config-app-universal');
 
 // Middleware para verificar token JWT
 const authenticateToken = async (req, res, next) => {
+    // Permitir solicitudes OPTIONS (preflight) sin autenticación
+    if (req.method === 'OPTIONS') {
+        return next();
+    }
+
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
@@ -58,15 +63,15 @@ const authenticateToken = async (req, res, next) => {
     }
 };
 
-// Middleware para verificar rol de supervisor/admin
+// Middleware para verificar rol de supervisor/empleador
 const requireAdmin = (req, res, next) => {
-    // Aceptar tanto 'ADMIN' como 'supervisor' como roles válidos de administrador
-    const validAdminRoles = ['ADMIN', 'supervisor'];
+    // Aceptar tanto 'Empleador' como 'Supervisor' como roles válidos de administrador
+    const validAdminRoles = ['Empleador', 'Supervisor'];
     if (!validAdminRoles.includes(req.user.rol)) {
         return res.status(403).json({
             success: false,
             error: 'Acceso denegado',
-            message: 'Se requieren permisos de administrador'
+            message: 'Se requieren permisos de Empleador o Supervisor'
         });
     }
     next();

@@ -7,9 +7,9 @@ package com.example.sistemadecalidad.utils
 object ProductionConfig {
     
     // CONFIGURACIÓN DEL SERVIDOR - CAMBIAR AQUÍ PARA DESPLIEGUE
-    const val SERVER_IP = "18.118.212.247"            // Servidor AWS desplegado (IP actualizada)
-    const val SERVER_PORT = ""                         // Puerto 80 (incluido en dominio)
-    const val USE_HTTPS = false                        // Servidor usa HTTP (puerto 80)
+    const val SERVER_IP = "10.0.2.2"                  // IP especial para emulador Android (apunta a localhost del host)
+    const val SERVER_PORT = "3000"                     // Puerto del backend local
+    const val USE_HTTPS = false                        // Servidor usa HTTP
     
     /**
      * Obtiene la URL completa del servidor de producción (incluye /api/)

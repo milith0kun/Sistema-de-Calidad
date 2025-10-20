@@ -330,7 +330,13 @@ export default function Configuracion() {
                                 startIcon={<MyLocationIcon />}
                                 onClick={obtenerUbicacionActual}
                                 disabled={loading}
-                                sx={{ height: '56px' }}
+                                sx={{ 
+                                    height: '56px',
+                                    borderRadius: 2,
+                                    textTransform: 'none',
+                                    fontWeight: 500,
+                                    minHeight: '36px'
+                                }}
                             >
                                 Usar mi ubicación actual
                             </Button>
@@ -342,6 +348,12 @@ export default function Configuracion() {
                                     variant="outlined"
                                     onClick={cargarConfiguracion}
                                     disabled={guardando}
+                                    sx={{
+                                        borderRadius: 2,
+                                        textTransform: 'none',
+                                        fontWeight: 500,
+                                        minHeight: '36px'
+                                    }}
                                 >
                                     Cancelar
                                 </Button>
@@ -351,6 +363,12 @@ export default function Configuracion() {
                                     size="large"
                                     startIcon={guardando ? <CircularProgress size={20} /> : <SaveIcon />}
                                     disabled={guardando}
+                                    sx={{
+                                        borderRadius: 2,
+                                        textTransform: 'none',
+                                        fontWeight: 500,
+                                        minHeight: '36px'
+                                    }}
                                 >
                                     {guardando ? 'Guardando...' : 'Guardar Configuración'}
                                 </Button>

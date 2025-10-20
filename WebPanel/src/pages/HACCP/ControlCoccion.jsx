@@ -109,34 +109,108 @@ const ControlCoccion = () => {
         </Alert>
       )}
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
+      <Paper 
+        sx={{ 
+          p: 3, 
+          mb: 3,
+          borderRadius: 2,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          border: '1px solid #e0e0e0'
+        }}
+      >
+        <Box 
+          sx={{ 
+            pb: 2, 
+            mb: 2, 
+            borderBottom: '1px solid #e0e0e0' 
+          }}
+        >
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 1,
+              fontWeight: 600,
+              color: '#2c3e50'
+            }}
+          >
+            Filtros de Búsqueda
+          </Typography>
+        </Box>
+        
+        <Grid container spacing={2} alignItems="flex-start">
           <Grid item xs={12} sm={4}>
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#666' }}>
+              Mes
+            </Typography>
             <TextField
-              label="Mes"
               type="number"
               value={mes}
               onChange={(e) => setMes(Number(e.target.value))}
               fullWidth
               InputProps={{ inputProps: { min: 1, max: 12 } }}
+              sx={{
+                height: '56px',
+                '& .MuiOutlinedInput-root': {
+                  height: '56px',
+                  fontSize: '14px',
+                  padding: '0 14px',
+                  borderRadius: 2,
+                  backgroundColor: '#fafafa',
+                  '&:hover': {
+                    backgroundColor: '#f0f0f0'
+                  }
+                }
+              }}
             />
           </Grid>
           <Grid item xs={12} sm={4}>
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#666' }}>
+              Año
+            </Typography>
             <TextField
-              label="Año"
               type="number"
               value={anio}
               onChange={(e) => setAnio(Number(e.target.value))}
               fullWidth
               InputProps={{ inputProps: { min: 2020, max: 2030 } }}
+              sx={{
+                height: '56px',
+                '& .MuiOutlinedInput-root': {
+                  height: '56px',
+                  fontSize: '14px',
+                  padding: '0 14px',
+                  borderRadius: 2,
+                  backgroundColor: '#fafafa',
+                  '&:hover': {
+                    backgroundColor: '#f0f0f0'
+                  }
+                }
+              }}
             />
           </Grid>
           <Grid item xs={12} sm={4}>
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: 'transparent' }}>
+              .
+            </Typography>
             <Button
               variant="contained"
               fullWidth
               onClick={cargarRegistros}
               disabled={loading}
+              sx={{
+                height: '56px',
+                fontSize: '14px',
+                padding: '0 16px',
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+                '&:hover': {
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                }
+              }}
             >
               Buscar
             </Button>

@@ -191,12 +191,29 @@ const DataTable = ({
       {/* Table */}
       <TableContainer
         component={Paper}
-        elevation={0}
+        elevation={2}
+        className="custom-scrollbar"
         sx={{
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: 3,
-          overflow: 'hidden',
+          borderRadius: '12px',
+          overflow: 'auto',
+          maxHeight: '70vh',
+          border: '1px solid rgba(0,0,0,0.05)',
+          '&::-webkit-scrollbar': {
+            width: '8px',
+            height: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: '#f1f3f4',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+            borderRadius: '4px',
+            border: '1px solid #f1f3f4',
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+          },
         }}
       >
         <Table>

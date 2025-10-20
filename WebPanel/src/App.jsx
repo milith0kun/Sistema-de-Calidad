@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { detectEnvironment, getEnvironmentConfig } from './config/environment';
 
 // Pages
 import Login from './pages/Login';
@@ -148,29 +150,40 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
-          padding: '10px 24px',
-          fontSize: '0.9375rem',
+          borderRadius: 8, // Reducido de 12 a 8 para ser más formal
+          padding: '8px 20px', // Reducido de '10px 24px' para ser menos alto
+          fontSize: '0.875rem', // Reducido de '0.9375rem' para ser más compacto
           fontWeight: 500,
           textTransform: 'none',
           boxShadow: 'none',
+          minHeight: '36px', // Altura mínima más formal
           '&:hover': {
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)', // Sombra más sutil
             transform: 'translateY(-1px)',
           },
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         },
         contained: {
           '&:hover': {
-            boxShadow: '0 6px 16px rgba(0, 0, 0, 0.18)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
           },
+        },
+        sizeSmall: {
+          padding: '6px 16px',
+          fontSize: '0.8125rem',
+          minHeight: '32px',
+        },
+        sizeLarge: {
+          padding: '10px 24px',
+          fontSize: '0.9375rem',
+          minHeight: '42px',
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 8, // Reducido de 12 a 8 para ser más formal
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06)',
           border: '1px solid rgba(0, 0, 0, 0.04)',
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -184,7 +197,7 @@ const theme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 8, // Reducido de 12 a 8 para ser más formal
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
         },
         elevation1: {
@@ -199,22 +212,24 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
-          padding: '16px',
+          padding: '12px 16px', // Reducido de '16px' para ser más compacto
         },
         head: {
           fontWeight: 600,
           color: '#475569',
           backgroundColor: '#F8FAFC',
           borderBottom: '2px solid rgba(0, 0, 0, 0.08)',
+          padding: '14px 16px', // Ligeramente más alto para encabezados
         },
       },
     },
     MuiChip: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 6, // Reducido de 12 a 6 para ser más formal
           fontWeight: 500,
           fontSize: '0.8125rem',
+          height: '28px', // Altura más compacta
         },
       },
     },
@@ -222,9 +237,12 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: 12,
+            borderRadius: 8, // Reducido de 12 a 8 para ser más formal
             backgroundColor: '#FFFFFF',
             transition: 'all 0.2s',
+            '& .MuiOutlinedInput-input': {
+              padding: '12px 14px', // Padding más compacto
+            },
             '&:hover': {
               backgroundColor: '#F8FAFC',
             },
@@ -239,14 +257,29 @@ const theme = createTheme({
     MuiDialog: {
       styleOverrides: {
         paper: {
-          borderRadius: 12,
+          borderRadius: 8, // Reducido de 12 a 8 para ser más formal
         },
       },
     },
     MuiAlert: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 8, // Reducido de 12 a 8 para ser más formal
+        },
+      },
+    },
+    MuiFormControl: {
+      styleOverrides: {
+        root: {
+          marginBottom: '16px', // Espaciado consistente entre campos
+        },
+      },
+    },
+    MuiGrid: {
+      styleOverrides: {
+        item: {
+          paddingTop: '8px !important', // Espaciado más compacto en grids
+          paddingLeft: '8px !important',
         },
       },
     },
@@ -254,6 +287,22 @@ const theme = createTheme({
 });
 
 function App() {
+  // Inicializar configuración automática de entorno
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        console.log('🚀 Inicializando configuración automática de entorno...');
+        await detectEnvironment();
+        console.log('✅ Configuración de entorno inicializada correctamente');
+      } catch (error) {
+        console.warn('⚠️ Error al inicializar configuración automática:', error.message);
+        console.log('📝 La aplicación continuará con configuración por defecto');
+      }
+    };
+
+    initializeApp();
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
