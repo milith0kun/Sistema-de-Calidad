@@ -1,0 +1,230 @@
+/* Estilos mejorados para botones responsivos */
+
+/* Contenedor de botones de exportación */
+.export-buttons-container {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Botones de exportación responsivos */
+.export-button {
+  min-height: 40px !important;
+  border-radius: 8px !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  padding: 8px 16px !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Botones de filtro responsivos */
+.filter-button-group {
+  width: 100%;
+}
+
+.filter-button-group .MuiButton-root {
+  border-radius: 8px !important;
+  text-transform: none !important;
+  font-weight: 500 !important;
+  padding: 8px 12px !important;
+  min-height: 36px !important;
+  font-size: 0.875rem !important;
+}
+
+/* Estilos específicos para móviles */
+@media (max-width: 600px) {
+  .export-buttons-container {
+    justify-content: stretch;
+    gap: 8px;
+  }
+  
+  .export-button {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.875rem !important;
+    padding: 10px 12px !important;
+  }
+  
+  .export-button .MuiButton-startIcon {
+    margin-right: 4px !important;
+    margin-left: 0 !important;
+  }
+  
+  /* Botones de filtro en móviles */
+  .filter-button-group .MuiButton-root {
+    padding: 6px 8px !important;
+    font-size: 0.75rem !important;
+    min-height: 32px !important;
+  }
+  
+  /* Contenedor de filtros más compacto */
+  .filters-container {
+    padding: 16px !important;
+  }
+  
+  .filters-container .MuiGrid-item {
+    padding: 4px !important;
+  }
+}
+
+/* Estilos para tablets */
+@media (min-width: 601px) and (max-width: 960px) {
+  .export-button {
+    font-size: 0.9rem !important;
+    padding: 9px 14px !important;
+  }
+  
+  .filter-button-group .MuiButton-root {
+    font-size: 0.8125rem !important;
+    padding: 7px 10px !important;
+  }
+}
+
+/* Mejoras para accesibilidad */
+.export-button:focus,
+.filter-button-group .MuiButton-root:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+/* Animaciones suaves */
+.export-button,
+.filter-button-group .MuiButton-root {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.export-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Estilos para botones deshabilitados */
+.export-button:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* Contenedor de acciones más responsivo */
+.actions-container {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .actions-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .actions-container > * {
+    width: 100%;
+  }
+}
+
+/* Estilos para botones del Dashboard */
+.dashboard-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dashboard-button {
+  border-radius: 8px !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  min-height: 40px !important;
+  padding: 8px 16px !important;
+  font-size: 0.875rem !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dashboard-button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.dashboard-button.auto-refresh-on {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%) !important;
+  color: white !important;
+}
+
+.dashboard-button.auto-refresh-off {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+  color: #495057 !important;
+  border: 2px solid #6366f1 !important;
+}
+
+.dashboard-button.refresh-btn {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.dashboard-button.refresh-btn:disabled {
+  background: #e9ecef !important;
+  color: #6c757d !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Responsividad para botones del Dashboard */
+@media (max-width: 768px) {
+  .dashboard-controls {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+  
+  .dashboard-button {
+    width: 100% !important;
+    justify-content: center !important;
+    min-height: 44px !important;
+    font-size: 0.9rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-button {
+    font-size: 0.8rem !important;
+    padding: 10px 12px !important;
+  }
+}
+
+/* Estilos para scrollbars personalizados */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f8f9fa;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 4px;
+  border: 1px solid #f8f9fa;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #4f46e5 0%, #7c3aed 100%);
+}
+
+.custom-scrollbar::-webkit-scrollbar-corner {
+  background: #f8f9fa;
+}

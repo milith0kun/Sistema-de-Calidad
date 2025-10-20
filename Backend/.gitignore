@@ -13,8 +13,8 @@ yarn-error.log*
 logs/
 *.log
 
-# Base de datos (solo desarrollo)
-database/database.db
+# Base de datos: permitir subir en este commit
+# database/database.db
 
 # Archivos del sistema
 .DS_Store

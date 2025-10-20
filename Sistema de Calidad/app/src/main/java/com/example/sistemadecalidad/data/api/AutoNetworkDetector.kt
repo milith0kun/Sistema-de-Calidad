@@ -23,8 +23,8 @@ class AutoNetworkDetector(private val context: Context) {
         private const val SERVER_PORT = "3000"
         
         // URLs disponibles para prueba
-        private const val LOCAL_SERVER_URL = "http://192.168.1.67:3000/api/"
-        private const val AWS_PRODUCTION_URL = "http://18.118.212.247/api/"
+        private const val LOCAL_SERVER_URL = "http://localhost:3000/api/"
+        private const val AWS_PRODUCTION_URL = "http://18.216.180.19:3000/api/"
     }
     
     private val httpClient = OkHttpClient.Builder()
@@ -35,26 +35,15 @@ class AutoNetworkDetector(private val context: Context) {
     
     /**
      * Detecta automáticamente la mejor URL del servidor
-     * Prueba primero el servidor local, luego AWS como respaldo
+     * Prueba primero AWS Production, luego local como respaldo
      * @return URL del servidor que responde, o null si ninguna funciona
      */
     suspend fun detectBestServerUrl(): String? = withContext(Dispatchers.IO) {
         Log.d(TAG, "🚀 Detectando mejor servidor disponible...")
         
-        val urlsToTest = listOf(LOCAL_SERVER_URL, AWS_PRODUCTION_URL)
-        
-        for (url in urlsToTest) {
-            Log.d(TAG, "Probando conexión a: $url")
-            
-            if (testServerConnection(url)) {
-                Log.d(TAG, "✅ Servidor conectado exitosamente: $url")
-                return@withContext url
-            }
-        }
-        
-        Log.e(TAG, "❌ Error: No se pudo conectar a ningún servidor")
-        // Retornar servidor local como fallback
-        return@withContext LOCAL_SERVER_URL
+        // Siempre usar AWS Production primero
+        Log.d(TAG, "Usando servidor AWS Production: $AWS_PRODUCTION_URL")
+        return@withContext AWS_PRODUCTION_URL
     }
     
     /**

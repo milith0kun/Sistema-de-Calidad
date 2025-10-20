@@ -7,8 +7,8 @@ package com.example.sistemadecalidad.utils
 object ProductionConfig {
     
     // CONFIGURACIÓN DEL SERVIDOR - CAMBIAR AQUÍ PARA DESPLIEGUE
-    const val SERVER_IP = "10.0.2.2"                  // IP especial para emulador Android (apunta a localhost del host)
-    const val SERVER_PORT = "3000"                     // Puerto del backend local
+    const val SERVER_IP = "18.216.180.19"             // IP del servidor AWS EC2
+    const val SERVER_PORT = "3000"                     // Puerto del backend
     const val USE_HTTPS = false                        // Servidor usa HTTP
     
     /**
