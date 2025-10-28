@@ -1379,7 +1379,9 @@ router.post('/temperatura-camaras', authenticateToken, (req, res) => {
                 }
 
                 // Calcular conformidad basado en rangos de cámara
+                console.log('Consultando cámara con ID:', camara_id, 'tipo:', typeof camara_id);
                 db.get('SELECT temperatura_minima, temperatura_maxima FROM camaras_frigorificas WHERE id = ?', [camara_id], (err, camara) => {
+                    console.log('Resultado de consulta SQL - err:', err, 'camara:', camara);
                     if (err) {
                         console.error('Error obteniendo cámara:', err);
                         return res.status(500).json({ success: false, error: 'Error al consultar información de la cámara' });
@@ -1387,6 +1389,10 @@ router.post('/temperatura-camaras', authenticateToken, (req, res) => {
                     
                     if (!camara) {
                         console.error('Cámara no encontrada con ID:', camara_id);
+                        // Verificar si existe la cámara con una consulta más amplia
+                        db.get('SELECT * FROM camaras_frigorificas WHERE id = ?', [camara_id], (err2, camaraCompleta) => {
+                            console.log('Verificación completa - err2:', err2, 'camaraCompleta:', camaraCompleta);
+                        });
                         return res.status(400).json({ success: false, error: 'Cámara no encontrada' });
                     }
 
