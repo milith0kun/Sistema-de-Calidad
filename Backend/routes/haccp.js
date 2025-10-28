@@ -1380,10 +1380,17 @@ router.post('/temperatura-camaras', authenticateToken, (req, res) => {
 
                 // Calcular conformidad basado en rangos de cámara
                 db.get('SELECT temperatura_minima, temperatura_maxima FROM camaras_frigorificas WHERE id = ?', [camara_id], (err, camara) => {
-                    if (err || !camara) {
+                    if (err) {
                         console.error('Error obteniendo cámara:', err);
+                        return res.status(500).json({ success: false, error: 'Error al consultar información de la cámara' });
+                    }
+                    
+                    if (!camara) {
+                        console.error('Cámara no encontrada con ID:', camara_id);
                         return res.status(400).json({ success: false, error: 'Cámara no encontrada' });
                     }
+
+                    console.log('Cámara encontrada:', JSON.stringify(camara, null, 2));
 
                     const conformidadManana = (temperatura_manana != null && 
                         temperatura_manana >= camara.temperatura_minima && 

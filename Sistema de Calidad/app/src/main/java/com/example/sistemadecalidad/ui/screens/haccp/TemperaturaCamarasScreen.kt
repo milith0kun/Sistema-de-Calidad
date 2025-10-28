@@ -26,9 +26,9 @@ fun TemperaturaCamarasScreen(
     var selectedCamara by remember { mutableStateOf(0) } // 0 = Ref 1, 1 = Ref 2, 2 = Cong 1
     
     val camaras = listOf(
-        CamaraInfo(1, "REFRIGERACIÓN 1", "REFRIGERACION", 1.0, 4.0),
-        CamaraInfo(2, "REFRIGERACIÓN 2", "REFRIGERACION", 1.0, 4.0),
-        CamaraInfo(3, "CONGELACIÓN 1", "CONGELACION", -100.0, -18.0)
+        CamaraInfo(1, "REFRIGERACIÓN 1", "REFRIGERACION", 2.0, 8.0),
+        CamaraInfo(2, "CONGELACIÓN 1", "CONGELACION", -18.0, -15.0),
+        CamaraInfo(4, "REFRIGERACIÓN 2", "REFRIGERACION", 1.0, 6.0)
     )
     
     Scaffold(
@@ -103,13 +103,15 @@ private fun CamaraFormulario(
     // Generar lista de temperaturas según tipo de cámara
     val temperaturasDisponibles = remember(camara) {
         if (camara.tipo == "REFRIGERACION") {
-            // Para refrigeración: 1°C a 4°C con incrementos de 0.5°C
-            val min = (camara.tempMin * 2).toInt()
-            val max = (camara.tempMax * 2).toInt()
-            (min..max).map { it / 2.0 }
+            // Para refrigeración: 1°C a 4°C con incrementos de 0.1°C (más correlativo)
+            val min = (camara.tempMin * 10).toInt()
+            val max = (camara.tempMax * 10).toInt()
+            (min..max).map { it / 10.0 }
         } else {
-            // Para congelación: -25°C a -18°C con incrementos de 1°C
-            listOf(-25.0, -24.0, -23.0, -22.0, -21.0, -20.0, -19.0, -18.0)
+            // Para congelación: -25°C a -18°C con incrementos de 0.1°C
+            val min = (-25.0 * 10).toInt()
+            val max = (-18.0 * 10).toInt()
+            (min..max).map { it / 10.0 }
         }
     }
     
