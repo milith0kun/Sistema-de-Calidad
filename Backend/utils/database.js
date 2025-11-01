@@ -11,12 +11,32 @@ if (!fs.existsSync(dbDir)) {
 
 const dbPath = path.join(dbDir, 'database.db');
 
+// Agregar logging para diagnosticar la ruta de la base de datos
+console.log('=== CONFIGURACIÓN DE BASE DE DATOS ===');
+console.log('Directorio de base de datos:', dbDir);
+console.log('Ruta completa de la base de datos:', dbPath);
+console.log('¿Existe el archivo de base de datos?:', fs.existsSync(dbPath));
+if (fs.existsSync(dbPath)) {
+    const stats = fs.statSync(dbPath);
+    console.log('Tamaño del archivo de base de datos:', stats.size, 'bytes');
+    console.log('Última modificación:', stats.mtime);
+}
+console.log('=======================================');
+
 // Conexión a la base de datos
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('Error al conectar con la base de datos:', err.message);
     } else {
         console.log('Conectado a la base de datos SQLite');
+        // Verificar que la tabla existe y tiene datos
+        db.get("SELECT COUNT(*) as count FROM camaras_frigorificas", (err, row) => {
+            if (err) {
+                console.error('Error verificando tabla camaras_frigorificas:', err.message);
+            } else {
+                console.log('Número de cámaras en la base de datos:', row.count);
+            }
+        });
     }
 });
 
