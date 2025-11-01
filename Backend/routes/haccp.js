@@ -1276,6 +1276,7 @@ router.get('/camaras', authenticateToken, (req, res) => {
 router.get('/temperatura-camaras/verificar/:camara_id', authenticateToken, (req, res) => {
     try {
         const { camara_id } = req.params;
+        const { turno } = req.query; // Parámetro opcional para verificar turno específico
         const fecha = formatDateForDB();
 
         db.get(
@@ -1295,26 +1296,57 @@ router.get('/temperatura-camaras/verificar/:camara_id', authenticateToken, (req,
                 }
 
                 if (registro) {
-                    // Ya existe un registro para esta cámara hoy
+                    // Verificar turnos específicos
+                    const turnoMananaCompleto = registro.temperatura_manana !== null;
+                    const turnoTardeCompleto = registro.temperatura_tarde !== null;
+                    
+                    let mensaje = '';
+                    let puede_registrar = false;
+                    
+                    if (turno === 'manana') {
+                        puede_registrar = !turnoMananaCompleto;
+                        mensaje = turnoMananaCompleto 
+                            ? `El turno de mañana ya fue registrado por: ${registro.responsable_manana_nombre}`
+                            : 'El turno de mañana está disponible para registro';
+                    } else if (turno === 'tarde') {
+                        puede_registrar = !turnoTardeCompleto;
+                        mensaje = turnoTardeCompleto 
+                            ? `El turno de tarde ya fue registrado por: ${registro.responsable_tarde_nombre}`
+                            : 'El turno de tarde está disponible para registro';
+                    } else {
+                        // Sin turno específico, mostrar estado general
+                        puede_registrar = !turnoMananaCompleto || !turnoTardeCompleto;
+                        mensaje = `Turnos - Mañana: ${turnoMananaCompleto ? 'Registrado' : 'Disponible'}, Tarde: ${turnoTardeCompleto ? 'Registrado' : 'Disponible'}`;
+                    }
+
                     res.json({
                         success: true,
                         existe_registro: true,
-                        mensaje: 'Ya existe un registro de temperatura para esta cámara en el día de hoy',
+                        puede_registrar,
+                        mensaje,
                         registro: {
                             id: registro.id,
                             fecha: registro.fecha,
-                            responsable: registro.responsable_manana_nombre || registro.responsable_tarde_nombre,
-                            temperatura_manana: registro.temperatura_manana,
-                            temperatura_tarde: registro.temperatura_tarde,
+                            turno_manana: {
+                                completado: turnoMananaCompleto,
+                                responsable: registro.responsable_manana_nombre,
+                                temperatura: registro.temperatura_manana
+                            },
+                            turno_tarde: {
+                                completado: turnoTardeCompleto,
+                                responsable: registro.responsable_tarde_nombre,
+                                temperatura: registro.temperatura_tarde
+                            },
                             timestamp_creacion: registro.timestamp_creacion
                         }
                     });
                 } else {
-                    // No existe registro, se puede crear uno nuevo
+                    // No existe registro, ambos turnos disponibles
                     res.json({
                         success: true,
                         existe_registro: false,
-                        mensaje: 'No existe registro para esta cámara hoy, se puede crear uno nuevo',
+                        puede_registrar: true,
+                        mensaje: 'No existe registro para esta cámara hoy. Ambos turnos están disponibles.',
                         fecha_actual: fecha
                     });
                 }
@@ -1338,6 +1370,7 @@ router.post('/temperatura-camaras', authenticateToken, (req, res) => {
         const {
             camara_id,
             temperatura_manana, temperatura_tarde,
+            turno, // Nuevo campo para identificar el turno
             acciones_correctivas
         } = req.body;
 
@@ -1351,9 +1384,9 @@ router.post('/temperatura-camaras', authenticateToken, (req, res) => {
         const dia = String(peruDate.getDate()).padStart(2, '0');
         const fecha = formatDateForDB();
 
-        // Verificar si ya existe registro para esta cámara hoy (CONTROL ÚNICO DIARIO)
+        // Verificar si ya existe registro para esta cámara hoy
         db.get(
-            'SELECT id, responsable_manana_nombre, responsable_tarde_nombre FROM control_temperatura_camaras WHERE camara_id = ? AND fecha = ?',
+            'SELECT id, responsable_manana_nombre, responsable_tarde_nombre, temperatura_manana, temperatura_tarde FROM control_temperatura_camaras WHERE camara_id = ? AND fecha = ?',
             [camara_id, fecha],
             (err, existente) => {
                 if (err) {
@@ -1361,21 +1394,29 @@ router.post('/temperatura-camaras', authenticateToken, (req, res) => {
                     return res.status(500).json({ success: false, error: 'Error al verificar registro' });
                 }
 
-                // NUEVA VALIDACIÓN: Si ya existe un registro, no permitir otro registro
+                // NUEVA LÓGICA: Validar por turno específico
                 if (existente) {
-                    console.log('❌ REGISTRO DUPLICADO - Ya existe registro para esta cámara hoy');
-                    console.log('Registro existente:', existente);
-                    return res.status(409).json({ 
-                        success: false, 
-                        error: 'Ya existe un registro de temperatura para esta cámara en el día de hoy',
-                        message: `Esta cámara ya fue registrada hoy por: ${existente.responsable_manana_nombre || existente.responsable_tarde_nombre || 'Usuario desconocido'}`,
-                        codigo: 'REGISTRO_DUPLICADO_DIA',
-                        registro_existente: {
-                            id: existente.id,
-                            fecha: fecha,
-                            responsable: existente.responsable_manana_nombre || existente.responsable_tarde_nombre
-                        }
-                    });
+                    // Si es turno mañana y ya existe temperatura_manana
+                    if (turno === 'manana' && existente.temperatura_manana !== null) {
+                        console.log('❌ TURNO MAÑANA YA REGISTRADO');
+                        return res.status(409).json({ 
+                            success: false, 
+                            error: 'El turno de mañana ya fue registrado para esta cámara hoy',
+                            message: `Turno mañana registrado por: ${existente.responsable_manana_nombre}`,
+                            codigo: 'TURNO_MANANA_DUPLICADO'
+                        });
+                    }
+                    
+                    // Si es turno tarde y ya existe temperatura_tarde
+                    if (turno === 'tarde' && existente.temperatura_tarde !== null) {
+                        console.log('❌ TURNO TARDE YA REGISTRADO');
+                        return res.status(409).json({ 
+                            success: false, 
+                            error: 'El turno de tarde ya fue registrado para esta cámara hoy',
+                            message: `Turno tarde registrado por: ${existente.responsable_tarde_nombre}`,
+                            codigo: 'TURNO_TARDE_DUPLICADO'
+                        });
+                    }
                 }
 
                 // Calcular conformidad basado en rangos de cámara
@@ -1401,52 +1442,110 @@ router.post('/temperatura-camaras', authenticateToken, (req, res) => {
 
                     console.log('Cámara encontrada:', JSON.stringify(camara, null, 2));
 
-                    const conformidadManana = (temperatura_manana != null && 
-                        temperatura_manana >= camara.temperatura_minima && 
-                        temperatura_manana <= camara.temperatura_maxima) ? 'C' : 'NC';
+                    // Determinar qué temperatura y conformidad calcular según el turno
+                    let temperatura_a_registrar, conformidad, campo_temperatura, campo_responsable_id, campo_responsable_nombre, campo_conformidad;
                     
-                    const conformidadTarde = (temperatura_tarde != null && 
-                        temperatura_tarde >= camara.temperatura_minima && 
-                        temperatura_tarde <= camara.temperatura_maxima) ? 'C' : 'NC';
-                    // Crear nuevo registro
-                    const query = `
-                        INSERT INTO control_temperatura_camaras (
+                    if (turno === 'manana') {
+                        temperatura_a_registrar = temperatura_manana;
+                        conformidad = (temperatura_manana != null && 
+                            temperatura_manana >= camara.temperatura_minima && 
+                            temperatura_manana <= camara.temperatura_maxima) ? 'C' : 'NC';
+                        campo_temperatura = 'temperatura_manana';
+                        campo_responsable_id = 'responsable_manana_id';
+                        campo_responsable_nombre = 'responsable_manana_nombre';
+                        campo_conformidad = 'conformidad_manana';
+                    } else if (turno === 'tarde') {
+                        temperatura_a_registrar = temperatura_tarde;
+                        conformidad = (temperatura_tarde != null && 
+                            temperatura_tarde >= camara.temperatura_minima && 
+                            temperatura_tarde <= camara.temperatura_maxima) ? 'C' : 'NC';
+                        campo_temperatura = 'temperatura_tarde';
+                        campo_responsable_id = 'responsable_tarde_id';
+                        campo_responsable_nombre = 'responsable_tarde_nombre';
+                        campo_conformidad = 'conformidad_tarde';
+                    } else {
+                        return res.status(400).json({ 
+                            success: false, 
+                            error: 'Turno no válido. Debe ser "manana" o "tarde"' 
+                        });
+                    }
+
+                    if (existente) {
+                        // ACTUALIZAR registro existente con el nuevo turno
+                        const updateQuery = `
+                            UPDATE control_temperatura_camaras 
+                            SET ${campo_temperatura} = ?, 
+                                ${campo_responsable_id} = ?, 
+                                ${campo_responsable_nombre} = ?, 
+                                ${campo_conformidad} = ?,
+                                acciones_correctivas = COALESCE(?, acciones_correctivas)
+                            WHERE id = ?
+                        `;
+
+                        db.run(updateQuery, [
+                            temperatura_a_registrar,
+                            usuario.id,
+                            `${usuario.nombre} ${usuario.apellido}`,
+                            conformidad,
+                            acciones_correctivas,
+                            existente.id
+                        ], function(err) {
+                            if (err) {
+                                console.error('❌ Error actualizando temperatura:', err);
+                                return res.status(500).json({ success: false, error: 'Error al actualizar temperatura' });
+                            }
+
+                            console.log(`✅ Turno ${turno} actualizado exitosamente para registro ID:`, existente.id);
+                            res.json({
+                                success: true,
+                                message: `Temperatura del turno ${turno} registrada correctamente`,
+                                data: { 
+                                    id: existente.id, 
+                                    fecha, 
+                                    turno,
+                                    temperatura: temperatura_a_registrar,
+                                    conformidad,
+                                    updated: true 
+                                }
+                            });
+                        });
+                    } else {
+                        // CREAR nuevo registro
+                        const insertQuery = `
+                            INSERT INTO control_temperatura_camaras (
+                                mes, anio, dia, fecha, camara_id,
+                                hora_manana, ${campo_temperatura}, ${campo_responsable_id}, ${campo_responsable_nombre}, ${campo_conformidad},
+                                acciones_correctivas, supervisor_id, supervisor_nombre
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        `;
+
+                        const hora_turno = turno === 'manana' ? '08:00' : '16:00';
+
+                        db.run(insertQuery, [
                             mes, anio, dia, fecha, camara_id,
-                            hora_manana, temperatura_manana, responsable_manana_id, responsable_manana_nombre, conformidad_manana,
-                            hora_tarde, temperatura_tarde, responsable_tarde_id, responsable_tarde_nombre, conformidad_tarde,
-                            acciones_correctivas, supervisor_id, supervisor_nombre
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    `;
+                            hora_turno, temperatura_a_registrar, usuario.id, `${usuario.nombre} ${usuario.apellido}`, conformidad,
+                            acciones_correctivas, usuario.id, `${usuario.nombre} ${usuario.apellido}`
+                        ], function(err) {
+                            if (err) {
+                                console.error('❌ Error insertando temperatura:', err);
+                                return res.status(500).json({ success: false, error: 'Error al registrar temperatura' });
+                            }
 
-                    db.run(query, [
-                        mes, anio, dia, fecha, camara_id,
-                        '08:00', temperatura_manana, usuario.id, `${usuario.nombre} ${usuario.apellido}`, conformidadManana,
-                        '16:00', temperatura_tarde, usuario.id, `${usuario.nombre} ${usuario.apellido}`, conformidadTarde,
-                        acciones_correctivas, usuario.id, `${usuario.nombre} ${usuario.apellido}`
-                    ], function(err) {
-                        if (err) {
-                            console.error('❌ Error insertando temperatura:', err);
-                            return res.status(500).json({ success: false, error: 'Error al registrar temperatura' });
-                        }
-
-                        console.log('✅ Temperatura de cámara registrada exitosamente, ID:', this.lastID);
-                        console.log('Datos registrados:', { 
-                            id: this.lastID, 
-                            fecha, 
-                            camara_id,
-                            temperatura_manana, 
-                            temperatura_tarde, 
-                            responsable: `${usuario.nombre} ${usuario.apellido}`,
-                            conformidad_manana: conformidadManana,
-                            conformidad_tarde: conformidadTarde
+                            console.log(`✅ Nuevo registro creado para turno ${turno}, ID:`, this.lastID);
+                            res.json({
+                                success: true,
+                                message: `Temperatura del turno ${turno} registrada correctamente`,
+                                data: { 
+                                    id: this.lastID, 
+                                    fecha, 
+                                    turno,
+                                    temperatura: temperatura_a_registrar,
+                                    conformidad,
+                                    created: true 
+                                }
+                            });
                         });
-
-                        res.json({
-                            success: true,
-                            message: 'Temperatura de cámara registrada correctamente',
-                            data: { id: this.lastID, fecha, temperatura_manana, temperatura_tarde, created: true }
-                        });
-                    });
+                    }
                 });
             }
         );
