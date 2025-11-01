@@ -416,11 +416,11 @@ fun MarcacionesScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp),
+                    userLatitude = locationManager.currentLocation.collectAsStateWithLifecycle().value?.latitude,
+                    userLongitude = locationManager.currentLocation.collectAsStateWithLifecycle().value?.longitude,
                     targetLatitude = targetLatitude,
                     targetLongitude = targetLongitude,
                     allowedRadius = allowedRadius,
-                    currentLatitude = locationManager.currentLocation.collectAsStateWithLifecycle().value?.latitude,
-                    currentLongitude = locationManager.currentLocation.collectAsStateWithLifecycle().value?.longitude,
                     isLocationValid = isLocationValid
                 )
                 
