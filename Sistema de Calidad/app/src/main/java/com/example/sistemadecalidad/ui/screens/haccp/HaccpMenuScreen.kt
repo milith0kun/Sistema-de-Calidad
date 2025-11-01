@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -61,6 +62,20 @@ fun HaccpMenuScreen(
             descripcion = "Control de calidad en recepción de mercadería de abarrotes en general",
             icono = Icons.Default.ShoppingCart,
             color = MaterialTheme.colorScheme.tertiaryContainer
+        ),
+        FormularioHaccp(
+            id = "control_higiene_personal",
+            titulo = "Control de Higiene Personal",
+            descripcion = "Verificación de uniformes y estado de salud del personal",
+            icono = Icons.Default.HealthAndSafety,
+            color = MaterialTheme.colorScheme.primaryContainer
+        ),
+        FormularioHaccp(
+            id = "limpieza_desinfeccion",
+            titulo = "Limpieza y Desinfección",
+            descripcion = "Control de limpieza de equipos y superficies",
+            icono = Icons.Default.CleaningServices,
+            color = MaterialTheme.colorScheme.secondaryContainer
         )
     )
     
@@ -70,7 +85,7 @@ fun HaccpMenuScreen(
                 title = { Text("Formularios HACCP") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
                     }
                 }
             )

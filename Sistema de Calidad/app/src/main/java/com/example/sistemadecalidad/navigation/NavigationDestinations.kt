@@ -21,6 +21,10 @@ object NavigationDestinations {
     const val LAVADO_MANOS = "lavado_manos"
     const val TEMPERATURA_CAMARAS = "temperatura_camaras"
     const val RECEPCION_ABARROTES = "recepcion_abarrotes"
+    
+    // Rutas de formularios de demostración (en desarrollo)
+    const val CONTROL_HIGIENE_PERSONAL = "control_higiene_personal"
+    const val LIMPIEZA_DESINFECCION = "limpieza_desinfeccion"
 }
 
 /**

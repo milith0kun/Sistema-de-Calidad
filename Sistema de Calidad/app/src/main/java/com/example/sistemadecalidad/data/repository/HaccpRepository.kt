@@ -253,8 +253,8 @@ class HaccpRepository(
         token: String,
         camaraId: Int,
         fecha: String,
-        temperaturaManana: Double?,
-        temperaturaTarde: Double?,
+        turno: String, // "manana" o "tarde"
+        temperatura: Double,
         accionesCorrectivas: String?
     ): Result<HaccpResponse> = withContext(Dispatchers.IO) {
         try {
@@ -262,27 +262,47 @@ class HaccpRepository(
             val request = TemperaturaCamarasRequest(
                 camaraId = camaraId,
                 fecha = fecha,
-                temperaturaManana = temperaturaManana,
-                temperaturaTarde = temperaturaTarde,
+                turno = turno,
+                temperatura = temperatura,
                 accionesCorrectivas = accionesCorrectivas
             )
             
-            Log.d(TAG, "Registrando temperatura cámara: camara=$camaraId, fecha=$fecha")
+            Log.d(TAG, "Registrando temperatura cámara: camara=$camaraId, fecha=$fecha, turno=$turno, temp=$temperatura")
             val response = apiService.registrarTemperaturaCamaras(bearerToken, request)
             
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!
                 if (body.success) {
-                    Log.d(TAG, "✅ Temperatura cámara registrada exitosamente")
+                    Log.d(TAG, "✅ Temperatura cámara registrada exitosamente para turno $turno")
                     Result.success(body)
                 } else {
                     Log.e(TAG, "❌ Error en temperatura cámara: ${body.error}")
-                    Result.failure(Exception(body.error ?: "Error desconocido"))
+                    // Manejar errores específicos de turnos duplicados
+                    when {
+                        body.error?.contains("TURNO_MANANA_DUPLICADO") == true -> {
+                            Result.failure(RegistroDuplicadoException("Ya existe un registro para el turno de mañana"))
+                        }
+                        body.error?.contains("TURNO_TARDE_DUPLICADO") == true -> {
+                            Result.failure(RegistroDuplicadoException("Ya existe un registro para el turno de tarde"))
+                        }
+                        else -> {
+                            Result.failure(Exception(body.error ?: "Error desconocido"))
+                        }
+                    }
                 }
             } else {
-                val errorMsg = "Error HTTP ${response.code()}: ${response.message()}"
-                Log.e(TAG, errorMsg)
-                Result.failure(Exception(errorMsg))
+                when (response.code()) {
+                    409 -> {
+                        // Conflicto - registro duplicado
+                        Log.w(TAG, "⚠️ Registro duplicado de temperatura para turno $turno")
+                        Result.failure(RegistroDuplicadoException("Ya existe un registro de temperatura para este turno"))
+                    }
+                    else -> {
+                        val errorMsg = "Error HTTP ${response.code()}: ${response.message()}"
+                        Log.e(TAG, errorMsg)
+                        Result.failure(Exception(errorMsg))
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "❌ Excepción en temperatura cámara", e)

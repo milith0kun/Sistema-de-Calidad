@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -14,7 +14,6 @@ import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.ui.viewmodel.HaccpViewModel
 import com.example.sistemadecalidad.utils.TimeUtils
 import java.util.Calendar
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,9 +25,11 @@ fun TemperaturaCamarasScreen(
     var selectedCamara by remember { mutableStateOf(0) } // 0 = Ref 1, 1 = Ref 2, 2 = Cong 1
     
     val camaras = listOf(
-        CamaraInfo(1, "REFRIGERACIÓN 1", "REFRIGERACION", 2.0, 8.0),
+        CamaraInfo(1, "REFRIGERACIÓN 1", "REFRIGERACION", 1.0, 4.0),
         CamaraInfo(2, "CONGELACIÓN 1", "CONGELACION", -18.0, -15.0),
-        CamaraInfo(4, "REFRIGERACIÓN 2", "REFRIGERACION", 1.0, 6.0)
+        CamaraInfo(3, "CONSERVACIÓN 1", "CONSERVACION", 1.0, 4.0),
+        CamaraInfo(4, "REFRIGERACIÓN 2", "REFRIGERACION", 1.0, 4.0),
+        CamaraInfo(5, "CONGELACIÓN 2", "CONGELACION", -18.0, -15.0)
     )
     
     Scaffold(
@@ -37,7 +38,7 @@ fun TemperaturaCamarasScreen(
                 title = { Text("Control de Temperatura de Cámaras") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
                     }
                 }
             )
@@ -82,28 +83,33 @@ private fun CamaraFormulario(
     val mes = peruCalendar.get(Calendar.MONTH) + 1
     val anio = peruCalendar.get(Calendar.YEAR)
     val dia = peruCalendar.get(Calendar.DAY_OF_MONTH)
+    val horaActual = peruCalendar.get(Calendar.HOUR_OF_DAY)
+    
+    // Detectar turno automáticamente (mañana: 00:00-12:00, tarde: 12:00-00:00)
+    val turnoActual = if (horaActual < 12) "mañana" else "tarde"
+    val horaDisplay = if (turnoActual == "mañana") "08:00" else "16:00"
     
     // Obtener usuario logueado
     val usuario by preferencesManager.getUser().collectAsState(initial = null)
     
-    // Estados para la verificación de registro existente
+    // Estado de verificación de registro existente
+    var verificacionRealizada by remember { mutableStateOf(false) }
     var registroExistente by remember { mutableStateOf(false) }
     var mensajeRegistroExistente by remember { mutableStateOf<String?>(null) }
-    var verificacionRealizada by remember { mutableStateOf(false) }
     
-    // Verificar si ya existe un registro para esta cámara hoy
-    LaunchedEffect(camara.id) {
+    // Verificar si ya existe un registro para esta cámara y turno hoy
+    LaunchedEffect(camara.id, turnoActual) {
         haccpViewModel.verificarRegistroTemperaturaCamara(camara.id) { existe, mensaje ->
+            verificacionRealizada = true
             registroExistente = existe
             mensajeRegistroExistente = mensaje
-            verificacionRealizada = true
         }
     }
     
     // Generar lista de temperaturas según tipo de cámara
     val temperaturasDisponibles = remember(camara) {
         if (camara.tipo == "REFRIGERACION") {
-            // Para refrigeración: 1°C a 4°C con incrementos de 0.1°C (más correlativo)
+            // Para refrigeración: 1°C a 4°C con incrementos de 0.1°C
             val min = (camara.tempMin * 10).toInt()
             val max = (camara.tempMax * 10).toInt()
             (min..max).map { it / 10.0 }
@@ -115,13 +121,12 @@ private fun CamaraFormulario(
         }
     }
     
-    var temperaturaManana by remember { mutableStateOf<Double?>(null) }
-    var temperaturaTarde by remember { mutableStateOf<Double?>(null) }
+    // Estado para la temperatura del turno actual
+    var temperatura by remember { mutableStateOf<Double?>(null) }
     var accionesCorrectivas by remember { mutableStateOf("") }
     
-    // Dropdowns expandidos
-    var expandedManana by remember { mutableStateOf(false) }
-    var expandedTarde by remember { mutableStateOf(false) }
+    // Dropdown expandido
+    var expandedTemperatura by remember { mutableStateOf(false) }
     
     // Responsable y supervisor auto-generados desde usuario logueado
     val responsable = remember(usuario) {
@@ -135,8 +140,7 @@ private fun CamaraFormulario(
     var showSuccessDialog by remember { mutableStateOf(false) }
     
     // Validación
-    val isFormValid = temperaturaManana != null &&
-            temperaturaTarde != null &&
+    val isFormValid = temperatura != null &&
             responsable.isNotEmpty() &&
             supervisor.isNotEmpty()
     
@@ -170,7 +174,7 @@ private fun CamaraFormulario(
             fontWeight = FontWeight.Bold
         )
         
-        Divider()
+        HorizontalDivider()
         
         // Mostrar mensaje si ya existe un registro
         if (verificacionRealizada && registroExistente && mensajeRegistroExistente != null) {
@@ -180,7 +184,7 @@ private fun CamaraFormulario(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "⚠️ REGISTRO YA REALIZADO",
+                        text = "⚠️ REGISTRO YA REALIZADO PARA ESTE TURNO",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onErrorContainer
@@ -193,7 +197,7 @@ private fun CamaraFormulario(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "No se puede realizar un nuevo registro para esta cámara hoy.",
+                        text = "No se puede realizar un nuevo registro para esta cámara en el turno ${turnoActual} hoy.",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onErrorContainer
@@ -216,6 +220,7 @@ private fun CamaraFormulario(
                     Text("AÑO: $anio", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                 }
                 Text("DÍA: $dia", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                Text("TURNO: ${turnoActual.uppercase()}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
                 Text("(Generado automáticamente)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f))
             }
         }
@@ -239,47 +244,47 @@ private fun CamaraFormulario(
             }
         }
         
-        Divider()
+        HorizontalDivider()
         
-        // TURNO MAÑANA
-        Text("TURNO MAÑANA", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        // TURNO ACTUAL
+        Text("TURNO ${turnoActual.uppercase()}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         
         Card {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("HORA: 08:00", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                Text("HORA: $horaDisplay", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                 
                 // Dropdown para temperatura
                 ExposedDropdownMenuBox(
-                    expanded = expandedManana,
-                    onExpandedChange = { expandedManana = !expandedManana }
+                    expanded = expandedTemperatura,
+                    onExpandedChange = { expandedTemperatura = !expandedTemperatura }
                 ) {
                     OutlinedTextField(
-                        value = temperaturaManana?.toString() ?: "",
+                        value = temperatura?.toString() ?: "",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("TEMPERATURA (°C) *") },
                         placeholder = { Text("Seleccionar temperatura") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedManana) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTemperatura) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
                         supportingText = { 
                             Text(
                                 if (camara.tipo == "REFRIGERACION") 
-                                    "Rango permitido: ${camara.tempMin}°C a ${camara.tempMax}°C"
+                                    "Rango permitido: ${camara.tempMin}°C a ${camara.tempMax}°C (variación 0.1°C)"
                                 else 
-                                    "Debe ser menor a ${camara.tempMax}°C"
+                                    "Debe ser menor a ${camara.tempMax}°C (variación 0.1°C)"
                             ) 
                         }
                     )
                     ExposedDropdownMenu(
-                        expanded = expandedManana,
-                        onDismissRequest = { expandedManana = false }
+                        expanded = expandedTemperatura,
+                        onDismissRequest = { expandedTemperatura = false }
                     ) {
                         temperaturasDisponibles.forEach { temp ->
                             DropdownMenuItem(
                                 text = { Text("$temp°C") },
                                 onClick = {
-                                    temperaturaManana = temp
-                                    expandedManana = false
+                                    temperatura = temp
+                                    expandedTemperatura = false
                                 }
                             )
                         }
@@ -312,80 +317,7 @@ private fun CamaraFormulario(
             }
         }
         
-        Divider()
-        
-        // TURNO TARDE
-        Text("TURNO TARDE", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-        
-        Card {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("HORA: 16:00", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                
-                // Dropdown para temperatura
-                ExposedDropdownMenuBox(
-                    expanded = expandedTarde,
-                    onExpandedChange = { expandedTarde = !expandedTarde }
-                ) {
-                    OutlinedTextField(
-                        value = temperaturaTarde?.toString() ?: "",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("TEMPERATURA (°C) *") },
-                        placeholder = { Text("Seleccionar temperatura") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTarde) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
-                        supportingText = { 
-                            Text(
-                                if (camara.tipo == "REFRIGERACION") 
-                                    "Rango permitido: ${camara.tempMin}°C a ${camara.tempMax}°C"
-                                else 
-                                    "Debe ser menor a ${camara.tempMax}°C"
-                            ) 
-                        }
-                    )
-                    ExposedDropdownMenu(
-                        expanded = expandedTarde,
-                        onDismissRequest = { expandedTarde = false }
-                    ) {
-                        temperaturasDisponibles.forEach { temp ->
-                            DropdownMenuItem(
-                                text = { Text("$temp°C") },
-                                onClick = {
-                                    temperaturaTarde = temp
-                                    expandedTarde = false
-                                }
-                            )
-                        }
-                    }
-                }
-                
-                // Responsable auto-generado
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            "RESPONSABLE DEL CONTROL",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            responsable.ifEmpty { "(Usuario no identificado)" },
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            "(Generado automáticamente)",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-            }
-        }
-        
-        Divider()
+        HorizontalDivider()
         
         // ACCIONES CORRECTIVAS
         Text("ACCIONES CORRECTIVAS ESTÁNDAR", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -400,7 +332,7 @@ private fun CamaraFormulario(
             maxLines = 5
         )
         
-        Divider()
+        HorizontalDivider()
         
         // SUPERVISOR
         Text("SUPERVISOR", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -440,7 +372,7 @@ private fun CamaraFormulario(
             }
         }
         
-        Divider()
+        HorizontalDivider()
         
         // SIGNIFICADO
         Card(
@@ -456,14 +388,14 @@ private fun CamaraFormulario(
         // Botón de registro
         Button(
             onClick = {
-                if (temperaturaManana != null && temperaturaTarde != null) {
+                if (temperatura != null) {
                     val fecha = "$anio-${mes.toString().padStart(2, '0')}-${dia.toString().padStart(2, '0')}"
                     
                     haccpViewModel.registrarTemperaturaCamaras(
                         camaraId = camara.id,
                         fecha = fecha,
-                        temperaturaManana = temperaturaManana,
-                        temperaturaTarde = temperaturaTarde,
+                        turno = turnoActual,
+                        temperatura = temperatura!!,
                         accionesCorrectivas = accionesCorrectivas.ifEmpty { null }
                     )
                 }
@@ -478,7 +410,7 @@ private fun CamaraFormulario(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
             }
-            Text("Registrar Control de Temperatura")
+            Text("Registrar Control de Temperatura - Turno ${turnoActual.uppercase()}")
         }
         
         // Mostrar error si existe
@@ -507,7 +439,7 @@ private fun CamaraFormulario(
             },
             title = { Text("✅ Registro Exitoso") },
             text = { 
-                Text(uiState.successMessage ?: "Control de temperatura registrado correctamente")
+                Text(uiState.successMessage ?: "Control de temperatura registrado correctamente para el turno ${turnoActual}")
             },
             confirmButton = {
                 TextButton(
@@ -515,31 +447,9 @@ private fun CamaraFormulario(
                         showSuccessDialog = false
                         haccpViewModel.clearMessages()
                         // Recargar la verificación para actualizar el estado
-                        haccpViewModel.verificarRegistroTemperaturaCamara(camara.id) { existe, mensaje ->
+                        haccpViewModel.verificarRegistroTemperaturaCamara(camara.id) { _, _ ->
                             // La verificación se actualizará automáticamente por el LaunchedEffect
                         }
-                    }
-                ) {
-                    Text("Aceptar")
-                }
-            }
-        )
-    }
-    
-    // Diálogo de éxito
-    if (showSuccessDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                showSuccessDialog = false
-                haccpViewModel.clearMessages()
-            },
-            title = { Text("✓ Registro Exitoso") },
-            text = { Text(uiState.successMessage ?: "Control de temperatura registrado correctamente") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showSuccessDialog = false
-                        haccpViewModel.clearMessages()
                     }
                 ) {
                     Text("Aceptar")

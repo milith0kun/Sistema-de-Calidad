@@ -1,11 +1,8 @@
 package com.example.sistemadecalidad.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -28,6 +25,7 @@ import com.example.sistemadecalidad.ui.screens.haccp.LavadoFrutasScreen
 import com.example.sistemadecalidad.ui.screens.haccp.LavadoManosScreen
 import com.example.sistemadecalidad.ui.screens.haccp.TemperaturaCamarasScreen
 import com.example.sistemadecalidad.ui.screens.haccp.RecepcionAbarrotesScreen
+import com.example.sistemadecalidad.ui.screens.haccp.EnDesarrolloScreen
 import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.ui.viewmodel.AuthViewModel
 import com.example.sistemadecalidad.ui.viewmodel.FichadoViewModel
@@ -62,9 +60,6 @@ fun HaccpNavigation(
     val authViewModel = AuthViewModel(authRepository, preferencesManager, authStateManager)
     val fichadoViewModel = FichadoViewModel(fichadoRepository, preferencesManager, locationManager, authStateManager)
     val haccpViewModel = com.example.sistemadecalidad.ui.viewmodel.HaccpViewModel(haccpRepository, preferencesManager)
-    
-    // Observar el estado de autenticación (solo para lectura, sin redirecciones automáticas)
-    val isAuthenticated by authViewModel.isAuthenticated.collectAsStateWithLifecycle()
     
     // NO USAR LaunchedEffect para redirecciones automáticas
     // El logout manual debe manejarse directamente en las pantallas
@@ -256,6 +251,23 @@ fun HaccpNavigation(
             RecepcionAbarrotesScreen(
                 haccpViewModel = haccpViewModel,
                 preferencesManager = preferencesManager,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        // Formularios de demostración (en desarrollo)
+        composable(NavigationDestinations.CONTROL_HIGIENE_PERSONAL) {
+            EnDesarrolloScreen(
+                titulo = "Control de Higiene Personal",
+                descripcion = "Verificación de uniformes y estado de salud del personal",
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(NavigationDestinations.LIMPIEZA_DESINFECCION) {
+            EnDesarrolloScreen(
+                titulo = "Limpieza y Desinfección",
+                descripcion = "Control de limpieza de equipos y superficies",
                 onNavigateBack = { navController.popBackStack() }
             )
         }

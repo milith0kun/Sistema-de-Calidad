@@ -364,11 +364,11 @@ data class TemperaturaCamarasRequest(
     @SerializedName("fecha")
     val fecha: String, // YYYY-MM-DD
     
-    @SerializedName("temperatura_manana")
-    val temperaturaManana: Double?,
+    @SerializedName("turno")
+    val turno: String, // "manana" o "tarde"
     
-    @SerializedName("temperatura_tarde")
-    val temperaturaTarde: Double?,
+    @SerializedName("temperatura")
+    val temperatura: Double,
     
     @SerializedName("acciones_correctivas")
     val accionesCorrectivas: String?

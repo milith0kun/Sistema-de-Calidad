@@ -324,8 +324,8 @@ class HaccpViewModel(
     fun registrarTemperaturaCamaras(
         camaraId: Int,
         fecha: String,
-        temperaturaManana: Double?,
-        temperaturaTarde: Double?,
+        turno: String, // "manana" o "tarde"
+        temperatura: Double,
         accionesCorrectivas: String?
     ) {
         viewModelScope.launch {
@@ -344,18 +344,19 @@ class HaccpViewModel(
                     token = token,
                     camaraId = camaraId,
                     fecha = fecha,
-                    temperaturaManana = temperaturaManana,
-                    temperaturaTarde = temperaturaTarde,
+                    turno = turno,
+                    temperatura = temperatura,
                     accionesCorrectivas = accionesCorrectivas
                 )
                 
                 result.onSuccess { response ->
+                    val turnoDisplay = if (turno == "manana") "mañana" else "tarde"
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        successMessage = response.message ?: "Registro guardado exitosamente",
+                        successMessage = response.message ?: "Registro del turno $turnoDisplay guardado exitosamente",
                         isFormSuccess = true
                     )
-                    Log.d(TAG, "✅ Temperatura cámara registrada")
+                    Log.d(TAG, "✅ Temperatura cámara registrada para turno $turno")
                 }.onFailure { error ->
                     // Manejo específico para registro duplicado
                     val errorMessage = when (error) {
