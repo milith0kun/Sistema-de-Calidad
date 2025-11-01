@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,7 +29,7 @@ import kotlinx.coroutines.delay
 
 /**
  * Componente de Google Maps optimizado para mostrar la ubicación del usuario y el área de trabajo
- * Incluye marcadores, círculo de radio permitido y zoom automático
+ * Incluye marcadores, círculo de radio permitido, zoom automático y manejo de errores mejorado
  */
 @Composable
 fun GoogleMapView(
@@ -47,6 +48,7 @@ fun GoogleMapView(
     var targetMarker by remember { mutableStateOf<Marker?>(null) }
     var radiusCircle by remember { mutableStateOf<Circle?>(null) }
     var isMapLoaded by remember { mutableStateOf(false) }
+    var mapError by remember { mutableStateOf<String?>(null) }
     
     // Verificar permisos de ubicación
     val hasLocationPermission = remember(context) {
@@ -62,10 +64,10 @@ fun GoogleMapView(
     
     // Actualizar marcadores cuando cambien las coordenadas
     LaunchedEffect(googleMap, userLatitude, userLongitude, targetLatitude, targetLongitude, allowedRadius, isMapLoaded) {
-        if (isMapLoaded) {
-            googleMap?.let { map ->
+        if (isMapLoaded && googleMap != null) {
+            try {
                 updateMapMarkers(
-                    map = map,
+                    map = googleMap!!,
                     userLatitude = userLatitude,
                     userLongitude = userLongitude,
                     targetLatitude = targetLatitude,
@@ -79,12 +81,18 @@ fun GoogleMapView(
                     onTargetMarkerUpdate = { targetMarker = it },
                     onRadiusCircleUpdate = { radiusCircle = it }
                 )
+            } catch (e: Exception) {
+                Log.e("GoogleMapView", "Error actualizando marcadores: ${e.message}")
+                mapError = "Error actualizando marcadores: ${e.message}"
             }
         }
     }
     
-    Column(modifier = modifier) {
-        // Información del estado con mejor diseño
+    // Layout principal que ocupa todo el ancho
+    Column(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        // Información del estado con diseño mejorado y ancho completo
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -113,7 +121,7 @@ fun GoogleMapView(
         
         Spacer(modifier = Modifier.height(12.dp))
         
-        // Contenedor del mapa con mejor diseño
+        // Contenedor del mapa optimizado para ancho completo
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -122,7 +130,7 @@ fun GoogleMapView(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(250.dp) // Aumentado para mejor visualización
+                    .height(300.dp) // Aumentado para mejor visualización
             ) {
                 // Mapa de Google Maps
                 AndroidView(
@@ -131,56 +139,124 @@ fun GoogleMapView(
                         .clip(RoundedCornerShape(16.dp)),
                     factory = { context ->
                         MapView(context).apply {
-                            onCreate(null)
-                            onResume()
-                            getMapAsync { map ->
-                                googleMap = map
-                                setupGoogleMap(map, hasLocationPermission)
-                                isMapLoaded = true
-                                onMapReady(map)
-                                
-                                // Configuración inicial del mapa con delay para asegurar carga
-                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                    updateMapMarkers(
-                                        map = map,
-                                        userLatitude = userLatitude,
-                                        userLongitude = userLongitude,
-                                        targetLatitude = targetLatitude,
-                                        targetLongitude = targetLongitude,
-                                        allowedRadius = allowedRadius,
-                                        isLocationValid = isLocationValid,
-                                        userMarker = userMarker,
-                                        targetMarker = targetMarker,
-                                        radiusCircle = radiusCircle,
-                                        onUserMarkerUpdate = { userMarker = it },
-                                        onTargetMarkerUpdate = { targetMarker = it },
-                                        onRadiusCircleUpdate = { radiusCircle = it }
-                                    )
-                                }, 500) // Delay de 500ms para asegurar que el mapa esté listo
+                            try {
+                                onCreate(null)
+                                onResume()
+                                getMapAsync { map ->
+                                    try {
+                                        googleMap = map
+                                        setupGoogleMap(map, hasLocationPermission)
+                                        isMapLoaded = true
+                                        mapError = null
+                                        onMapReady(map)
+                                        
+                                        Log.d("GoogleMapView", "Mapa cargado exitosamente")
+                                        
+                                        // Configuración inicial del mapa con delay para asegurar carga
+                                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                            try {
+                                                updateMapMarkers(
+                                                    map = map,
+                                                    userLatitude = userLatitude,
+                                                    userLongitude = userLongitude,
+                                                    targetLatitude = targetLatitude,
+                                                    targetLongitude = targetLongitude,
+                                                    allowedRadius = allowedRadius,
+                                                    isLocationValid = isLocationValid,
+                                                    userMarker = userMarker,
+                                                    targetMarker = targetMarker,
+                                                    radiusCircle = radiusCircle,
+                                                    onUserMarkerUpdate = { userMarker = it },
+                                                    onTargetMarkerUpdate = { targetMarker = it },
+                                                    onRadiusCircleUpdate = { radiusCircle = it }
+                                                )
+                                            } catch (e: Exception) {
+                                                Log.e("GoogleMapView", "Error en configuración inicial: ${e.message}")
+                                                mapError = "Error configurando mapa: ${e.message}"
+                                            }
+                                        }, 1000) // Aumentado a 1 segundo para mejor carga
+                                    } catch (e: Exception) {
+                                        Log.e("GoogleMapView", "Error configurando mapa: ${e.message}")
+                                        mapError = "Error configurando mapa: ${e.message}"
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.e("GoogleMapView", "Error inicializando MapView: ${e.message}")
+                                mapError = "Error inicializando mapa: ${e.message}"
                             }
                         }
                     }
                 )
                 
-                // Indicador de carga
-                if (!isMapLoaded) {
+                // Indicador de carga o error
+                if (!isMapLoaded || mapError != null) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.Gray.copy(alpha = 0.3f)),
+                            .background(
+                                if (mapError != null) 
+                                    Color.Red.copy(alpha = 0.1f) 
+                                else 
+                                    Color.Gray.copy(alpha = 0.3f)
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            CircularProgressIndicator(
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            if (mapError != null) {
+                                Text(
+                                    text = "⚠️ Error del mapa",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Red
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Verifica tu API Key de Google Maps",
+                                    fontSize = 12.sp,
+                                    color = Color.Red.copy(alpha = 0.8f)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = mapError!!,
+                                    fontSize = 10.sp,
+                                    color = Color.Red.copy(alpha = 0.6f)
+                                )
+                            } else {
+                                CircularProgressIndicator(
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Cargando mapa...",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                // Información de API Key si no está configurada
+                if (!isMapLoaded && mapError == null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .align(Alignment.BottomCenter)
+                    ) {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFFF9800).copy(alpha = 0.9f)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
                             Text(
-                                text = "Cargando mapa...",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurface
+                                text = "💡 Configura tu API Key de Google Maps en AndroidManifest.xml",
+                                fontSize = 10.sp,
+                                color = Color.White,
+                                modifier = Modifier.padding(8.dp)
                             )
                         }
                     }
@@ -190,7 +266,7 @@ fun GoogleMapView(
         
         Spacer(modifier = Modifier.height(12.dp))
         
-        // Leyenda mejorada
+        // Leyenda mejorada con ancho completo
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -219,6 +295,44 @@ fun GoogleMapView(
                     text = "Área permitida",
                     color = Color(0xFF4CAF50)
                 )
+            }
+        }
+        
+        // Información adicional de debug si hay error
+        if (mapError != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.Red.copy(alpha = 0.1f)
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp)
+                ) {
+                    Text(
+                        text = "🔧 Pasos para solucionar:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Red
+                    )
+                    Text(
+                        text = "1. Obtén una API Key de Google Maps",
+                        fontSize = 10.sp,
+                        color = Color.Red.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = "2. Reemplaza 'YOUR_GOOGLE_MAPS_API_KEY_HERE' en AndroidManifest.xml",
+                        fontSize = 10.sp,
+                        color = Color.Red.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = "3. Habilita Maps SDK for Android en Google Cloud Console",
+                        fontSize = 10.sp,
+                        color = Color.Red.copy(alpha = 0.8f)
+                    )
+                }
             }
         }
     }

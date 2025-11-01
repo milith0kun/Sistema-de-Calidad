@@ -32,7 +32,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.sistemadecalidad.data.local.PreferencesManager
-import com.example.sistemadecalidad.ui.components.GoogleMapView
+import com.example.sistemadecalidad.ui.components.OSMMapView
 import com.example.sistemadecalidad.ui.components.TokenExpiredDialog
 import com.example.sistemadecalidad.ui.viewmodel.FichadoViewModel
 import com.example.sistemadecalidad.utils.LocationManager
@@ -411,8 +411,8 @@ fun MarcacionesScreen(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 
-                // Google Maps con ubicación objetivo
-                GoogleMapView(
+                // OpenStreetMap con ubicación objetivo (sin API Key requerida)
+                OSMMapView(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp),
