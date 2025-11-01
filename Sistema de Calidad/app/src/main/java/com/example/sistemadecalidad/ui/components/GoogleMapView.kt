@@ -4,11 +4,14 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -24,7 +27,7 @@ import com.google.android.gms.maps.model.*
 import kotlinx.coroutines.delay
 
 /**
- * Componente de Google Maps para mostrar la ubicación del usuario y el área de trabajo
+ * Componente de Google Maps optimizado para mostrar la ubicación del usuario y el área de trabajo
  * Incluye marcadores, círculo de radio permitido y zoom automático
  */
 @Composable
@@ -43,6 +46,7 @@ fun GoogleMapView(
     var userMarker by remember { mutableStateOf<Marker?>(null) }
     var targetMarker by remember { mutableStateOf<Marker?>(null) }
     var radiusCircle by remember { mutableStateOf<Circle?>(null) }
+    var isMapLoaded by remember { mutableStateOf(false) }
     
     // Verificar permisos de ubicación
     val hasLocationPermission = remember(context) {
@@ -57,41 +61,44 @@ fun GoogleMapView(
     }
     
     // Actualizar marcadores cuando cambien las coordenadas
-    LaunchedEffect(googleMap, userLatitude, userLongitude, targetLatitude, targetLongitude, allowedRadius) {
-        googleMap?.let { map ->
-            updateMapMarkers(
-                map = map,
-                userLatitude = userLatitude,
-                userLongitude = userLongitude,
-                targetLatitude = targetLatitude,
-                targetLongitude = targetLongitude,
-                allowedRadius = allowedRadius,
-                isLocationValid = isLocationValid,
-                userMarker = userMarker,
-                targetMarker = targetMarker,
-                radiusCircle = radiusCircle,
-                onUserMarkerUpdate = { userMarker = it },
-                onTargetMarkerUpdate = { targetMarker = it },
-                onRadiusCircleUpdate = { radiusCircle = it }
-            )
+    LaunchedEffect(googleMap, userLatitude, userLongitude, targetLatitude, targetLongitude, allowedRadius, isMapLoaded) {
+        if (isMapLoaded) {
+            googleMap?.let { map ->
+                updateMapMarkers(
+                    map = map,
+                    userLatitude = userLatitude,
+                    userLongitude = userLongitude,
+                    targetLatitude = targetLatitude,
+                    targetLongitude = targetLongitude,
+                    allowedRadius = allowedRadius,
+                    isLocationValid = isLocationValid,
+                    userMarker = userMarker,
+                    targetMarker = targetMarker,
+                    radiusCircle = radiusCircle,
+                    onUserMarkerUpdate = { userMarker = it },
+                    onTargetMarkerUpdate = { targetMarker = it },
+                    onRadiusCircleUpdate = { radiusCircle = it }
+                )
+            }
         }
     }
     
     Column(modifier = modifier) {
-        // Información del estado
+        // Información del estado con mejor diseño
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
                 containerColor = if (isLocationValid) 
-                    Color(0xFF4CAF50).copy(alpha = 0.1f) 
+                    Color(0xFF4CAF50).copy(alpha = 0.15f) 
                 else 
-                    Color(0xFFF44336).copy(alpha = 0.1f)
-            )
+                    Color(0xFFF44336).copy(alpha = 0.15f)
+            ),
+            shape = RoundedCornerShape(12.dp)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
+                    .padding(16.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -104,66 +111,138 @@ fun GoogleMapView(
             }
         }
         
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         
-        // Mapa de Google Maps
-        AndroidView(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp),
-            factory = { context ->
-                MapView(context).apply {
-                    onCreate(null)
-                    onResume()
-                    getMapAsync { map ->
-                        googleMap = map
-                        setupGoogleMap(map, hasLocationPermission)
-                        onMapReady(map)
-                        
-                        // Configuración inicial del mapa
-                        updateMapMarkers(
-                            map = map,
-                            userLatitude = userLatitude,
-                            userLongitude = userLongitude,
-                            targetLatitude = targetLatitude,
-                            targetLongitude = targetLongitude,
-                            allowedRadius = allowedRadius,
-                            isLocationValid = isLocationValid,
-                            userMarker = userMarker,
-                            targetMarker = targetMarker,
-                            radiusCircle = radiusCircle,
-                            onUserMarkerUpdate = { userMarker = it },
-                            onTargetMarkerUpdate = { targetMarker = it },
-                            onRadiusCircleUpdate = { radiusCircle = it }
-                        )
+        // Contenedor del mapa con mejor diseño
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp) // Aumentado para mejor visualización
+            ) {
+                // Mapa de Google Maps
+                AndroidView(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(16.dp)),
+                    factory = { context ->
+                        MapView(context).apply {
+                            onCreate(null)
+                            onResume()
+                            getMapAsync { map ->
+                                googleMap = map
+                                setupGoogleMap(map, hasLocationPermission)
+                                isMapLoaded = true
+                                onMapReady(map)
+                                
+                                // Configuración inicial del mapa con delay para asegurar carga
+                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                    updateMapMarkers(
+                                        map = map,
+                                        userLatitude = userLatitude,
+                                        userLongitude = userLongitude,
+                                        targetLatitude = targetLatitude,
+                                        targetLongitude = targetLongitude,
+                                        allowedRadius = allowedRadius,
+                                        isLocationValid = isLocationValid,
+                                        userMarker = userMarker,
+                                        targetMarker = targetMarker,
+                                        radiusCircle = radiusCircle,
+                                        onUserMarkerUpdate = { userMarker = it },
+                                        onTargetMarkerUpdate = { targetMarker = it },
+                                        onRadiusCircleUpdate = { radiusCircle = it }
+                                    )
+                                }, 500) // Delay de 500ms para asegurar que el mapa esté listo
+                            }
+                        }
+                    }
+                )
+                
+                // Indicador de carga
+                if (!isMapLoaded) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Gray.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Cargando mapa...",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             }
-        )
-        
-        // Leyenda
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Text(
-                text = "🔵 Tu ubicación",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "📍 Cocina",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "⭕ Área permitida",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        // Leyenda mejorada
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                LegendItem(
+                    icon = "🔵",
+                    text = "Tu ubicación",
+                    color = Color(0xFF2196F3)
+                )
+                LegendItem(
+                    icon = "📍",
+                    text = "Cocina",
+                    color = Color(0xFFD32F2F)
+                )
+                LegendItem(
+                    icon = "⭕",
+                    text = "Área permitida",
+                    color = Color(0xFF4CAF50)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LegendItem(
+    icon: String,
+    text: String,
+    color: Color
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = icon,
+            fontSize = 16.sp
+        )
+        Text(
+            text = text,
+            fontSize = 10.sp,
+            color = color,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 

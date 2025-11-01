@@ -681,7 +681,7 @@ fun MarcacionesScreen(
                         )
                     } else {
                         Icon(
-                            imageVector = Icons.Default.ExitToApp,
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                             contentDescription = "Marcar salida",
                             modifier = Modifier.size(20.dp)
                         )
