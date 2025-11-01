@@ -3,7 +3,6 @@ package com.example.sistemadecalidad.ui.screens.marcaciones
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -22,9 +21,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,6 +32,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.sistemadecalidad.data.local.PreferencesManager
+import com.example.sistemadecalidad.ui.components.GoogleMapView
 import com.example.sistemadecalidad.ui.components.TokenExpiredDialog
 import com.example.sistemadecalidad.ui.viewmodel.FichadoViewModel
 import com.example.sistemadecalidad.utils.LocationManager
@@ -413,93 +411,58 @@ fun MarcacionesScreen(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 
-                // Canvas con mapa simplificado
-                Box(
+                // Google Maps con ubicación objetivo
+                GoogleMapView(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(180.dp)
-                        .background(Color(0xFFE3F2FD)),
-                    contentAlignment = Alignment.Center
+                        .height(200.dp),
+                    targetLatitude = targetLatitude,
+                    targetLongitude = targetLongitude,
+                    allowedRadius = allowedRadius,
+                    currentLatitude = locationManager.currentLocation.collectAsStateWithLifecycle().value?.latitude,
+                    currentLongitude = locationManager.currentLocation.collectAsStateWithLifecycle().value?.longitude,
+                    isLocationValid = isLocationValid
+                )
+                
+                // Información de ubicación
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White.copy(alpha = 0.9f)
+                    )
                 ) {
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        val centerX = size.width / 2
-                        val centerY = size.height / 2
-                        
-                        // Dibujar círculo de área permitida (radio)
-                        val radiusPx = size.minDimension * 0.3f
-                        drawCircle(
-                            color = Color(0x4000C853), // Verde semi-transparente
-                            radius = radiusPx,
-                            center = Offset(centerX, centerY)
-                        )
-                        
-                        // Borde del círculo
-                        drawCircle(
-                            color = Color(0xFF00C853),
-                            radius = radiusPx,
-                            center = Offset(centerX, centerY),
-                            style = Stroke(width = 3f)
-                        )
-                        
-                        // Marcador del punto objetivo (pin rojo)
-                        drawCircle(
-                            color = Color(0xFFD32F2F),
-                            radius = 12f,
-                            center = Offset(centerX, centerY)
-                        )
-                        
-                        // Punto blanco interior del marcador
-                        drawCircle(
-                            color = Color.White,
-                            radius = 4f,
-                            center = Offset(centerX, centerY)
-                        )
-                    }
-                    
-                    // Información de ubicación actual
                     Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(8.dp),
+                        modifier = Modifier.padding(12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color.White.copy(alpha = 0.9f)
-                            )
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(8.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = "📍 Ubicación Objetivo",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFD32F2F)
-                                )
-                                Text(
-                                    text = "Lat: %.6f".format(targetLatitude),
-                                    fontSize = 10.sp,
-                                    color = Color.Black
-                                )
-                                Text(
-                                    text = "Lon: %.6f".format(targetLongitude),
-                                    fontSize = 10.sp,
-                                    color = Color.Black
-                                )
-                                Text(
-                                    text = "Radio: $allowedRadius m",
-                                    fontSize = 10.sp,
-                                    color = Color(0xFF00C853)
-                                )
-                            }
-                        }
+                        Text(
+                            text = "📍 Ubicación Objetivo",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD32F2F)
+                        )
+                        Text(
+                            text = "Lat: %.6f".format(targetLatitude),
+                            fontSize = 10.sp,
+                            color = Color.Black
+                        )
+                        Text(
+                            text = "Lon: %.6f".format(targetLongitude),
+                            fontSize = 10.sp,
+                            color = Color.Black
+                        )
+                        Text(
+                            text = "Radio: $allowedRadius m",
+                            fontSize = 10.sp,
+                            color = Color(0xFF00C853)
+                        )
                     }
                 }
                 
                 Text(
-                    text = "🔵 = Área Permitida  📍 = Ubicación Objetivo",
+                    text = "🔵 = Área Permitida  📍 = Ubicación Objetivo  📱 = Tu Ubicación",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp)
