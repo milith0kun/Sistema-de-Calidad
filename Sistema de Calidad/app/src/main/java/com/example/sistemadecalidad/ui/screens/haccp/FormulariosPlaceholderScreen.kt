@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
@@ -32,7 +32,7 @@ fun FormularioPlaceholderScreen(
                 title = { Text(titulo) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
                     }
                 }
             )
@@ -137,7 +137,7 @@ fun LavadoManosScreen(
                 title = { Text("Lavado de Manos") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
                     }
                 }
             )
@@ -158,7 +158,7 @@ fun LavadoManosScreen(
                 fontWeight = FontWeight.Bold
             )
             
-            Divider()
+            HorizontalDivider()
             
             // DATOS DEL EMPLEADO (automático del usuario logueado)
             Card(
@@ -187,7 +187,7 @@ fun LavadoManosScreen(
                 }
             }
             
-            Divider()
+            HorizontalDivider()
             
             // ÁREA O ESTACIÓN
             Text("ÁREA O ESTACIÓN *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -207,7 +207,7 @@ fun LavadoManosScreen(
                 )
             }
             
-            Divider()
+            HorizontalDivider()
             
             // TURNO
             Text("TURNO *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -227,7 +227,7 @@ fun LavadoManosScreen(
                 )
             }
             
-            Divider()
+            HorizontalDivider()
             
             // SUPERVISOR
             Text("SUPERVISOR *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -253,7 +253,7 @@ fun LavadoManosScreen(
                             contentDescription = null
                         )
                     },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
                     supportingText = { 
                         Text(
                             if (supervisores.isEmpty()) 
@@ -305,7 +305,7 @@ fun LavadoManosScreen(
                 }
             }
             
-            Divider()
+            HorizontalDivider()
             
             // PROCEDIMIENTO DE LAVADO
             Text("PROCEDIMIENTO DE LAVADO DE MANOS", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -365,7 +365,7 @@ fun LavadoManosScreen(
                 }
             }
             
-            Divider()
+            HorizontalDivider()
             
             // ACCIONES CORRECTIVAS
             Text("ACCIÓN CORRECTIVA", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)

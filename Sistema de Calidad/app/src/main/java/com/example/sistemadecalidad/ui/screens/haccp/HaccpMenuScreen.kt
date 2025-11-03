@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -12,7 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.sistemadecalidad.ui.theme.HaccpColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,15 +98,15 @@ fun HaccpMenuScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
                 Text(
                     text = "Seleccione un formulario",
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.titleMedium
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
             }
             
             items(formularios) { formulario ->
@@ -116,6 +119,10 @@ fun HaccpMenuScreen(
     }
 }
 
+/**
+ * Card compacta para mostrar formularios HACCP
+ * Diseño minimalista con información esencial
+ */
 @Composable
 fun FormularioCard(
     formulario: FormularioHaccp,
@@ -127,35 +134,46 @@ fun FormularioCard(
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = formulario.color
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(6.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Icono más compacto
             Icon(
                 imageVector = formulario.icono,
                 contentDescription = null,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(32.dp)
             )
+            
+            // Información del formulario
             Column(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
                     text = formulario.titulo,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
                 )
                 Text(
                     text = formulario.descripcion,
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2
                 )
             }
+            
+            // Flecha indicadora más pequeña
             Icon(
                 imageVector = Icons.Default.ChevronRight,
-                contentDescription = "Ir al formulario"
+                contentDescription = "Ir al formulario",
+                modifier = Modifier.size(20.dp)
             )
         }
     }

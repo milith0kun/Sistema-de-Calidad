@@ -9,7 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
@@ -39,8 +39,7 @@ import java.util.Calendar
 fun RecepcionMercaderiaScreen(
     onNavigateBack: () -> Unit,
     haccpViewModel: HaccpViewModel, // = hiltViewModel()
-    usuario: User? = null,
-    preferencesManager: PreferencesManager? = null
+    usuario: User? = null
 ) {
     // Estados para los campos del formulario - Solo para Frutas y Verduras
     var nombreProveedor by remember { mutableStateOf("") }
@@ -182,7 +181,7 @@ fun RecepcionMercaderiaScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -278,7 +277,7 @@ fun RecepcionMercaderiaScreen(
                                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = showSupervisorDialog)
                                 },
                                 modifier = Modifier
-                                    .menuAnchor()
+                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
                                     .fillMaxWidth(),
                                 placeholder = { Text("Seleccionar supervisor") }
                             )
@@ -407,7 +406,7 @@ fun RecepcionMercaderiaScreen(
                                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = showTipoMedidaDropdown)
                                 },
                                 modifier = Modifier
-                                    .menuAnchor()
+                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
                                     .fillMaxWidth(),
                                 placeholder = { Text("Seleccionar tipo") },
                                 colors = OutlinedTextFieldDefaults.colors(

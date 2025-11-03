@@ -1,8 +1,8 @@
 package com.example.sistemadecalidad.ui.components
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
@@ -64,7 +64,7 @@ private fun getIconForRoute(route: String): ImageVector {
     return when (route) {
         NavigationDestinations.DASHBOARD -> Icons.Default.Home
         NavigationDestinations.MARCACIONES -> Icons.Default.Info
-        NavigationDestinations.HISTORIAL -> Icons.Default.List
+        NavigationDestinations.HISTORIAL -> Icons.AutoMirrored.Filled.List
         NavigationDestinations.HACCP_MENU -> Icons.Default.CheckCircle
         else -> Icons.Default.Home
     }

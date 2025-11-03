@@ -5,15 +5,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.ExitToApp
-
-import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-// import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.sistemadecalidad.ui.components.TokenExpiredDialog
 import com.example.sistemadecalidad.ui.viewmodel.AuthViewModel
@@ -33,7 +31,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * Modelo de datos para el historial de marcaciones según especificaciones
+ * Modelo de datos para representar un registro de marcación
+ * Usado para mostrar entradas y salidas en el historial
  */
 data class RegistroMarcacion(
     val fecha: String,
@@ -43,16 +42,13 @@ data class RegistroMarcacion(
 )
 
 /**
- * Pantalla de historial que replica exactamente el diseño de d2 Móvil
- * Implementa diseño según especificaciones:
- * - Header con foto de perfil, nombre y menú hamburguesa
- * - Lista de registros con icono verde, fecha, hora, tipo y estado
- * - Estado vacío cuando no hay registros
+ * Pantalla de historial de marcaciones
+ * Muestra el historial de entradas y salidas del usuario
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistorialScreen(
-    fichadoViewModel: FichadoViewModel, // = hiltViewModel()
+    fichadoViewModel: FichadoViewModel,
     authViewModel: AuthViewModel? = null,
     onNavigateToDashboard: () -> Unit = {},
     onNavigateToMarcaciones: () -> Unit = {},
@@ -61,9 +57,11 @@ fun HistorialScreen(
 ) {
     var showMenu by remember { mutableStateOf(false) }
     
-    // Observar estados
+    // Estados observados
     val historialFichados by fichadoViewModel.historial.collectAsStateWithLifecycle()
+    val uiState by fichadoViewModel.uiState.collectAsStateWithLifecycle()
     val currentUser by (authViewModel?.currentUser?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) })
+    val showTokenExpiredDialog by fichadoViewModel.authStateManager.showTokenExpiredDialog.collectAsStateWithLifecycle()
     
     // Inicializar datos al cargar la pantalla
     LaunchedEffect(Unit) {
@@ -80,7 +78,7 @@ fun HistorialScreen(
         }
     }
     
-    // Convertir los registros del backend al formato de visualización
+    // Procesar datos del historial para mostrar
     val registrosParaMostrar: List<RegistroMarcacion> = remember(historialFichados) {
         val listaFinal = mutableListOf<RegistroMarcacion>()
         
@@ -134,7 +132,7 @@ fun HistorialScreen(
                     icon = { Icon(Icons.Default.DateRange, contentDescription = "Historial") },
                     label = { Text("Historial") },
                     selected = true,
-                    onClick = { /* Ya estamos en Historial */ }
+                    onClick = { }
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Calidad") },
@@ -150,192 +148,212 @@ fun HistorialScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-        // Header según especificaciones exactas
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            shape = RoundedCornerShape(0.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+            // Header con información del usuario
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                shape = RoundedCornerShape(0.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
-                // Foto de perfil circular (icono de persona)
-                Card(
-                    modifier = Modifier.size(40.dp),
-                    shape = RoundedCornerShape(50),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                    // Avatar del usuario
+                    Card(
+                        modifier = Modifier.size(32.dp),
+                        shape = RoundedCornerShape(50),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Perfil",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(24.dp)
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Perfil",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    // Información del usuario
+                    Column {
+                        Text(
+                            text = currentUser?.nombreCompleto ?: "Usuario",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                }
-                
-                Spacer(modifier = Modifier.width(12.dp))
-                
-                // Información del usuario
-                Column {
+                    
+                    Spacer(modifier = Modifier.weight(1f))
+                    
+                    // Título de la pantalla
                     Text(
-                        text = "Bienvenido",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = currentUser?.nombre ?: "Usuario",
-                        fontSize = 14.sp,
+                        text = "Historial",
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    
+                    Spacer(modifier = Modifier.width(12.dp))
+                    
+                    // Menú de opciones
+                    Box {
+                        IconButton(
+                            onClick = { showMenu = true },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Menú",
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Cerrar sesión") },
+                                onClick = { 
+                                    showMenu = false
+                                    authViewModel?.logout()
+                                    onLogout()
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            
+            // Contenido principal
+            when {
+                uiState.isLoadingHistorial -> {
+                    // Estado de carga
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(48.dp),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            Text(
+                                text = "Cargando historial...",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
                 
-                Spacer(modifier = Modifier.weight(1f))
+                registrosParaMostrar.isNotEmpty() -> {
+                    // Lista de registros
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(vertical = 16.dp)
+                    ) {
+                        items(registrosParaMostrar) { registro ->
+                            RegistroMarcacionItem(registro = registro)
+                        }
+                        
+                        // Espacio adicional para la navegación inferior
+                        item {
+                            Spacer(modifier = Modifier.height(80.dp))
+                        }
+                    }
+                }
                 
-                // Título "Historial"
-                Text(
-                    text = "Historial",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                else -> {
+                    // Estado vacío
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.EventNote,
+                                contentDescription = "Sin registros",
+                                modifier = Modifier.size(80.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            )
+                            
+                            Spacer(modifier = Modifier.height(24.dp))
+                            
+                            Text(
+                                text = "No hay registros disponibles",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Text(
+                                text = "Los registros de marcaciones aparecerán aquí",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+            
+            // Mostrar diálogo de token expirado
+            if (showTokenExpiredDialog) {
+                TokenExpiredDialog(
+                    onGoToLogin = {
+                        fichadoViewModel.authStateManager.dismissTokenExpiredDialog()
+                        onLogout()
+                    },
+                    onDismiss = {
+                        fichadoViewModel.authStateManager.dismissTokenExpiredDialog()
+                    }
                 )
-                
-                Spacer(modifier = Modifier.width(16.dp))
-                
-                // Menú hamburguesa en esquina superior
-                Box {
-                    IconButton(
-                        onClick = { showMenu = true }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Menú",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Cerrar sesión") },
-                            onClick = { 
-                                showMenu = false
-                                authViewModel?.logout()
-                                onLogout()
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.ExitToApp, contentDescription = null)
-                            }
-                        )
-                    }
-                }
             }
         }
-        
-        // Contenido principal - Lista de registros o estado vacío
-        if (registrosParaMostrar.isNotEmpty()) {
-            // Lista de registros según especificaciones
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(vertical = 16.dp)
-            ) {
-                items(registrosParaMostrar) { registro ->
-                    RegistroMarcacionItem(registro = registro)
-                }
-                
-                // Espacio adicional para la navegación inferior
-                item {
-                    Spacer(modifier = Modifier.height(80.dp))
-                }
-            }
-        } else {
-            // Estado vacío - pantalla limpia sin elementos
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    // Icono de información gris grande
-                    Icon(
-                        imageVector = Icons.Default.EventNote,
-                        contentDescription = "Sin registros",
-                        modifier = Modifier.size(80.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                    )
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    // Texto principal
-                    Text(
-                        text = "No hay registros disponibles",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    // Texto secundario
-                    Text(
-                        text = "Los registros de marcaciones aparecerán aquí",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        } // Cierre de if-else
-        } // Cierre de Column
-        
-        // Observar estado del diálogo de token expirado
-        val showTokenExpiredDialog by fichadoViewModel.authStateManager.showTokenExpiredDialog.collectAsStateWithLifecycle()
-        
-        // Mostrar diálogo de token expirado
-        if (showTokenExpiredDialog) {
-            TokenExpiredDialog(
-                onGoToLogin = {
-                    fichadoViewModel.authStateManager.dismissTokenExpiredDialog()
-                    onLogout()
-                },
-                onDismiss = {
-                    fichadoViewModel.authStateManager.dismissTokenExpiredDialog()
-                }
-            )
-        }
-    } // Cierre de Scaffold
-} // Cierre de HistorialScreen
+    }
+}
 
 /**
- * Componente para mostrar cada registro de marcación según especificaciones exactas
- * - Icono verde de persona (lado izquierdo)
- * - Fecha: 2025-09-15 (formato año-mes-día)
- * - Hora: 07:57:57 (formato completo)
- * - Tipo: CONCEPTO / ENTRADA o SALIDA
- * - Estado: CLASIFICACIÓN / PUNTUAL o TARDANZA
+ * Componente para mostrar cada registro de marcación
  */
 @Composable
 fun RegistroMarcacionItem(registro: RegistroMarcacion) {
@@ -344,115 +362,59 @@ fun RegistroMarcacionItem(registro: RegistroMarcacion) {
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(8.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icono verde de persona (lado izquierdo)
+            // Indicador de tipo (entrada/salida)
             Card(
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(8.dp),
                 shape = RoundedCornerShape(50),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF4CAF50) // Verde según especificaciones
+                    containerColor = if (registro.tipo == "ENTRADA") Color(0xFF4CAF50) else Color(0xFF2196F3)
                 )
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Registro",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                Box(modifier = Modifier.fillMaxSize())
             }
             
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             
-            // Información del registro
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                // Fecha: 2025-09-15 (formato año-mes-día)
+            // Información principal
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = registro.fecha,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+                    text = registro.tipo,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                // Hora: 07:57:57 (formato completo) - Formatear usando TimeUtils
-                val horaFormateada = try {
-                    val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-                    val date = sdf.parse(registro.hora)
-                    if (date != null) TimeUtils.formatTimeForDisplay(date) else registro.hora
-                } catch (e: Exception) {
-                    registro.hora // Fallback al valor original si hay error
-                }
                 Text(
-                    text = horaFormateada,
-                    fontSize = 14.sp,
+                    text = registro.fecha,
+                    fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+            
+            // Hora y estado
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = registro.hora,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
                 
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Tipo: CONCEPTO / ENTRADA o SALIDA
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "CONCEPTO",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = " / ",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = registro.tipo,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                // Estado: CLASIFICACIÓN / PUNTUAL o TARDANZA
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "CLASIFICACIÓN",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = " / ",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = registro.estado,
-                        fontSize = 12.sp,
-                        color = if (registro.estado == "PUNTUAL") Color(0xFF4CAF50) else Color(0xFFF44336),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                Text(
+                    text = registro.estado,
+                    fontSize = 11.sp,
+                    color = if (registro.estado == "PUNTUAL") Color(0xFF4CAF50) else Color(0xFFF44336),
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     }

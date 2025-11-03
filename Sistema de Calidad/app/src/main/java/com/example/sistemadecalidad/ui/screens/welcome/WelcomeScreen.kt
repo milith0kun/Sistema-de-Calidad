@@ -1,6 +1,11 @@
 package com.example.sistemadecalidad.ui.screens.welcome
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -9,56 +14,112 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sistemadecalidad.utils.NotificationPermissionEffect
 
 /**
  * Pantalla de bienvenida - Primera pantalla que ve el usuario
- * Diseño simple sin fondos especiales, solo botón para ir al login
+ * Diseño mejorado con mejor tipografía, espaciado y elementos visuales
+ * Solicita permisos de notificaciones al iniciar
  */
 @Composable
 fun WelcomeScreen(
     onNavigateToLogin: () -> Unit
 ) {
+    // Solicitar permiso de notificaciones al iniciar la app
+    NotificationPermissionEffect(
+        requestOnLaunch = true,
+        onPermissionResult = { granted ->
+            if (granted) {
+                android.util.Log.d("WelcomeScreen", "✅ Permisos de notificaciones concedidos")
+            } else {
+                android.util.Log.w("WelcomeScreen", "⚠️ Permisos de notificaciones denegados - las notificaciones no funcionarán")
+            }
+        }
+    )
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Espacio superior para bajar el contenido
-        Spacer(modifier = Modifier.weight(0.3f))
+        // Espacio superior ajustado
+        Spacer(modifier = Modifier.height(48.dp))
         
-        // Título principal centrado
+        // Título principal mejorado con mejor tipografía
         Text(
-            text = "Bienvenido, seleccione el tipo de login:",
-            fontSize = 24.sp,
+            text = "Sistema de Calidad",
+            fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 32.dp)
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 8.dp)
         )
         
-        // Logo simple del sistema (por ahora solo texto)
+        // Subtítulo descriptivo
+        Text(
+            text = "Control HACCP y Gestión de Calidad",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 48.dp)
+        )
+        
+        // Logo mejorado del sistema
         Card(
             modifier = Modifier
-                .size(120.dp)
-                .padding(bottom = 48.dp),
+                .size(140.dp)
+                .padding(bottom = 56.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            shape = RoundedCornerShape(20.dp)
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "HACCP",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "HACCP",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Text(
+                        text = "SYSTEM",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        letterSpacing = 2.sp
+                    )
+                }
             }
         }
         
-        // Botón principal - único botón disponible
+        // Mensaje de bienvenida mejorado
+        Text(
+            text = "Bienvenido al sistema",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        
+        Text(
+            text = "Seleccione una opción para continuar",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Normal,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 32.dp)
+        )
+        
+        // Botón principal mejorado con icono
         Button(
             onClick = onNavigateToLogin,
             modifier = Modifier
@@ -66,34 +127,63 @@ fun WelcomeScreen(
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary
-            )
+            ),
+            shape = RoundedCornerShape(12.dp),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
         ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Login,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Usuario y Contraseña",
+                text = "Iniciar Sesión",
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.SemiBold
             )
         }
         
-        // Espacio inferior para mantener el balance
-        Spacer(modifier = Modifier.weight(0.7f))
+        // Espacio flexible para empujar los enlaces hacia abajo
+        Spacer(modifier = Modifier.weight(1f))
         
-        // Enlaces inferiores
+        // Enlaces inferiores mejorados con iconos
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(bottom = 16.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(bottom = 24.dp)
         ) {
-            TextButton(onClick = { /* TODO: Implementar ayuda */ }) {
+            TextButton(
+                onClick = { /* TODO: Implementar ayuda */ },
+                modifier = Modifier.padding(horizontal = 16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Help,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "¿Necesitas ayuda?",
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 14.sp
                 )
             }
             
-            TextButton(onClick = { /* TODO: Implementar privacidad */ }) {
+            TextButton(
+                onClick = { /* TODO: Implementar privacidad */ },
+                modifier = Modifier.padding(horizontal = 16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Security,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Declaración de privacidad",
-                    color = MaterialTheme.colorScheme.primary
+                    text = "Política de Privacidad",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 14.sp
                 )
             }
         }

@@ -22,6 +22,7 @@ fun AnaliticaScreen(
     fichadoViewModel: FichadoViewModel
 ) {
     // Estado del resumen
+    @Suppress("UNUSED_VARIABLE")
     val resumen by fichadoViewModel.resumen.collectAsStateWithLifecycle()
 
     // Cargar datos al inicializar

@@ -1,5 +1,6 @@
 package com.example.sistemadecalidad.ui.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sistemadecalidad.data.local.PreferencesManager
@@ -7,6 +8,7 @@ import com.example.sistemadecalidad.data.model.User
 import com.example.sistemadecalidad.data.repository.AuthRepository
 import com.example.sistemadecalidad.data.auth.AuthStateManager
 import com.example.sistemadecalidad.data.auth.AuthState
+import com.example.sistemadecalidad.services.NotificationIntegrationService
 // import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -20,7 +22,8 @@ import kotlinx.coroutines.launch
 class AuthViewModel /* @Inject constructor( */ (
     private val authRepository: AuthRepository,
     private val preferencesManager: PreferencesManager,
-    private val authStateManager: AuthStateManager
+    private val authStateManager: AuthStateManager,
+    private val context: Context
 ) : ViewModel() {
     
     // Estado de la UI
@@ -35,6 +38,10 @@ class AuthViewModel /* @Inject constructor( */ (
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
     
+    // Estado de inicialización
+    private val _isInitializing = MutableStateFlow(true)
+    val isInitializing: StateFlow<Boolean> = _isInitializing.asStateFlow()
+    
     // Flag para evitar verificaciones múltiples
     private var isVerifying = false
     private var hasInitialized = false
@@ -46,28 +53,71 @@ class AuthViewModel /* @Inject constructor( */ (
     
     /**
      * Verificar el estado de autenticación al iniciar la app
+     * CORREGIDO: No establecer usuario hasta verificar token para evitar parpadeo
      */
     private fun checkAuthenticationStatus() {
         if (hasInitialized || isVerifying) return
-        
+
         viewModelScope.launch {
             isVerifying = true
+            _isInitializing.value = true
+            
             try {
-                // Obtener valores únicos sin usar collect anidado
+                android.util.Log.d("AuthViewModel", "🔍 Verificando estado de autenticación...")
+
                 val isLoggedIn = preferencesManager.isLoggedIn().first()
+                android.util.Log.d("AuthViewModel", "📊 Estado guardado - isLoggedIn: $isLoggedIn")
+
                 if (isLoggedIn) {
+                    // Obtener datos guardados
+                    val savedUser = preferencesManager.getUser().first()
                     val token = preferencesManager.getToken().first()
-                    if (token != null) {
-                        verifyTokenSilently(token)
+                    
+                    android.util.Log.d("AuthViewModel", "👤 Usuario guardado encontrado: ${savedUser?.nombreCompleto}")
+
+                    if (savedUser != null && token != null) {
+                        android.util.Log.d("AuthViewModel", "🔐 Verificando validez del token antes de establecer usuario...")
+                        
+                        // CAMBIO CLAVE: Verificar token ANTES de establecer el usuario en la UI
+                        authRepository.verifyToken(token).collect { result ->
+                            result.fold(
+                                onSuccess = { verifiedUser ->
+                                    android.util.Log.d("AuthViewModel", "✅ Token válido, estableciendo usuario verificado")
+                                    _currentUser.value = verifiedUser
+                                    _isAuthenticated.value = true
+                                    
+                                    // Actualizar datos del usuario si han cambiado
+                                    if (verifiedUser != savedUser) {
+                                        preferencesManager.saveUser(verifiedUser)
+                                        android.util.Log.d("AuthViewModel", "🔄 Datos de usuario actualizados")
+                                    }
+                                },
+                                onFailure = { error ->
+                                    android.util.Log.w("AuthViewModel", "❌ Token inválido: ${error.message}")
+                                    // Token inválido, limpiar todo sin mostrar usuario temporal
+                                    logout()
+                                }
+                            )
+                        }
                     } else {
-                        _isAuthenticated.value = false
+                        android.util.Log.w("AuthViewModel", "⚠️ Datos incompletos (usuario o token faltante), cerrando sesión")
+                        logout()
                     }
                 } else {
+                    android.util.Log.d("AuthViewModel", "❌ Usuario no logueado")
                     _isAuthenticated.value = false
+                    _currentUser.value = null
                 }
+
                 hasInitialized = true
+            } catch (e: Exception) {
+                android.util.Log.e("AuthViewModel", "❌ Error verificando autenticación: ${e.message}")
+                _isAuthenticated.value = false
+                _currentUser.value = null
             } finally {
                 isVerifying = false
+                _isInitializing.value = false
+                android.util.Log.d("AuthViewModel", "🏁 Inicialización completada")
             }
         }
     }
@@ -123,6 +173,16 @@ class AuthViewModel /* @Inject constructor( */ (
                                 isLoading = false,
                                 isLoginSuccessful = true
                             )
+                            
+                            // Iniciar notificaciones para el usuario autenticado
+                            try {
+                                android.util.Log.d("AuthViewModel", "🔔 Iniciando sistema de notificaciones...")
+                                NotificationIntegrationService.startNotificationsForUser(context)
+                                android.util.Log.d("AuthViewModel", "✅ Notificaciones iniciadas correctamente")
+                            } catch (e: Exception) {
+                                android.util.Log.e("AuthViewModel", "❌ Error iniciando notificaciones: ${e.message}")
+                            }
+                            
                             android.util.Log.d("AuthViewModel", "✅ Login completado exitosamente - Estado de autenticación: isAuthenticated=true")
                             android.util.Log.d("AuthViewModel", "======================")
                         } catch (e: Exception) {
@@ -146,22 +206,36 @@ class AuthViewModel /* @Inject constructor( */ (
     }
     
     /**
-     * Verificar token JWT (silenciosamente, sin logout automático)
+     * Verificar token silenciosamente (sin mostrar errores al usuario)
+     * CORREGIDO: Mejorada para evitar cambios de estado innecesarios
      */
     private fun verifyTokenSilently(token: String) {
         viewModelScope.launch {
-            authRepository.verifyToken(token).collect { result ->
-                result.fold(
-                    onSuccess = { user ->
-                        _currentUser.value = user
-                        _isAuthenticated.value = true
-                    },
-                    onFailure = {
-                        // Token inválido, solo limpiar estado sin logout forzado
-                        _currentUser.value = null
-                        _isAuthenticated.value = false
-                    }
-                )
+            try {
+                android.util.Log.d("AuthViewModel", "🔐 Verificación silenciosa del token...")
+                
+                authRepository.verifyToken(token).collect { result ->
+                    result.fold(
+                        onSuccess = { verifiedUser ->
+                            android.util.Log.d("AuthViewModel", "✅ Token verificado silenciosamente - Usuario: ${verifiedUser.nombreCompleto}")
+                            
+                            // Solo actualizar si el usuario actual es diferente
+                            if (_currentUser.value != verifiedUser) {
+                                _currentUser.value = verifiedUser
+                                preferencesManager.saveUser(verifiedUser)
+                                android.util.Log.d("AuthViewModel", "🔄 Usuario actualizado tras verificación silenciosa")
+                            }
+                        },
+                        onFailure = { error ->
+                            android.util.Log.w("AuthViewModel", "❌ Verificación silenciosa falló: ${error.message}")
+                            // Token inválido, cerrar sesión silenciosamente
+                            logout()
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("AuthViewModel", "❌ Error en verificación silenciosa: ${e.message}")
+                // En caso de error de red, mantener sesión local pero marcar como no verificada
             }
         }
     }
@@ -192,6 +266,15 @@ class AuthViewModel /* @Inject constructor( */ (
     fun logout() {
         viewModelScope.launch {
             android.util.Log.d("AuthViewModel", "Cerrando sesión...")
+            
+            // Detener notificaciones antes de cerrar sesión
+            try {
+                android.util.Log.d("AuthViewModel", "🔕 Deteniendo notificaciones...")
+                NotificationIntegrationService.stopNotificationsForUser(context)
+                android.util.Log.d("AuthViewModel", "✅ Notificaciones detenidas correctamente")
+            } catch (e: Exception) {
+                android.util.Log.e("AuthViewModel", "❌ Error deteniendo notificaciones: ${e.message}")
+            }
             
             // Primero cambiar el estado en memoria
             _isAuthenticated.value = false
@@ -256,5 +339,6 @@ data class AuthUiState(
     val isLoginSuccessful: Boolean = false,
     val errorMessage: String? = null,
     val isCheckingConnection: Boolean = false,
-    val isServerConnected: Boolean? = null
+    val isServerConnected: Boolean? = null,
+    val isInitializing: Boolean = true // Estado de inicialización de la app
 )

@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -66,7 +66,7 @@ fun LavadoFrutasScreen(
                 title = { Text("Lavado y Desinfección de Frutas/Verduras") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
                     }
                 }
             )
@@ -87,7 +87,7 @@ fun LavadoFrutasScreen(
                 fontWeight = FontWeight.Bold
             )
             
-            Divider()
+            HorizontalDivider()
             
             // DATOS DEL SUPERVISOR (automático del usuario logueado)
             Card(
@@ -115,7 +115,7 @@ fun LavadoFrutasScreen(
                 }
             }
             
-            Divider()
+            HorizontalDivider()
             
             // PRODUCTO QUÍMICO
             Text("PRODUCTO QUÍMICO", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -137,7 +137,7 @@ fun LavadoFrutasScreen(
                 supportingText = { Text("Ejemplo: 100ppm, 0.5%, etc.") }
             )
             
-            Divider()
+            HorizontalDivider()
             
             // FRUTA/VERDURA
             Text("NOMBRE FRUTA/VERDURA *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -151,7 +151,7 @@ fun LavadoFrutasScreen(
                 placeholder = { Text("Ej: Lechugas, Tomates, Zanahorias") }
             )
             
-            Divider()
+            HorizontalDivider()
             
             // CONFORMIDAD DEL PROCESO
             Text("CONFORMIDAD DEL PROCESO", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -207,7 +207,7 @@ fun LavadoFrutasScreen(
                 )
             }
             
-            Divider()
+            HorizontalDivider()
             
             // TIEMPO DE DESINFECCIÓN
             Text("TIEMPO DE DESINFECCIÓN *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -221,7 +221,7 @@ fun LavadoFrutasScreen(
                 supportingText = { Text("Debe estar entre 0 - 10 minutos") }
             )
             
-            Divider()
+            HorizontalDivider()
             
             // ACCIONES CORRECTIVAS
             Text("ACCIONES CORRECTIVAS", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)

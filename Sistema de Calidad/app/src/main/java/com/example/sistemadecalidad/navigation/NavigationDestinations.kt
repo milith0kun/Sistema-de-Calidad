@@ -12,6 +12,8 @@ object NavigationDestinations {
     const val ANALITICA = "analitica"
     const val HACCP_MENU = "haccp_menu"
     const val ABOUT = "about"
+    const val PROFILE = "profile"
+    const val NOTIFICATION_SETTINGS = "notification_settings"
     // const val LOCATION_SETTINGS = "location_settings" // ELIMINADO - configuración GPS solo desde WebPanel
     
     // Rutas de formularios HACCP (solo los que existen en la base de datos)

@@ -2,6 +2,7 @@ package com.example.sistemadecalidad.ui.components
 
 import android.content.Context
 import android.graphics.drawable.Drawable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -50,11 +51,11 @@ fun OSMMapView(
         Configuration.getInstance().userAgentValue = "SistemaHACCP"
     }
 
-    // Layout principal que ocupa todo el ancho
+    // Layout principal optimizado para mapa cuadrado
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        // Información del estado con diseño mejorado y ancho completo
+        // Información del estado con diseño mejorado y compacto
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -63,36 +64,36 @@ fun OSMMapView(
                 else 
                     Color(0xFFF44336).copy(alpha = 0.15f)
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(8.dp)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(12.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = if (isLocationValid) "✅ Dentro del área permitida" else "❌ Fuera del área permitida",
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     color = if (isLocationValid) Color(0xFF2E7D32) else Color(0xFFD32F2F)
                 )
             }
         }
         
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         
-        // Contenedor del mapa optimizado para ancho completo
+        // Contenedor del mapa cuadrado optimizado
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp)
+                    .aspectRatio(1f) // Hace el mapa cuadrado (1:1)
             ) {
                 // Mapa de OpenStreetMap
                 AndroidView(
@@ -152,102 +153,29 @@ fun OSMMapView(
                         }
                     }
                 }
-                
-                // Información de que no requiere API Key
-                if (isMapReady) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                            .align(Alignment.BottomCenter)
-                    ) {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFF4CAF50).copy(alpha = 0.9f)
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = "✅ OpenStreetMap - Sin API Key requerida",
-                                fontSize = 10.sp,
-                                color = Color.White,
-                                modifier = Modifier.padding(8.dp)
-                            )
-                        }
-                    }
-                }
             }
         }
         
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         
-        // Leyenda mejorada con ancho completo
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
-            ),
-            shape = RoundedCornerShape(12.dp)
+        // Leyenda compacta y optimizada para el diseño cuadrado
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                    RoundedCornerShape(6.dp)
+                )
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                LegendItem(
-                    icon = "🔵",
-                    text = "Tu ubicación",
-                    color = Color(0xFF2196F3)
-                )
-                LegendItem(
-                    icon = "📍",
-                    text = "Cocina",
-                    color = Color(0xFFD32F2F)
-                )
-                LegendItem(
-                    icon = "⭕",
-                    text = "Área permitida",
-                    color = Color(0xFF4CAF50)
-                )
-            }
+            LegendItemCompact("🔵", "Tu ubicación")
+            LegendItemCompact("📍", "Cocina")
+            LegendItemCompact("⭕", "Área permitida")
         }
         
-        // Información adicional sobre OpenStreetMap
-        Spacer(modifier = Modifier.height(8.dp))
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF2196F3).copy(alpha = 0.1f)
-            ),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp)
-            ) {
-                Text(
-                    text = "🗺️ Mapa OpenStreetMap",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1976D2)
-                )
-                Text(
-                    text = "• No requiere API Key de Google",
-                    fontSize = 10.sp,
-                    color = Color(0xFF1976D2).copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "• Funciona sin conexión a servicios de Google",
-                    fontSize = 10.sp,
-                    color = Color(0xFF1976D2).copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "• Datos de mapas de código abierto",
-                    fontSize = 10.sp,
-                    color = Color(0xFF1976D2).copy(alpha = 0.8f)
-                )
-            }
-        }
+
     }
 }
 
@@ -273,9 +201,32 @@ private fun LegendItem(
     }
 }
 
+@Composable
+private fun LegendItemCompact(
+    icon: String,
+    text: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Text(
+            text = icon,
+            fontSize = 11.sp
+        )
+        Text(
+            text = text,
+            fontSize = 8.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
 /**
  * Actualiza los marcadores y círculos en el mapa OSM
  */
+@Suppress("UNUSED_PARAMETER")
 private fun updateOSMMarkers(
     mapView: MapView,
     context: Context,
@@ -314,9 +265,10 @@ private fun updateOSMMarkers(
             }
             
             this.points = points
-            fillColor = Color(0xFF4CAF50).copy(alpha = 0.3f).toArgb()
-            strokeColor = Color(0xFF4CAF50).toArgb()
-            strokeWidth = 3.0f
+            // Usar métodos no deprecados para configurar el polígono
+            this.fillPaint.color = Color(0xFF4CAF50).copy(alpha = 0.3f).toArgb()
+            this.outlinePaint.color = Color(0xFF4CAF50).toArgb()
+            this.outlinePaint.strokeWidth = 3.0f
             title = "Área permitida (${allowedRadius}m)"
         }
         mapView.overlays.add(allowedAreaCircle)

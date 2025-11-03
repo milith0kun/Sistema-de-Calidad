@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    // Temporalmente removido para probar compilación básica
+    // Hilt deshabilitado - usando inyección manual
     // alias(libs.plugins.hilt)
     // id("kotlin-kapt")
 }
@@ -14,25 +14,53 @@ android {
         applicationId = "com.sistemahaccp.calidad"
         minSdk = 24
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 4
+        versionName = "1.0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
-        
+
         // Nombre profesional para el APK
         setProperty("archivesBaseName", "SistemaHACCP-v${versionName}")
+
+        // BuildConfig fields para URLs configurables
+        buildConfigField("String", "BASE_URL_AWS_PRIMARY", "\"http://18.216.180.19:3000/api/\"")
+        buildConfigField("String", "BASE_URL_AWS_SECONDARY", "\"http://18.118.212.247:3000/api/\"")
+        buildConfigField("String", "BASE_URL_LOCAL", "\"http://192.168.1.100:3000/api/\"")
+
+        // Soporte para múltiples arquitecturas de dispositivos
+        ndk {
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
+        }
     }
 
     buildTypes {
-        release {
+        debug {
             isMinifyEnabled = false
+            isShrinkResources = false
+            isDebuggable = true
+            // Firma debug para evitar problemas de "APK no válido"
+            signingConfig = signingConfigs.getByName("debug")
+        }
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Usar la misma firma debug para releases de prueba
+            // En producción se debe usar una firma release específica
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
+    // Configuración de splits para generar APKs universales
+    splits {
+        abi {
+            isEnable = false // Deshabilitado para generar APK universal
         }
     }
     compileOptions {
@@ -44,6 +72,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
@@ -80,16 +109,16 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.gson)
 
-    // Dependency Injection - Hilt (temporalmente comentado)
+    // Dependency Injection - Hilt (deshabilitado - usando manual)
     // implementation(libs.hilt.android)
     // implementation(libs.hilt.navigation)
     // kapt(libs.hilt.compiler)
 
-    // Local Storage (temporalmente comentado kapt)
+    // Local Storage
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     implementation(libs.datastore)
-    // kapt(libs.room.compiler)
+    // kapt(libs.room.compiler) // Room no se usa actualmente
 
     // Google Maps y Location Services
     implementation("com.google.android.gms:play-services-maps:18.2.0")
@@ -100,6 +129,10 @@ dependencies {
     implementation("org.osmdroid:osmdroid-android:6.1.17")
     implementation("org.osmdroid:osmdroid-wms:6.1.17")
     implementation("org.osmdroid:osmdroid-mapsforge:6.1.17")
+
+    // WorkManager para notificaciones programadas
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.hilt:hilt-work:1.1.0")
 
     // Testing
     testImplementation(libs.junit)

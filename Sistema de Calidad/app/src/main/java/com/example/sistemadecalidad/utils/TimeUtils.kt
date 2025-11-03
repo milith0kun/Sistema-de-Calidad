@@ -26,7 +26,7 @@ object TimeUtils {
      * Ejemplo: "lunes, 15 de enero"
      */
     fun formatDateForDisplay(date: Date = getCurrentPeruDate()): String {
-        val formatter = SimpleDateFormat("EEEE, dd 'de' MMMM", Locale("es", "PE"))
+        val formatter = SimpleDateFormat("EEEE, dd 'de' MMMM", Locale.Builder().setLanguage("es").setRegion("PE").build())
         formatter.timeZone = peruTimeZone
         return formatter.format(date)
     }
@@ -36,7 +36,7 @@ object TimeUtils {
      * Ejemplo: "14:30:25"
      */
     fun formatTimeForDisplay(date: Date = getCurrentPeruDate()): String {
-        val formatter = SimpleDateFormat("HH:mm:ss", Locale("es", "PE"))
+        val formatter = SimpleDateFormat("HH:mm:ss", Locale.Builder().setLanguage("es").setRegion("PE").build())
         formatter.timeZone = peruTimeZone
         return formatter.format(date)
     }
@@ -46,7 +46,7 @@ object TimeUtils {
      * Ejemplo: "2024-01-15"
      */
     fun formatDateForBackend(date: Date = getCurrentPeruDate()): String {
-        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale("es", "PE"))
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.Builder().setLanguage("es").setRegion("PE").build())
         formatter.timeZone = peruTimeZone
         return formatter.format(date)
     }
@@ -56,7 +56,7 @@ object TimeUtils {
      * Ejemplo: "14:30:25"
      */
     fun formatTimeForBackend(date: Date = getCurrentPeruDate()): String {
-        val formatter = SimpleDateFormat("HH:mm:ss", Locale("es", "PE"))
+        val formatter = SimpleDateFormat("HH:mm:ss", Locale.Builder().setLanguage("es").setRegion("PE").build())
         formatter.timeZone = peruTimeZone
         return formatter.format(date)
     }
@@ -66,7 +66,7 @@ object TimeUtils {
      * Ejemplo: "2024-01-15T14:30:25.123-05:00"
      */
     fun getPeruTimestamp(date: Date = getCurrentPeruDate()): String {
-        val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale("es", "PE"))
+        val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.Builder().setLanguage("es").setRegion("PE").build())
         formatter.timeZone = peruTimeZone
         return formatter.format(date)
     }

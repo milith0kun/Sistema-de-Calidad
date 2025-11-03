@@ -4,20 +4,24 @@ import android.content.Context
 import android.util.Log
 import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.data.auth.AuthStateManager
-import com.google.gson.Gson
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Interceptor para manejar automáticamente la autenticación y tokens expirados
  * Funcionalidades:
  * 1. Agrega automáticamente el token Bearer a todas las peticiones
  * 2. Detecta tokens expirados (401/403) y limpia la sesión
- * 3. Redirige automáticamente al login cuando es necesario
+ * 3. Usa caché atómico para evitar bloquear el thread principal
+ *
+ * MEJORA: Evita runBlocking usando caché atómico actualizado en background
  */
 class AuthInterceptor(
     private val context: Context,
@@ -29,7 +33,7 @@ class AuthInterceptor(
         private const val TAG = "AuthInterceptor"
         private const val HEADER_AUTHORIZATION = "Authorization"
         private const val BEARER_PREFIX = "Bearer "
-        
+
         // Endpoints que NO requieren autenticación
         private val PUBLIC_ENDPOINTS = setOf(
             "auth/login",
@@ -37,25 +41,32 @@ class AuthInterceptor(
         )
     }
 
+    // Caché atómico del token (evita runBlocking - MEJORA)
+    private val tokenCache = AtomicReference<String?>(null)
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    init {
+        // Observar cambios en el token y actualizar caché en background
+        scope.launch {
+            preferencesManager.getToken().collect { token ->
+                tokenCache.set(token)
+                Log.d(TAG, "📝 Token actualizado en caché")
+            }
+        }
+    }
+
     @Throws(IOException::class)
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
-        
+
         // Verificar si el endpoint requiere autenticación
         if (isPublicEndpoint(originalRequest)) {
             Log.d(TAG, "🔓 Endpoint público, sin autenticación: ${originalRequest.url}")
             return chain.proceed(originalRequest)
         }
 
-        // Obtener token de forma síncrona
-        val token = runBlocking {
-            try {
-                preferencesManager.getToken().first()
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ Error obteniendo token: ${e.message}")
-                null
-            }
-        }
+        // Obtener token del caché (sin bloquear)
+        val token = tokenCache.get()
 
         // Si no hay token, proceder sin autenticación (el servidor responderá 401)
         if (token.isNullOrBlank()) {
@@ -91,18 +102,21 @@ class AuthInterceptor(
     }
 
     /**
-     * Maneja tokens expirados limpiando la sesión
+     * Maneja tokens expirados limpiando la sesión (sin bloquear)
      */
     private fun handleTokenExpired() {
-        runBlocking {
+        scope.launch {
             try {
                 Log.i(TAG, "🧹 Limpiando sesión por token expirado...")
-                
+
+                // Limpiar caché inmediatamente
+                tokenCache.set(null)
+
                 // Notificar al AuthStateManager que el token expiró
                 authStateManager.notifyTokenExpired()
-                
+
                 Log.i(TAG, "✅ Sesión limpiada exitosamente")
-                
+
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Error limpiando sesión: ${e.message}")
             }

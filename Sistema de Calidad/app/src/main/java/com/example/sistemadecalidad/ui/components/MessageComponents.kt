@@ -202,7 +202,7 @@ fun LoadingMessage(
 fun CustomSnackbar(
     message: String,
     type: MessageType,
-    onDismiss: () -> Unit,
+    @Suppress("UNUSED_PARAMETER") onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val (backgroundColor, contentColor, icon) = when (type) {

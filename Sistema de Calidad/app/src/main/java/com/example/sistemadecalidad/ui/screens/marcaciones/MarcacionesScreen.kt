@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -268,85 +269,86 @@ fun MarcacionesScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
-                .padding(16.dp),
+                .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-        // Fecha actual
+        // Header compacto con fecha y hora
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+            ),
+            shape = RoundedCornerShape(12.dp)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.Center,
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.DateRange,
-                    contentDescription = "Fecha",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(20.dp)
-                )
+                // Fecha
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Fecha",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.width(6.dp))
+                    
+                    Text(
+                        text = TimeUtils.formatDateForDisplay(Date()),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
                 
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                Text(
-                    text = TimeUtils.formatDateForDisplay(Date()),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
-        
-        // Hora actual en tiempo real
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Hora Actual",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                Text(
-                    text = TimeUtils.formatTimeForDisplay(currentTime),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                // Hora actual
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AccessTime,
+                        contentDescription = "Hora",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.width(6.dp))
+                    
+                    Text(
+                        text = TimeUtils.formatTimeForDisplay(currentTime),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
         }
         
         // Estado de ubicación GPS
+        // Estado GPS compacto
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
                 containerColor = when {
-                    !hasLocationPermission -> MaterialTheme.colorScheme.errorContainer
-                    !isGpsEnabled -> MaterialTheme.colorScheme.errorContainer
+                    !hasLocationPermission || !isGpsEnabled -> MaterialTheme.colorScheme.errorContainer
                     isLocationValid -> Color(0xFF4CAF50).copy(alpha = 0.1f)
                     else -> MaterialTheme.colorScheme.errorContainer
                 }
-            )
+            ),
+            shape = RoundedCornerShape(8.dp)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -361,15 +363,15 @@ fun MarcacionesScreen(
                         isLocationValid -> Color(0xFF4CAF50)
                         else -> MaterialTheme.colorScheme.onErrorContainer
                     },
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(16.dp)
                 )
                 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = locationManager.getLocationStatusMessage(),
-                        fontSize = 14.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = when {
                             !hasLocationPermission || !isGpsEnabled -> MaterialTheme.colorScheme.onErrorContainer
@@ -380,8 +382,8 @@ fun MarcacionesScreen(
                     
                     distanceToKitchen?.let { distance ->
                         Text(
-                            text = "Distancia: ${distance.toInt()}m de la cocina",
-                            fontSize = 12.sp,
+                            text = "Distancia: ${distance.toInt()}m",
+                            fontSize = 10.sp,
                             color = when {
                                 isLocationValid -> Color(0xFF4CAF50)
                                 else -> MaterialTheme.colorScheme.onErrorContainer
@@ -392,30 +394,27 @@ fun MarcacionesScreen(
             }
         }
         
-
-        
-        // Mapa visual de ubicación objetivo
+        // Mapa compacto
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+            ),
+            shape = RoundedCornerShape(8.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(10.dp)
             ) {
                 Text(
-                    text = "Tu Ubicación Objetivo",
-                    fontSize = 16.sp,
+                    text = "Ubicación Objetivo",
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 6.dp)
                 )
                 
-                // OpenStreetMap con ubicación objetivo (sin API Key requerida)
+                // Mapa de ubicación optimizado y cuadrado
                 OSMMapView(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     userLatitude = locationManager.currentLocation.collectAsStateWithLifecycle().value?.latitude,
                     userLongitude = locationManager.currentLocation.collectAsStateWithLifecycle().value?.longitude,
                     targetLatitude = targetLatitude,
@@ -423,52 +422,11 @@ fun MarcacionesScreen(
                     allowedRadius = allowedRadius,
                     isLocationValid = isLocationValid
                 )
-                
-                // Información de ubicación
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White.copy(alpha = 0.9f)
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "📍 Ubicación Objetivo",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFD32F2F)
-                        )
-                        Text(
-                            text = "Lat: %.6f".format(targetLatitude),
-                            fontSize = 10.sp,
-                            color = Color.Black
-                        )
-                        Text(
-                            text = "Lon: %.6f".format(targetLongitude),
-                            fontSize = 10.sp,
-                            color = Color.Black
-                        )
-                        Text(
-                            text = "Radio: $allowedRadius m",
-                            fontSize = 10.sp,
-                            color = Color(0xFF00C853)
-                        )
-                    }
-                }
-                
-                Text(
-                    text = "🔵 = Área Permitida  📍 = Ubicación Objetivo  📱 = Tu Ubicación",
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
             }
         }
+        
+
+
         
         // Estado actual
         val estadoFichado = dashboardHoy?.data?.estadoFichado
@@ -581,40 +539,25 @@ fun MarcacionesScreen(
             }
         }
         
-        // Botones de marcación
-        android.util.Log.d("MarcacionesScreen", "=== ESTADO DEBUG ===")
-        android.util.Log.d("MarcacionesScreen", "dashboardHoy: $dashboardHoy")
-        android.util.Log.d("MarcacionesScreen", "estadoFichado: $estadoFichado")
-        android.util.Log.d("MarcacionesScreen", "estadoActual: '$estadoActual'")
-        android.util.Log.d("MarcacionesScreen", "tieneEntrada: ${estadoFichado?.tieneEntrada}")
-        android.util.Log.d("MarcacionesScreen", "tieneSalida: ${estadoFichado?.tieneSalida}")
-        
+        // Botones de marcación - Diseño compacto
         when (estadoActual) {
             "SIN_MARCAR" -> {
-                android.util.Log.d("MarcacionesScreen", "✅ Entrando en caso SIN_MARCAR - Mostrando botón")
                 Button(
                     onClick = { 
-                        android.util.Log.d("MarcacionesScreen", "Botón MARCAR ENTRADA presionado")
                         val locationData = locationManager.getCurrentLocationForFichado()
-                        android.util.Log.d("MarcacionesScreen", "LocationData: $locationData")
-                        android.util.Log.d("MarcacionesScreen", "canPerformFichado: ${locationManager.canPerformFichado()}")
-                        
                         if (locationData != null) {
-                            android.util.Log.d("MarcacionesScreen", "Registrando entrada con GPS: lat=${locationData.latitude}, lon=${locationData.longitude}")
                             fichadoViewModel.registrarEntrada(
                                 metodo = "GPS",
                                 latitud = locationData.latitude,
                                 longitud = locationData.longitude
                             )
                         } else {
-                            android.util.Log.d("MarcacionesScreen", "Sin GPS, registrando entrada manual")
-                            // Fallback a método manual si no hay GPS
                             fichadoViewModel.registrarEntrada(metodo = "MANUAL")
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(48.dp),
                     enabled = !fichadoUiState.isLoading && locationManager.canPerformFichado(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (locationManager.canPerformFichado()) 
@@ -625,30 +568,29 @@ fun MarcacionesScreen(
                 ) {
                     if (fichadoUiState.isLoading) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(16.dp),
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
                         Icon(
                             imageVector = Icons.Default.PlayArrow,
                             contentDescription = "Marcar entrada",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = if (locationManager.canPerformFichado()) 
-                                "MARCAR ENTRADA (GPS)" 
+                                "MARCAR ENTRADA" 
                             else 
                                 "GPS REQUERIDO",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
             }
             
             "TRABAJANDO" -> {
-                android.util.Log.d("MarcacionesScreen", "✅ Entrando en caso TRABAJANDO - Mostrando botón salida")
                 Button(
                     onClick = { 
                         val locationData = locationManager.getCurrentLocationForFichado()
@@ -659,13 +601,12 @@ fun MarcacionesScreen(
                                 longitud = locationData.longitude
                             )
                         } else {
-                            // Fallback a método manual si no hay GPS
                             fichadoViewModel.registrarSalida(metodo = "MANUAL")
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(48.dp),
                     enabled = !fichadoUiState.isLoading && locationManager.canPerformFichado(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (locationManager.canPerformFichado()) 
@@ -676,31 +617,30 @@ fun MarcacionesScreen(
                 ) {
                     if (fichadoUiState.isLoading) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(16.dp),
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                             contentDescription = "Marcar salida",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = if (locationManager.canPerformFichado()) 
-                                "MARCAR SALIDA (GPS)" 
+                                "MARCAR SALIDA" 
                             else 
                                 "GPS REQUERIDO",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
             }
             
             "COMPLETADO" -> {
-                android.util.Log.d("MarcacionesScreen", "✅ Entrando en caso COMPLETADO - Permitiendo nueva entrada")
-                // Mostrar mensaje de jornada completada
+                // Mensaje compacto de jornada completada
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -708,42 +648,36 @@ fun MarcacionesScreen(
                     )
                 ) {
                     Text(
-                        text = "✅ Última jornada completada",
+                        text = "✅ Jornada completada",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
+                            .padding(8.dp),
                         textAlign = TextAlign.Center,
-                        fontSize = 14.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
                 }
                 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 
-                // Permitir registrar nueva entrada para otro turno
+                // Botón para nueva entrada
                 Button(
                     onClick = { 
-                        android.util.Log.d("MarcacionesScreen", "Botón NUEVA ENTRADA presionado (después de completar turno)")
                         val locationData = locationManager.getCurrentLocationForFichado()
-                        android.util.Log.d("MarcacionesScreen", "LocationData: $locationData")
-                        android.util.Log.d("MarcacionesScreen", "canPerformFichado: ${locationManager.canPerformFichado()}")
-                        
                         if (locationData != null) {
-                            android.util.Log.d("MarcacionesScreen", "Registrando nueva entrada con GPS: lat=${locationData.latitude}, lon=${locationData.longitude}")
                             fichadoViewModel.registrarEntrada(
                                 metodo = "GPS",
                                 latitud = locationData.latitude,
                                 longitud = locationData.longitude
                             )
                         } else {
-                            android.util.Log.d("MarcacionesScreen", "Sin GPS, registrando nueva entrada manual")
                             fichadoViewModel.registrarEntrada(metodo = "MANUAL")
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(48.dp),
                     enabled = !fichadoUiState.isLoading && locationManager.canPerformFichado(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (locationManager.canPerformFichado()) 
@@ -754,23 +688,23 @@ fun MarcacionesScreen(
                 ) {
                     if (fichadoUiState.isLoading) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(16.dp),
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
                         Icon(
                             imageVector = Icons.Default.PlayArrow,
                             contentDescription = "Nueva entrada",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = if (locationManager.canPerformFichado()) 
-                                "NUEVA ENTRADA (GPS)" 
+                                "NUEVA ENTRADA" 
                             else 
                                 "GPS REQUERIDO",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }

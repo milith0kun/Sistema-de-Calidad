@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,8 +33,8 @@ fun RecepcionAbarrotesScreen(
     peruCalendar.time = currentPeruDate
     val mes = peruCalendar.get(Calendar.MONTH) + 1
     val anio = peruCalendar.get(Calendar.YEAR)
-    val fecha = SimpleDateFormat("dd/MM/yyyy", Locale("es", "PE")).apply { 
-        timeZone = TimeUtils.getPeruTimeZone() 
+    val fecha = SimpleDateFormat("dd/MM/yyyy", Locale.Builder().setLanguage("es").setRegion("PE").build()).apply {
+        timeZone = TimeUtils.getPeruTimeZone()
     }.format(currentPeruDate)
     val hora = TimeUtils.formatTimeForDisplay(currentPeruDate)
     
@@ -106,7 +106,7 @@ fun RecepcionAbarrotesScreen(
                 title = { Text("Recepción de Abarrotes") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
                     }
                 }
             )
@@ -127,7 +127,7 @@ fun RecepcionAbarrotesScreen(
                 fontWeight = FontWeight.Bold
             )
             
-            Divider()
+            HorizontalDivider()
             
             // DATOS DEL PERÍODO (Auto-generados)
             Card(
@@ -177,7 +177,7 @@ fun RecepcionAbarrotesScreen(
                 supportingText = { Text("Ejemplo: 50 kg, 24 latas, 12 paquetes, 500 gramos") }
             )
             
-            Divider()
+            HorizontalDivider()
             
             // VERIFICACIONES SANITARIAS
             Text("VERIFICACIONES SANITARIAS", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -281,7 +281,7 @@ fun RecepcionAbarrotesScreen(
                 }
             }
             
-            Divider()
+            HorizontalDivider()
             
             // VERIFICACIONES C/NC
             Text("VERIFICACIONES C/NC", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -370,7 +370,7 @@ fun RecepcionAbarrotesScreen(
                 }
             }
             
-            Divider()
+            HorizontalDivider()
             
             // RESPONSABLES
             Text("RESPONSABLES", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -449,7 +449,7 @@ fun RecepcionAbarrotesScreen(
                     label = { Text("RESPONSABLE DE LA SUPERVISIÓN (SUPERVISOR DEL TURNO) *") },
                     placeholder = { Text("Seleccionar supervisor del turno") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSupervisor) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
                     supportingText = { 
                         Text(
                             if (supervisores.isEmpty()) 
@@ -507,7 +507,7 @@ fun RecepcionAbarrotesScreen(
                 }
             }
             
-            Divider()
+            HorizontalDivider()
             
             // SIGNIFICADO
             Card(

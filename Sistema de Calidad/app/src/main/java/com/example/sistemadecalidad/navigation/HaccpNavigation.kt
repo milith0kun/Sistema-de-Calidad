@@ -14,6 +14,7 @@ import com.example.sistemadecalidad.ui.screens.dashboard.DashboardScreen
 import com.example.sistemadecalidad.ui.screens.historial.HistorialScreen
 import com.example.sistemadecalidad.ui.screens.login.LoginScreen
 import com.example.sistemadecalidad.ui.screens.marcaciones.MarcacionesScreen
+import com.example.sistemadecalidad.ui.screens.profile.ProfileScreen
 // import com.example.sistemadecalidad.ui.screens.settings.NetworkSettingsScreen // ELIMINADO
 // import com.example.sistemadecalidad.ui.screens.settings.LocationSettingsScreen // ELIMINADO - configuración GPS solo desde WebPanel
 import com.example.sistemadecalidad.ui.screens.about.AboutScreen
@@ -26,6 +27,7 @@ import com.example.sistemadecalidad.ui.screens.haccp.LavadoManosScreen
 import com.example.sistemadecalidad.ui.screens.haccp.TemperaturaCamarasScreen
 import com.example.sistemadecalidad.ui.screens.haccp.RecepcionAbarrotesScreen
 import com.example.sistemadecalidad.ui.screens.haccp.EnDesarrolloScreen
+import com.example.sistemadecalidad.ui.screens.settings.NotificationSettingsScreen
 import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.ui.viewmodel.AuthViewModel
 import com.example.sistemadecalidad.ui.viewmodel.FichadoViewModel
@@ -35,32 +37,60 @@ import com.google.gson.Gson
 /**
  * Configuración principal de navegación para la aplicación HACCP
  * Temporalmente con instanciación manual de ViewModels
+ * Con soporte para navegación desde notificaciones
  */
 @Composable
 fun HaccpNavigation(
     navController: NavHostController,
-    startDestination: String = NavigationDestinations.WELCOME
+    startDestination: String = NavigationDestinations.WELCOME,
+    notificationDestination: String? = null
 ) {
-    // Crear instancias temporales de dependencias
+    // Crear instancias temporales de dependencias (inyección manual)
     val context = LocalContext.current
     val gson = Gson()
     val preferencesManager = PreferencesManager(context, gson)
-    val networkModule = NetworkModule
-    val apiService = networkModule.provideApiService(
-        networkModule.provideRetrofit(
-            networkModule.provideGson(),
-            context
-        )
-    )
+
+    // NetworkModule con inyección manual
+    val retrofit = NetworkModule.provideRetrofit(gson, context)
+    val apiService = NetworkModule.provideApiService(retrofit)
     val authRepository = AuthRepository(apiService)
+    val authStateManager = NetworkModule.configureAuthStateManager(context, authRepository)
+
+    // Repositories
     val fichadoRepository = FichadoRepository(apiService)
     val haccpRepository = com.example.sistemadecalidad.data.repository.HaccpRepository(apiService)
+
+    // Utils
     val locationManager = LocationManager(context)
-    val authStateManager = networkModule.configureAuthStateManager(context, authRepository)
-    val authViewModel = AuthViewModel(authRepository, preferencesManager, authStateManager)
+
+    // ViewModels
+    val authViewModel = AuthViewModel(authRepository, preferencesManager, authStateManager, context)
     val fichadoViewModel = FichadoViewModel(fichadoRepository, preferencesManager, locationManager, authStateManager)
     val haccpViewModel = com.example.sistemadecalidad.ui.viewmodel.HaccpViewModel(haccpRepository, preferencesManager)
-    
+
+    // Manejar navegación desde notificaciones
+    val isAuthenticated = authViewModel.isAuthenticated.collectAsState()
+    androidx.compose.runtime.LaunchedEffect(notificationDestination, isAuthenticated.value) {
+        if (notificationDestination != null && isAuthenticated.value) {
+            android.util.Log.d("HaccpNavigation", "🔔 Navegando desde notificación a: $notificationDestination")
+
+            val destination = when (notificationDestination) {
+                "marcaciones" -> NavigationDestinations.MARCACIONES
+                "calidad" -> NavigationDestinations.HACCP_MENU
+                else -> null
+            }
+
+            if (destination != null) {
+                // Esperar un poco para que la UI se estabilice
+                kotlinx.coroutines.delay(500)
+                navController.navigate(destination) {
+                    // Limpiar el backstack hasta el dashboard
+                    popUpTo(NavigationDestinations.DASHBOARD) { inclusive = false }
+                }
+            }
+        }
+    }
+
     // NO USAR LaunchedEffect para redirecciones automáticas
     // El logout manual debe manejarse directamente en las pantallas
     NavHost(
@@ -107,6 +137,9 @@ fun HaccpNavigation(
                 },
                 onNavigateToAbout = {
                     navController.navigate(NavigationDestinations.ABOUT)
+                },
+                onNavigateToProfile = {
+                    navController.navigate(NavigationDestinations.PROFILE)
                 },
                 onLogout = {
                     navController.navigate(NavigationDestinations.LOGIN) {
@@ -205,12 +238,33 @@ fun HaccpNavigation(
             )
         }
         
+        // Pantalla de perfil del usuario
+        composable(NavigationDestinations.PROFILE) {
+            ProfileScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToNotificationSettings = {
+                    navController.navigate(NavigationDestinations.NOTIFICATION_SETTINGS)
+                },
+                authViewModel = authViewModel
+            )
+        }
+
+        // Pantalla de configuración de notificaciones
+        composable(NavigationDestinations.NOTIFICATION_SETTINGS) {
+            NotificationSettingsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
         // Formularios HACCP individuales
         composable(NavigationDestinations.RECEPCION_MERCADERIA) {
             RecepcionMercaderiaScreen(
                 haccpViewModel = haccpViewModel,
                 usuario = preferencesManager.getUser().collectAsState(initial = null).value,
-                preferencesManager = preferencesManager,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

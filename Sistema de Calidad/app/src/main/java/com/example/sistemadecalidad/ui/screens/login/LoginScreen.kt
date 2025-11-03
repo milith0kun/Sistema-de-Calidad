@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -16,8 +17,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-// import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.sistemadecalidad.data.local.PreferencesManager
 import com.example.sistemadecalidad.ui.viewmodel.AuthViewModel
+import com.google.gson.Gson
+import kotlinx.coroutines.launch
 
 /**
  * Pantalla de login con validación de credenciales
@@ -25,6 +28,8 @@ import com.example.sistemadecalidad.ui.viewmodel.AuthViewModel
  * - Email debe tener formato válido
  * - Contraseña no puede estar vacía
  * - Deshabilitar botón si campos están incompletos
+ * - Autocompletado de email guardado
+ * - Opción "Recordarme" para guardar email
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,9 +37,24 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     viewModel: AuthViewModel // = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val preferencesManager = remember { PreferencesManager(context, Gson()) }
+    val scope = rememberCoroutineScope()
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var rememberMe by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) } // Toggle para mostrar/ocultar contraseña
+
+    // Cargar credenciales guardadas al iniciar
+    LaunchedEffect(Unit) {
+        preferencesManager.getSavedEmail().collect { savedEmail ->
+            if (savedEmail != null) {
+                email = savedEmail
+                rememberMe = true
+            }
+        }
+    }
     
     // Estados de validación local
     var emailError by remember { mutableStateOf<String?>(null) }
@@ -85,9 +105,13 @@ fun LoginScreen(
     // Verificar si los campos están completos para habilitar el botón
     val areFieldsComplete = email.isNotBlank() && password.isNotBlank() && isValidEmail(email)
     
-    // Navegar automáticamente si ya está autenticado
+    // Navegar automáticamente si ya está autenticado y guardar credenciales
     LaunchedEffect(isAuthenticated) {
         if (isAuthenticated) {
+            // Guardar credenciales si el usuario marcó "Recordarme"
+            scope.launch {
+                preferencesManager.saveLoginCredentials(email, rememberMe)
+            }
             onLoginSuccess()
         }
     }
@@ -158,7 +182,27 @@ fun LoginScreen(
                 }
             }
         )
-        
+
+        // Checkbox "Recordarme"
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = rememberMe,
+                onCheckedChange = { rememberMe = it },
+                enabled = !uiState.isLoading
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Recordar mi correo electrónico",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
         // Mensaje de error del servidor
         uiState.errorMessage?.let { message ->
             Card(

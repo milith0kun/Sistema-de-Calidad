@@ -110,7 +110,6 @@ object NetworkConfig {
         
         // Siempre usar la configuración por defecto actualizada: AWS Producción
         val awsUrl = ENVIRONMENTS["aws_production"] ?: DEFAULT_BASE_URL
-        NetworkModule.setCustomBaseUrl(awsUrl)
         setEnvironment(context, "aws_production")
         Log.d("NetworkConfig", "Usando servidor AWS por defecto: $awsUrl")
     }
@@ -125,10 +124,7 @@ object NetworkConfig {
             .remove(KEY_SERVER_URL) // Limpiar URL personalizada
             .apply()
         
-        val environmentUrl = ENVIRONMENTS[environment]
-        if (environmentUrl != null) {
-            NetworkModule.setCustomBaseUrl(environmentUrl)
-        }
+        Log.d("NetworkConfig", "🌐 Entorno establecido: $environment")
     }
     
     /**
@@ -141,14 +137,20 @@ object NetworkConfig {
             .remove(KEY_ENVIRONMENT) // Limpiar entorno predefinido
             .apply()
         
-        NetworkModule.setCustomBaseUrl(url)
+        Log.d("NetworkConfig", "🔧 URL personalizada establecida: $url")
     }
     
     /**
      * Obtiene la URL actual del servidor
      */
-    fun getCurrentUrl(): String {
-        return NetworkModule.getCurrentBaseUrl()
+    fun getCurrentUrl(context: Context): String {
+        val customUrl = getCustomUrl(context)
+        if (!customUrl.isNullOrEmpty()) {
+            return customUrl
+        }
+        
+        val environment = getCurrentEnvironment(context)
+        return ENVIRONMENTS[environment] ?: DEFAULT_BASE_URL
     }
     
     /**
@@ -169,6 +171,7 @@ object NetworkConfig {
      * Detección automática del entorno según la conectividad
      * Simplificado: siempre AWS
      */
+    @Suppress("UNUSED_PARAMETER")
     fun autoDetectEnvironment(context: Context): String {
         return "aws_production"
     }

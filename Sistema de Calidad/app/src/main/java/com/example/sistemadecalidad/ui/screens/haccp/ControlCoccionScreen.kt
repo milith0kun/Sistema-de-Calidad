@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,10 +30,9 @@ fun ControlCoccionScreen(
     val usuario by preferencesManager.getUser().collectAsState(initial = null)
     
     var showSuccessDialog by remember { mutableStateOf(false) }
-    
+
     val scrollState = rememberScrollState()
-    val currentPeruDate = TimeUtils.getCurrentPeruDate()
-    
+
     // Calcular conformidad automáticamente
     val temperatura = temperaturaCoccion.toDoubleOrNull() ?: 0.0
     val conformidad = if (temperatura > 80.0) "C" else "NC"
@@ -56,7 +55,7 @@ fun ControlCoccionScreen(
                 title = { Text("Control de Cocción") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
                     }
                 }
             )
@@ -77,7 +76,7 @@ fun ControlCoccionScreen(
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
             )
             
-            Divider()
+            HorizontalDivider()
             
             // DATOS DEL RESPONSABLE (automático del usuario logueado)
             Card(

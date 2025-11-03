@@ -31,9 +31,11 @@ class ConnectivityManager(
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
         } else {
+            // Para versiones anteriores a Android M, usar método deprecado con supresión
             @Suppress("DEPRECATION")
             val networkInfo = connectivityManager.activeNetworkInfo
-            networkInfo?.isConnected == true
+            // Usar isConnectedOrConnecting en lugar de isConnected para mejor compatibilidad
+            networkInfo?.isConnectedOrConnecting == true
         }
     }
     
@@ -58,9 +60,13 @@ class ConnectivityManager(
         } else {
             @Suppress("DEPRECATION")
             val networkInfo = connectivityManager.activeNetworkInfo
+            @Suppress("DEPRECATION")
             when (networkInfo?.type) {
+                @Suppress("DEPRECATION")
                 ConnectivityManager.TYPE_WIFI -> ConnectionType.WIFI
+                @Suppress("DEPRECATION")
                 ConnectivityManager.TYPE_MOBILE -> ConnectionType.MOBILE
+                @Suppress("DEPRECATION")
                 ConnectivityManager.TYPE_ETHERNET -> ConnectionType.ETHERNET
                 else -> ConnectionType.OTHER
             }
@@ -89,7 +95,7 @@ class ConnectivityManager(
                 val healthResponse = result.body()
                 if (healthResponse != null && healthResponse.status == "OK") {
                     emit(ServerConnectivityResult.Connected(
-                        serverUrl = NetworkConfig.getCurrentUrl(),
+                        serverUrl = NetworkConfig.getCurrentUrl(context),
                         connectionType = getConnectionType(),
                         responseTime = System.currentTimeMillis() // Simplificado
                     ))
@@ -125,7 +131,7 @@ class ConnectivityManager(
         for (environment in environments) {
             emit(NetworkTestResult.Testing(environment))
             
-            val originalUrl = NetworkConfig.getCurrentUrl()
+            val originalUrl = NetworkConfig.getCurrentUrl(context)
             NetworkConfig.setEnvironment(context, environment)
             
             try {
@@ -134,7 +140,7 @@ class ConnectivityManager(
                 }
                 
                 if (result?.isSuccessful == true) {
-                    emit(NetworkTestResult.Success(environment, NetworkConfig.getCurrentUrl()))
+                    emit(NetworkTestResult.Success(environment, NetworkConfig.getCurrentUrl(context)))
                     return@flow
                 } else {
                     emit(NetworkTestResult.Failed(environment, "No responde"))
