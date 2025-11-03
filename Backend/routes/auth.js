@@ -30,7 +30,7 @@ router.post('/login', async (req, res) => {
         // Buscar usuario en la base de datos
         console.log('Searching for user with email:', email);
         const user = await db.get(
-            'SELECT * FROM usuarios WHERE email = ? AND activo = 1',
+            'SELECT id, nombre, apellido, email, password, rol, cargo, area, activo FROM usuarios WHERE email = ? AND activo = 1',
             [email]
         );
         
@@ -40,6 +40,8 @@ router.post('/login', async (req, res) => {
                 id: user.id,
                 email: user.email,
                 rol: user.rol,
+                activo: user.activo,
+                activoType: typeof user.activo,
                 hasPassword: !!user.password
             });
         }
