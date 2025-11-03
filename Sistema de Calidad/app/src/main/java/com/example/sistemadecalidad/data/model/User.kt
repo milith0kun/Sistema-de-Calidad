@@ -1,6 +1,40 @@
 package com.example.sistemadecalidad.data.model
 
 import com.google.gson.annotations.SerializedName
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
+import com.google.gson.JsonParseException
+import java.lang.reflect.Type
+
+/**
+ * Deserializador personalizado para el campo 'activo'
+ * Convierte tanto números (0/1) como booleanos (true/false) a Boolean
+ */
+class BooleanDeserializer : JsonDeserializer<Boolean> {
+    override fun deserialize(
+        json: JsonElement?,
+        typeOfT: Type?,
+        context: JsonDeserializationContext?
+    ): Boolean {
+        return when {
+            json == null || json.isJsonNull -> false
+            json.isJsonPrimitive -> {
+                val primitive = json.asJsonPrimitive
+                when {
+                    primitive.isBoolean -> primitive.asBoolean
+                    primitive.isNumber -> primitive.asInt != 0
+                    primitive.isString -> {
+                        val str = primitive.asString.lowercase()
+                        str == "true" || str == "1" || str == "yes" || str == "sí"
+                    }
+                    else -> false
+                }
+            }
+            else -> false
+        }
+    }
+}
 
 /**
  * Modelo de datos para el usuario

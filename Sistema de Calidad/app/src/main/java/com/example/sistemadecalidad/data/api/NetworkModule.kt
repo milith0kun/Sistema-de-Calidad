@@ -22,46 +22,8 @@ object NetworkModule {
 
     private const val TAG = "NetworkModule"
 
-    // URL base por defecto - usar BuildConfig
-    private val DEFAULT_BASE_URL = BuildConfig.BASE_URL_AWS_PRIMARY
-
-    // URL actual (mutable para detección automática)
-    @Volatile
-    private var currentBaseUrl: String = DEFAULT_BASE_URL
-
-    /**
-     * Detecta automáticamente la mejor URL del servidor
-     */
-    suspend fun detectAndSetBestUrl(context: Context) {
-        try {
-            Log.d(TAG, "🔍 Iniciando detección automática de servidor...")
-            val detector = AutoNetworkDetector(context)
-            val detectedUrl = detector.detectBestServerUrl()
-
-            if (detectedUrl != null) {
-                currentBaseUrl = detectedUrl
-                Log.d(TAG, "✅ Servidor detectado automáticamente: $currentBaseUrl")
-            } else {
-                Log.w(TAG, "⚠️ No se detectó servidor, usando URL de respaldo: $currentBaseUrl")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Error en detección automática: ${e.message}")
-            Log.d(TAG, "🔄 Usando URL de respaldo: $currentBaseUrl")
-        }
-    }
-
-    /**
-     * Obtiene la URL base actual
-     */
-    fun getCurrentBaseUrl(): String = currentBaseUrl
-
-    /**
-     * Configura una URL personalizada (para casos especiales)
-     */
-    fun setCustomBaseUrl(url: String) {
-        currentBaseUrl = if (url.endsWith("/")) url else "$url/"
-        Log.d(TAG, "🔧 URL personalizada configurada: $currentBaseUrl")
-    }
+    // URL del servidor AWS EC2 - Producción
+    private const val BASE_URL = BuildConfig.BASE_URL_AWS
 
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor {
         return HttpLoggingInterceptor().apply {
@@ -96,23 +58,49 @@ object NetworkModule {
                     .build()
                 chain.proceed(newRequest)
             }
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            // Interceptor de retry automático para conexiones fallidas
+            .addInterceptor { chain ->
+                val request = chain.request()
+                var response = chain.proceed(request)
+                var tryCount = 0
+                val maxRetries = 2 // Máximo 2 reintentos adicionales
+                
+                while (!response.isSuccessful && tryCount < maxRetries) {
+                    tryCount++
+                    Log.d(TAG, "🔄 Reintentando petición (intento $tryCount/$maxRetries): ${request.url}")
+                    response.close()
+                    
+                    // Esperar un poco antes del reintento (backoff exponencial)
+                    Thread.sleep(1000L * tryCount)
+                    
+                    response = chain.proceed(request)
+                }
+                
+                if (!response.isSuccessful && tryCount >= maxRetries) {
+                    Log.w(TAG, "❌ Petición falló después de $maxRetries reintentos: ${request.url}")
+                }
+                
+                response
+            }
+            .connectTimeout(15, TimeUnit.SECONDS) // Reducido de 30 a 15 segundos
+            .readTimeout(20, TimeUnit.SECONDS)    // Reducido de 30 a 20 segundos  
+            .writeTimeout(15, TimeUnit.SECONDS)   // Reducido de 30 a 15 segundos
             .build()
     }
 
     /**
      * Configuración de Gson para parsing JSON
+     * Incluye deserializador personalizado para el campo 'activo'
      */
     fun provideGson(): Gson {
         return GsonBuilder()
             .setLenient()
+            .registerTypeAdapter(Boolean::class.java, com.example.sistemadecalidad.data.model.BooleanDeserializer())
             .create()
     }
 
     /**
-     * Cliente Retrofit con URL dinámica
+     * Cliente Retrofit para comunicación con el backend
      */
     fun provideRetrofit(
         gson: Gson,
@@ -122,10 +110,10 @@ object NetworkModule {
         val loggingInterceptor = provideHttpLoggingInterceptor()
         val okHttpClient = provideOkHttpClient(loggingInterceptor, context)
 
-        Log.d(TAG, "🚀 Retrofit configurado con URL: $currentBaseUrl")
+        Log.d(TAG, "🚀 Retrofit configurado con URL: $BASE_URL")
 
         return Retrofit.Builder()
-            .baseUrl(currentBaseUrl)
+            .baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
@@ -144,7 +132,7 @@ object NetworkModule {
     private fun createTemporaryAuthStateManager(context: Context, preferencesManager: PreferencesManager): AuthStateManager {
         // Crear un AuthRepository temporal con un ApiService básico
         val tempRetrofit = Retrofit.Builder()
-            .baseUrl(currentBaseUrl)
+            .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create(provideGson()))
             .build()
         val tempApiService = tempRetrofit.create(ApiService::class.java)
