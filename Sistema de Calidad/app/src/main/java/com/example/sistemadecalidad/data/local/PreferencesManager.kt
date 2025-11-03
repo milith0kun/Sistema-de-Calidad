@@ -46,7 +46,9 @@ class PreferencesManager /* @Inject constructor */ (
 
         // Claves para credenciales guardadas (login)
         private val SAVED_EMAIL_KEY = stringPreferencesKey("saved_email")
+        private val SAVED_PASSWORD_KEY = stringPreferencesKey("saved_password")
         private val REMEMBER_ME_KEY = stringPreferencesKey("remember_me")
+        private val REMEMBER_PASSWORD_KEY = stringPreferencesKey("remember_password")
     }
     
     private val dataStore = context.dataStore
@@ -270,16 +272,37 @@ class PreferencesManager /* @Inject constructor */ (
     /**
      * Guardar email para autocompletado en login
      */
-    suspend fun saveLoginCredentials(email: String, rememberMe: Boolean) {
+    suspend fun saveLoginCredentials(
+        email: String, 
+        password: String = "",
+        rememberEmail: Boolean = false,
+        rememberPassword: Boolean = false
+    ) {
         dataStore.edit { preferences ->
-            if (rememberMe) {
+            // Guardar email si se solicita
+            if (rememberEmail) {
                 preferences[SAVED_EMAIL_KEY] = email
                 preferences[REMEMBER_ME_KEY] = "true"
-                android.util.Log.d("PreferencesManager", "💾 Credenciales guardadas para autocompletado")
+                android.util.Log.d("PreferencesManager", "💾 Email guardado para autocompletado")
             } else {
                 preferences.remove(SAVED_EMAIL_KEY)
                 preferences[REMEMBER_ME_KEY] = "false"
-                android.util.Log.d("PreferencesManager", "🗑️ Credenciales eliminadas")
+                android.util.Log.d("PreferencesManager", "🗑️ Email eliminado")
+            }
+            
+            // Guardar contraseña si se solicita (codificada en Base64 para seguridad básica)
+            if (rememberPassword && password.isNotEmpty()) {
+                val encodedPassword = android.util.Base64.encodeToString(
+                    password.toByteArray(), 
+                    android.util.Base64.DEFAULT
+                )
+                preferences[SAVED_PASSWORD_KEY] = encodedPassword
+                preferences[REMEMBER_PASSWORD_KEY] = "true"
+                android.util.Log.d("PreferencesManager", "🔐 Contraseña guardada de forma segura")
+            } else {
+                preferences.remove(SAVED_PASSWORD_KEY)
+                preferences[REMEMBER_PASSWORD_KEY] = "false"
+                android.util.Log.d("PreferencesManager", "🗑️ Contraseña eliminada")
             }
         }
     }
@@ -294,11 +317,71 @@ class PreferencesManager /* @Inject constructor */ (
     }
 
     /**
-     * Verificar si el usuario eligió recordar credenciales
+     * Obtener contraseña guardada (decodificada)
+     */
+    fun getSavedPassword(): Flow<String?> {
+        return dataStore.data.map { preferences ->
+            val encodedPassword = preferences[SAVED_PASSWORD_KEY]
+            if (encodedPassword != null) {
+                try {
+                    val decodedBytes = android.util.Base64.decode(encodedPassword, android.util.Base64.DEFAULT)
+                    String(decodedBytes)
+                } catch (e: Exception) {
+                    android.util.Log.e("PreferencesManager", "Error decodificando contraseña: ${e.message}")
+                    null
+                }
+            } else {
+                null
+            }
+        }
+    }
+
+    /**
+     * Verificar si el usuario eligió recordar email
      */
     fun isRememberMeEnabled(): Flow<Boolean> {
         return dataStore.data.map { preferences ->
             preferences[REMEMBER_ME_KEY]?.toBooleanStrictOrNull() ?: false
+        }
+    }
+
+    /**
+     * Verificar si el usuario eligió recordar contraseña
+     */
+    fun isRememberPasswordEnabled(): Flow<Boolean> {
+        return dataStore.data.map { preferences ->
+            preferences[REMEMBER_PASSWORD_KEY]?.toBooleanStrictOrNull() ?: false
+        }
+    }
+
+    /**
+     * Obtener credenciales completas guardadas
+     */
+    fun getSavedCredentials(): Flow<SavedCredentials> {
+        return dataStore.data.map { preferences ->
+            val email = preferences[SAVED_EMAIL_KEY]
+            val encodedPassword = preferences[SAVED_PASSWORD_KEY]
+            val rememberEmail = preferences[REMEMBER_ME_KEY]?.toBooleanStrictOrNull() ?: false
+            val rememberPassword = preferences[REMEMBER_PASSWORD_KEY]?.toBooleanStrictOrNull() ?: false
+            
+            val password = if (encodedPassword != null) {
+                try {
+                    val decodedBytes = android.util.Base64.decode(encodedPassword, android.util.Base64.DEFAULT)
+                    String(decodedBytes)
+                } catch (e: Exception) {
+                    android.util.Log.e("PreferencesManager", "Error decodificando contraseña: ${e.message}")
+                    null
+                }
+            } else {
+                null
+            }
+            
+            SavedCredentials(
+                email = email,
+                password = password,
+                rememberEmail = rememberEmail,
+                rememberPassword = rememberPassword
+            )
         }
     }
 
@@ -308,9 +391,11 @@ class PreferencesManager /* @Inject constructor */ (
     suspend fun clearSavedCredentials() {
         dataStore.edit { preferences ->
             preferences.remove(SAVED_EMAIL_KEY)
+            preferences.remove(SAVED_PASSWORD_KEY)
             preferences.remove(REMEMBER_ME_KEY)
+            preferences.remove(REMEMBER_PASSWORD_KEY)
         }
-        android.util.Log.d("PreferencesManager", "🗑️ Credenciales de login limpiadas")
+        android.util.Log.d("PreferencesManager", "🗑️ Todas las credenciales de login limpiadas")
     }
 }
 
@@ -329,4 +414,14 @@ data class NotificationSettings(
     val haccpEnabled: Boolean = true,
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true
+)
+
+/**
+ * Clase de datos para credenciales guardadas
+ */
+data class SavedCredentials(
+    val email: String? = null,
+    val password: String? = null,
+    val rememberEmail: Boolean = false,
+    val rememberPassword: Boolean = false
 )

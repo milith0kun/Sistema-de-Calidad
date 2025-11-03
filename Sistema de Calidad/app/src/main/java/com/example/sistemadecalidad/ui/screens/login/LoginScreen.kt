@@ -43,15 +43,23 @@ fun LoginScreen(
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var rememberMe by remember { mutableStateOf(false) }
+    var rememberEmail by remember { mutableStateOf(false) }
+    var rememberPassword by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) } // Toggle para mostrar/ocultar contraseña
 
     // Cargar credenciales guardadas al iniciar
     LaunchedEffect(Unit) {
-        preferencesManager.getSavedEmail().collect { savedEmail ->
-            if (savedEmail != null) {
+        preferencesManager.getSavedCredentials().collect { savedCredentials ->
+            // Cargar email si está guardado
+            savedCredentials.email?.let { savedEmail ->
                 email = savedEmail
-                rememberMe = true
+                rememberEmail = savedCredentials.rememberEmail
+            }
+            
+            // Cargar contraseña si está guardada
+            savedCredentials.password?.let { savedPassword ->
+                password = savedPassword
+                rememberPassword = savedCredentials.rememberPassword
             }
         }
     }
@@ -108,9 +116,14 @@ fun LoginScreen(
     // Navegar automáticamente si ya está autenticado y guardar credenciales
     LaunchedEffect(isAuthenticated) {
         if (isAuthenticated) {
-            // Guardar credenciales si el usuario marcó "Recordarme"
+            // Guardar credenciales según las preferencias del usuario
             scope.launch {
-                preferencesManager.saveLoginCredentials(email, rememberMe)
+                preferencesManager.saveLoginCredentials(
+                    email = email,
+                    password = password,
+                    rememberEmail = rememberEmail,
+                    rememberPassword = rememberPassword
+                )
             }
             onLoginSuccess()
         }
@@ -183,24 +196,47 @@ fun LoginScreen(
             }
         )
 
-        // Checkbox "Recordarme"
-        Row(
+        // Checkboxes para recordar credenciales
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(vertical = 8.dp)
         ) {
-            Checkbox(
-                checked = rememberMe,
-                onCheckedChange = { rememberMe = it },
-                enabled = !uiState.isLoading
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Recordar mi correo electrónico",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            // Checkbox "Recordar email"
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = rememberEmail,
+                    onCheckedChange = { rememberEmail = it },
+                    enabled = !uiState.isLoading
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Recordar mi correo electrónico",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            
+            // Checkbox "Recordar contraseña"
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = rememberPassword,
+                    onCheckedChange = { rememberPassword = it },
+                    enabled = !uiState.isLoading
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Recordar mi contraseña",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
 
         // Mensaje de error del servidor

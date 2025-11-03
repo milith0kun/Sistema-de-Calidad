@@ -95,7 +95,7 @@ router.post('/login', async (req, res) => {
                 rol: user.rol,
                 cargo: user.cargo,
                 area: user.area,
-                activo: user.activo
+                activo: Boolean(user.activo) // Convertir a boolean
             }
         });
 

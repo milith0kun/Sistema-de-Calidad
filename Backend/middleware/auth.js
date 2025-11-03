@@ -47,7 +47,7 @@ const authenticateToken = async (req, res, next) => {
             rol: row.rol,
             cargo: row.cargo,
             area: row.area,
-            activo: row.activo
+            activo: Boolean(row.activo) // Convertir a boolean
         };
         
         // Alias para compatibilidad
