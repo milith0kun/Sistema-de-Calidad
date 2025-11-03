@@ -46,7 +46,8 @@ const authenticateToken = async (req, res, next) => {
             email: row.email,
             rol: row.rol,
             cargo: row.cargo,
-            area: row.area
+            area: row.area,
+            activo: row.activo
         };
         
         // Alias para compatibilidad

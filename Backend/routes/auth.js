@@ -94,7 +94,8 @@ router.post('/login', async (req, res) => {
                 email: user.email,
                 rol: user.rol,
                 cargo: user.cargo,
-                area: user.area
+                area: user.area,
+                activo: user.activo
             }
         });
 
@@ -116,8 +117,12 @@ router.get('/verify', authenticateToken, (req, res) => {
         user: {
             id: req.user.id,
             nombre: req.user.nombre,
+            apellido: req.user.apellido,
             email: req.user.email,
-            rol: req.user.rol
+            rol: req.user.rol,
+            cargo: req.user.cargo,
+            area: req.user.area,
+            activo: req.user.activo
         }
     });
 });
@@ -143,8 +148,12 @@ router.post('/refresh', authenticateToken, (req, res) => {
             user: {
                 id: req.user.id,
                 nombre: req.user.nombre,
+                apellido: req.user.apellido,
                 email: req.user.email,
-                rol: req.user.rol
+                rol: req.user.rol,
+                cargo: req.user.cargo,
+                area: req.user.area,
+                activo: req.user.activo
             }
         });
 
