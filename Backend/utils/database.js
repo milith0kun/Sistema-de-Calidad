@@ -29,14 +29,10 @@ const db = new sqlite3.Database(dbPath, (err) => {
         console.error('Error al conectar con la base de datos:', err.message);
     } else {
         console.log('Conectado a la base de datos SQLite');
-        // Verificar que la tabla existe y tiene datos
-        db.get("SELECT COUNT(*) as count FROM camaras_frigorificas", (err, row) => {
-            if (err) {
-                console.error('Error verificando tabla camaras_frigorificas:', err.message);
-            } else {
-                console.log('Número de cámaras en la base de datos:', row.count);
-            }
-        });
+        // Nota: la tabla `camaras_frigorificas` es opcional en runtime.
+        // El backend puede usar un catálogo estático para evitar depender de esta tabla.
+        // Evitamos aquí una consulta que genere logs repetidos si la tabla no existe.
+        console.log('La tabla camaras_frigorificas es opcional; se utilizará catálogo estático si falta.');
     }
 });
 
