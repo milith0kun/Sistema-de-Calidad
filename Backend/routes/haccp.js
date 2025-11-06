@@ -1441,38 +1441,26 @@ router.post('/temperatura-camaras', authenticateToken, (req, res) => {
                 // Usar dbRaw directamente para evitar problemas con el wrapper
                 const { dbRaw } = require('../utils/database');
                 dbRaw.get('SELECT temperatura_minima, temperatura_maxima FROM camaras_frigorificas WHERE id = ?', [camara_id], (err, camara) => {
-                    console.log('Resultado de consulta SQL - err:', err, 'camara:', camara);
-                    // Si hay error consultando la tabla (por ejemplo: tabla inexistente), usar fallback
-                    if (err) {
-                        console.error('Error obteniendo cámara (usando fallback si aplica):', err);
-                        if (err.message && err.message.includes('no such table')) {
-                            const fallback = CAMARAS_FALLBACK[parseInt(camara_id)] || {
-                                id: camara_id,
-                                nombre: `Cámara ${camara_id}`,
-                                tipo: 'REFRIGERACION',
-                                temperatura_minima: 0.0,
-                                temperatura_maxima: 4.0
-                            };
-                            camara = fallback;
-                            console.warn('Usando datos de fallback para cámara:', JSON.stringify(camara));
-                        } else {
-                            return res.status(500).json({ success: false, error: 'Error al consultar información de la cámara' });
-                        }
-                    }
+                        // Normalizar camara_id a número
+                        const camaraIdNum = parseInt(camara_id);
 
-                    // Si no hay una fila en la tabla, usar fallback también
-                    if (!camara) {
-                        console.warn('Cámara no encontrada en DB. Usando fallback si existe. ID:', camara_id);
-                        const fallback = CAMARAS_FALLBACK[parseInt(camara_id)];
-                        if (fallback) {
-                            camara = fallback;
-                        } else {
-                            // Asumir rango genérico de refrigeración
-                            camara = { temperatura_minima: 0.0, temperatura_maxima: 4.0 };
+                        // Manejo de error y fallback: solamente loguear error si existe.
+                        if (err) {
+                            // Si la tabla no existe, usar fallback
+                            if (err.message && err.message.includes('no such table')) {
+                                console.warn('Tabla camaras_frigorificas no encontrada en DB. Usando fallback. ID:', camaraIdNum);
+                                camara = CAMARAS_FALLBACK[camaraIdNum] || { temperatura_minima: 0.0, temperatura_maxima: 4.0 };
+                            } else {
+                                console.error('Error inesperado al obtener cámara:', err);
+                                return res.status(500).json({ success: false, error: 'Error al consultar información de la cámara' });
+                            }
+                        } else if (!camara) {
+                            // No hubo error pero tampoco fila: usar fallback si existe
+                            console.info(`Cámara con ID ${camaraIdNum} no encontrada en la BD. Usando fallback si está disponible.`);
+                            camara = CAMARAS_FALLBACK[camaraIdNum] || { temperatura_minima: 0.0, temperatura_maxima: 4.0 };
                         }
-                    }
 
-                    console.log('Cámara usada para validación de rangos:', JSON.stringify(camara, null, 2));
+                        console.log('Cámara usada para validación de rangos:', JSON.stringify(camara, null, 2));
 
                     // Determinar qué temperatura y conformidad calcular según el turno
                     let temperatura_a_registrar, conformidad, campo_temperatura, campo_responsable_id, campo_responsable_nombre, campo_conformidad;
@@ -1597,6 +1585,8 @@ router.get('/temperatura-camaras', authenticateToken, (req, res) => {
     try {
         const { mes, anio, fecha, fecha_inicio, fecha_fin, camara_id, limite = 100 } = req.query;
 
+        const params = [];
+        // Intentamos primero la versión que hace JOIN con camaras_frigorificas
         let query = `
             SELECT t.*, c.nombre as camara_nombre, c.tipo as camara_tipo,
                    c.temperatura_minima, c.temperatura_maxima
@@ -1604,7 +1594,6 @@ router.get('/temperatura-camaras', authenticateToken, (req, res) => {
             JOIN camaras_frigorificas c ON t.camara_id = c.id
             WHERE 1=1
         `;
-        const params = [];
 
         // Prioridad 1: Filtrar por fecha específica (día)
         if (fecha) {
@@ -1641,18 +1630,67 @@ router.get('/temperatura-camaras', authenticateToken, (req, res) => {
 
         db.all(query, params, (err, registros) => {
             if (err) {
+                console.warn('Error obteniendo temperaturas con JOIN (posible ausencia de tabla camaras_frigorificas):', err && err.message);
+                // Si la tabla camaras_frigorificas no existe, obtener los registros sin el JOIN
+                if (err && err.message && err.message.includes('no such table')) {
+                    // Construir query alternativo sin JOIN
+                    let q2 = `SELECT t.* FROM control_temperatura_camaras t WHERE 1=1`;
+                    const params2 = [];
+
+                    if (fecha) {
+                        q2 += ' AND t.fecha = ?';
+                        params2.push(fecha);
+                    } else if (mes && anio) {
+                        const mesStr = String(mes).padStart(2, '0');
+                        q2 += ' AND strftime("%m", t.fecha) = ? AND strftime("%Y", t.fecha) = ?';
+                        params2.push(mesStr);
+                        params2.push(String(anio));
+                    } else if (fecha_inicio && fecha_fin) {
+                        q2 += ' AND t.fecha >= ? AND t.fecha <= ?';
+                        params2.push(fecha_inicio);
+                        params2.push(fecha_fin);
+                    } else if (fecha_inicio) {
+                        q2 += ' AND t.fecha >= ?';
+                        params2.push(fecha_inicio);
+                    } else if (fecha_fin) {
+                        q2 += ' AND t.fecha <= ?';
+                        params2.push(fecha_fin);
+                    }
+
+                    if (camara_id) {
+                        q2 += ' AND t.camara_id = ?';
+                        params2.push(camara_id);
+                    }
+
+                    q2 += ' ORDER BY t.fecha DESC LIMIT ?';
+                    params2.push(parseInt(limite));
+
+                    return db.all(q2, params2, (err2, registros2) => {
+                        if (err2) {
+                            console.error('Error al obtener temperaturas sin JOIN:', err2);
+                            return res.status(500).json({ success: false, error: 'Error al obtener temperaturas de cámaras' });
+                        }
+
+                        // Adjuntar datos de cámara desde fallback según camara_id
+                        const registrosConCamara = registros2.map(r => {
+                            const camFallback = CAMARAS_FALLBACK[parseInt(r.camara_id)] || { nombre: `Cámara ${r.camara_id}`, tipo: null, temperatura_minima: null, temperatura_maxima: null };
+                            return Object.assign({}, r, {
+                                camara_nombre: camFallback.nombre,
+                                camara_tipo: camFallback.tipo,
+                                temperatura_minima: camFallback.temperatura_minima,
+                                temperatura_maxima: camFallback.temperatura_maxima
+                            });
+                        });
+
+                        return res.json({ success: true, data: registrosConCamara, total: registrosConCamara.length });
+                    });
+                }
+
                 console.error('Error al obtener temperaturas de cámaras:', err);
-                return res.status(500).json({
-                    success: false,
-                    error: 'Error al obtener temperaturas de cámaras'
-                });
+                return res.status(500).json({ success: false, error: 'Error al obtener temperaturas de cámaras' });
             }
 
-            res.json({
-                success: true,
-                data: registros,
-                total: registros.length
-            });
+            res.json({ success: true, data: registros, total: registros.length });
         });
 
     } catch (error) {
