@@ -55,11 +55,22 @@ const authenticateToken = async (req, res, next) => {
 
         next();
     } catch (err) {
-        console.error('Error en authenticateToken:', err);
-        return res.status(403).json({
+        // Manejar expiración de token explícitamente para reducir ruido en logs
+        if (err && err.name === 'TokenExpiredError') {
+            console.warn('Token expirado en authenticateToken. expiredAt:', err.expiredAt);
+            return res.status(401).json({
+                success: false,
+                error: 'Token expirado',
+                message: 'Su sesión ha expirado. Por favor inicie sesión de nuevo.'
+            });
+        }
+
+        // Errores inesperados: loguear y devolver 401
+        console.error('Error en authenticateToken:', err && err.message ? err.message : err);
+        return res.status(401).json({
             success: false,
             error: 'Token inválido',
-            message: 'El token proporcionado no es válido o ha expirado'
+            message: 'El token proporcionado no es válido'
         });
     }
 };
