@@ -130,24 +130,36 @@ class FichadoRepository /* @Inject constructor */ (
      */
     suspend fun obtenerHistorial(token: String): Flow<Result<List<FichadoHistorial>>> = flow {
         try {
+            android.util.Log.d("FichadoRepository", "📋 Iniciando petición de historial")
             val bearerToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
+            android.util.Log.d("FichadoRepository", "🔑 Token preparado: ${bearerToken.take(20)}...")
+            
             val response = apiService.obtenerHistorial(bearerToken)
+            android.util.Log.d("FichadoRepository", "📡 Respuesta recibida - Code: ${response.code()}, Message: ${response.message()}")
             
             if (response.isSuccessful) {
                 val historialResponse = response.body()
+                android.util.Log.d("FichadoRepository", "📄 Response body: $historialResponse")
+                
                 if (historialResponse != null) {
                     if (historialResponse.success && historialResponse.data != null) {
+                        android.util.Log.d("FichadoRepository", "✅ Historial obtenido: ${historialResponse.data.size} registros")
                         emit(Result.success(historialResponse.data))
                     } else {
+                        android.util.Log.w("FichadoRepository", "⚠️ Respuesta no exitosa: ${historialResponse.error}")
                         emit(Result.failure(Exception(historialResponse.error ?: "Error al obtener historial")))
                     }
                 } else {
+                    android.util.Log.e("FichadoRepository", "❌ Respuesta vacía del servidor")
                     emit(Result.failure(Exception("Respuesta vacía del servidor")))
                 }
             } else {
+                android.util.Log.e("FichadoRepository", "❌ Error HTTP: ${response.code()} - ${response.message()}")
+                android.util.Log.e("FichadoRepository", "❌ Error body: ${response.errorBody()?.string()}")
                 emit(Result.failure(Exception("Error HTTP: ${response.code()} - ${response.message()}")))
             }
         } catch (e: Exception) {
+            android.util.Log.e("FichadoRepository", "💥 Excepción en obtenerHistorial: ${e.message}", e)
             emit(Result.failure(e))
         }
     }

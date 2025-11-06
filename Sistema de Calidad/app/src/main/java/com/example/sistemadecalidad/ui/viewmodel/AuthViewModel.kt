@@ -61,7 +61,7 @@ class AuthViewModel /* @Inject constructor( */ (
         viewModelScope.launch {
             isVerifying = true
             _isInitializing.value = true
-            
+
             try {
                 android.util.Log.d("AuthViewModel", "🔍 Verificando estado de autenticación...")
 
@@ -72,32 +72,55 @@ class AuthViewModel /* @Inject constructor( */ (
                     // Obtener datos guardados
                     val savedUser = preferencesManager.getUser().first()
                     val token = preferencesManager.getToken().first()
-                    
+
                     android.util.Log.d("AuthViewModel", "👤 Usuario guardado encontrado: ${savedUser?.nombreCompleto}")
 
                     if (savedUser != null && token != null) {
-                        android.util.Log.d("AuthViewModel", "🔐 Verificando validez del token antes de establecer usuario...")
-                        
-                        // CAMBIO CLAVE: Verificar token ANTES de establecer el usuario en la UI
-                        authRepository.verifyToken(token).collect { result ->
-                            result.fold(
-                                onSuccess = { verifiedUser ->
-                                    android.util.Log.d("AuthViewModel", "✅ Token válido, estableciendo usuario verificado")
-                                    _currentUser.value = verifiedUser
-                                    _isAuthenticated.value = true
-                                    
-                                    // Actualizar datos del usuario si han cambiado
-                                    if (verifiedUser != savedUser) {
-                                        preferencesManager.saveUser(verifiedUser)
-                                        android.util.Log.d("AuthViewModel", "🔄 Datos de usuario actualizados")
-                                    }
-                                },
-                                onFailure = { error ->
-                                    android.util.Log.w("AuthViewModel", "❌ Token inválido: ${error.message}")
-                                    // Token inválido, limpiar todo sin mostrar usuario temporal
-                                    logout()
+                        // OPCIÓN RÁPIDA: Establecer usuario guardado INMEDIATAMENTE para UI instantánea
+                        _currentUser.value = savedUser
+                        _isAuthenticated.value = true
+                        android.util.Log.d("AuthViewModel", "⚡ Usuario establecido inmediatamente desde caché")
+
+                        // Marcar inicialización como completada INMEDIATAMENTE
+                        hasInitialized = true
+                        isVerifying = false
+                        _isInitializing.value = false
+                        android.util.Log.d("AuthViewModel", "🏁 Inicialización completada - UI lista")
+
+                        // Luego verificar token en background (en nueva coroutine para no bloquear)
+                        viewModelScope.launch {
+                            try {
+                                android.util.Log.d("AuthViewModel", "🔐 Verificando validez del token en background...")
+                                authRepository.verifyToken(token).collect { result ->
+                                    result.fold(
+                                        onSuccess = { verifiedUser ->
+                                            android.util.Log.d("AuthViewModel", "✅ Token válido, usuario verificado")
+
+                                            // SOLO actualizar si los datos cambiaron REALMENTE
+                                            if (verifiedUser.id != savedUser.id ||
+                                                verifiedUser.nombre != savedUser.nombre ||
+                                                verifiedUser.apellido != savedUser.apellido ||
+                                                verifiedUser.email != savedUser.email ||
+                                                verifiedUser.rol != savedUser.rol ||
+                                                verifiedUser.cargo != savedUser.cargo) {
+
+                                                _currentUser.value = verifiedUser
+                                                preferencesManager.saveUser(verifiedUser)
+                                                android.util.Log.d("AuthViewModel", "🔄 Datos de usuario actualizados (cambios detectados)")
+                                            } else {
+                                                android.util.Log.d("AuthViewModel", "✓ Usuario verificado - sin cambios")
+                                            }
+                                        },
+                                        onFailure = { error ->
+                                            android.util.Log.w("AuthViewModel", "❌ Token inválido: ${error.message}")
+                                            // Token inválido, limpiar todo
+                                            logout()
+                                        }
+                                    )
                                 }
-                            )
+                            } catch (e: Exception) {
+                                android.util.Log.e("AuthViewModel", "❌ Error verificando token en background: ${e.message}")
+                            }
                         }
                     } else {
                         android.util.Log.w("AuthViewModel", "⚠️ Datos incompletos (usuario o token faltante), cerrando sesión")

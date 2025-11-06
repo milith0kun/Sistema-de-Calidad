@@ -19,25 +19,12 @@ class HaccpApplication : Application() {
     
     override fun onCreate() {
         super.onCreate()
-        
-        // Inicializar configuración de red (AWS Production por defecto)
-        initializeNetworkConfig()
-        
+
+        // Log de configuración de red (URL fija en BuildConfig)
+        Log.d(TAG, "🔧 Servidor configurado: ${NetworkConfig.AWS_PRODUCTION_URL}")
+
         // Inicializar sistema de notificaciones
         initializeNotifications()
-    }
-    
-    /**
-     * Inicializa la configuración de red con AWS Production
-     */
-    private fun initializeNetworkConfig() {
-        try {
-            Log.d(TAG, "🔧 Inicializando configuración de red...")
-            NetworkConfig.initialize(this)
-            Log.d(TAG, "✅ Red configurada: ${NetworkConfig.getCurrentUrl(this)}")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Error inicializando red: ${e.message}")
-        }
     }
     
     /**

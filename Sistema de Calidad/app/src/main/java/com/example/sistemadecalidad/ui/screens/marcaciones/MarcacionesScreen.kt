@@ -215,19 +215,12 @@ fun MarcacionesScreen(
     // Mostrar mensaje de éxito y actualizar estado
     LaunchedEffect(fichadoUiState.isEntradaExitosa, fichadoUiState.isSalidaExitosa) {
         if (fichadoUiState.isEntradaExitosa || fichadoUiState.isSalidaExitosa) {
-            android.util.Log.d("MarcacionesScreen", "Fichado exitoso detectado - Actualizando datos")
+            android.util.Log.d("MarcacionesScreen", "✅ Fichado exitoso detectado - Los datos se actualizarán automáticamente")
             
-            // Primer delay para asegurar que el ViewModel haya actualizado
-            delay(1500)
-            
-            // Recargar datos después de una marcación exitosa
-            android.util.Log.d("MarcacionesScreen", "Recargando dashboard y historial")
-            fichadoViewModel.obtenerDashboardHoy()
-            fichadoViewModel.obtenerHistorial()
-            
-            // Segundo delay antes de limpiar estados
-            delay(2000)
-            android.util.Log.d("MarcacionesScreen", "Limpiando estados de éxito")
+            // El ViewModel ya invalida el caché y actualiza automáticamente
+            // Solo necesitamos limpiar los estados después de un delay
+            delay(3000)
+            android.util.Log.d("MarcacionesScreen", "🧹 Limpiando estados de éxito")
             fichadoViewModel.resetSuccessStates()
         }
     }

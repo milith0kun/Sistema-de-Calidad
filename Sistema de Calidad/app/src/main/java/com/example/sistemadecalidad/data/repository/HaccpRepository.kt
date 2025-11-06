@@ -259,11 +259,13 @@ class HaccpRepository(
     ): Result<HaccpResponse> = withContext(Dispatchers.IO) {
         try {
             val bearerToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
+            // Construir payload por turno: el backend espera temperatura_manana o temperatura_tarde
             val request = TemperaturaCamarasRequest(
                 camaraId = camaraId,
                 fecha = fecha,
                 turno = turno,
-                temperatura = temperatura,
+                temperaturaManana = if (turno == "manana") temperatura else null,
+                temperaturaTarde = if (turno == "tarde") temperatura else null,
                 accionesCorrectivas = accionesCorrectivas
             )
             
@@ -315,18 +317,19 @@ class HaccpRepository(
      */
     suspend fun verificarRegistroTemperaturaCamara(
         token: String,
-        camaraId: Int
+        camaraId: Int,
+        turno: String? = null
     ): Result<VerificacionTemperaturaResponse> = withContext(Dispatchers.IO) {
         try {
             val bearerToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
-            
-            Log.d(TAG, "Verificando registro de temperatura para cámara: $camaraId")
-            val response = apiService.verificarRegistroTemperaturaCamara(bearerToken, camaraId)
-            
+
+            Log.d(TAG, "Verificando registro de temperatura para cámara: $camaraId, turno: $turno")
+            val response = apiService.verificarRegistroTemperaturaCamara(bearerToken, camaraId, turno)
+
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!
                 if (body.success) {
-                    Log.d(TAG, "✅ Verificación completada: existe_registro=${body.existeRegistro}")
+                    Log.d(TAG, "✅ Verificación completada: existe_registro=${body.existeRegistro}, puede_registrar=${body.puedeRegistrar}")
                     Result.success(body)
                 } else {
                     Log.e(TAG, "❌ Error en verificación: ${body.error}")

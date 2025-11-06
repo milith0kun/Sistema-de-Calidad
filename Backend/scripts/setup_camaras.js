@@ -71,12 +71,16 @@ function setupCamaras() {
 }
 
 function insertarCamaras() {
+    // CONFIGURACIÓN: 3 CÁMARAS (2 Refrigeración + 1 Congelación)
+    // Rangos según normas HACCP:
+    // - Refrigeración: 1°C a 4°C
+    // - Congelación: menor a -18°C
     const camaras = [
         {
             id: 1,
             nombre: 'REFRIGERACIÓN 1',
             tipo: 'REFRIGERACION',
-            temperatura_minima: 0.0,
+            temperatura_minima: 1.0,
             temperatura_maxima: 4.0,
             ubicacion: 'Área de almacenamiento principal',
             descripcion: 'Cámara de refrigeración para productos frescos'
@@ -85,8 +89,8 @@ function insertarCamaras() {
             id: 2,
             nombre: 'CONGELACIÓN 1',
             tipo: 'CONGELACION',
-            temperatura_minima: -18.0,
-            temperatura_maxima: -15.0,
+            temperatura_minima: -25.0,
+            temperatura_maxima: -18.0,
             ubicacion: 'Área de congelados',
             descripcion: 'Cámara de congelación para productos congelados'
         },
@@ -94,7 +98,7 @@ function insertarCamaras() {
             id: 3,
             nombre: 'REFRIGERACIÓN 2',
             tipo: 'REFRIGERACION',
-            temperatura_minima: 0.0,
+            temperatura_minima: 1.0,
             temperatura_maxima: 4.0,
             ubicacion: 'Área de almacenamiento secundaria',
             descripcion: 'Cámara de refrigeración adicional'

@@ -387,6 +387,7 @@ class HaccpViewModel(
      */
     fun verificarRegistroTemperaturaCamara(
         camaraId: Int,
+        turno: String? = null,
         onResult: (Boolean, String?) -> Unit
     ) {
         viewModelScope.launch {
@@ -398,23 +399,20 @@ class HaccpViewModel(
 
                 val result = haccpRepository.verificarRegistroTemperaturaCamara(
                     token = token,
-                    camaraId = camaraId
+                    camaraId = camaraId,
+                    turno = turno
                 )
-                
+
                 result.onSuccess { response ->
-                    if (response.existeRegistro) {
-                        val mensaje = response.data?.let { registro ->
-                            "Ya existe un registro para esta cámara el día de hoy.\n" +
-                            "Registrado por: ${registro.responsable ?: "Usuario desconocido"}\n" +
-                            "Fecha: ${registro.fecha}\n" +
-                            "Temperatura mañana: ${registro.temperaturaManana ?: "No registrada"}°C\n" +
-                            "Temperatura tarde: ${registro.temperaturaTarde ?: "No registrada"}°C"
-                        } ?: "Ya existe un registro para esta cámara el día de hoy"
-                        onResult(true, mensaje)
-                    } else {
+                    // Si puede registrar, no hay bloqueo
+                    if (response.puedeRegistrar) {
                         onResult(false, null)
+                    } else {
+                        // No puede registrar, mostrar mensaje
+                        val mensaje = response.mensaje ?: response.message ?: "Este turno ya fue registrado"
+                        onResult(true, mensaje)
                     }
-                    Log.d(TAG, "✅ Verificación completada: existe=${response.existeRegistro}")
+                    Log.d(TAG, "✅ Verificación completada: existe=${response.existeRegistro}, puede_registrar=${response.puedeRegistrar}")
                 }.onFailure { error ->
                     onResult(false, "Error verificando registro: ${error.message}")
                     Log.e(TAG, "❌ Error en verificación", error)

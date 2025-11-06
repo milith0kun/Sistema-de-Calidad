@@ -161,8 +161,8 @@ class SimpleNotificationWorker(
      * Crea una instancia de FichadoRepository usando NetworkConfig
      */
     private fun createFichadoRepository(): FichadoRepository {
-        // Usar la URL del NetworkConfig (AWS Production por defecto)
-        val baseUrl = NetworkConfig.getCurrentUrl(applicationContext)
+        // Usar la URL de AWS Production
+        val baseUrl = NetworkConfig.AWS_PRODUCTION_URL
 
         android.util.Log.d(TAG, "🌐 Usando URL del servidor: $baseUrl")
 

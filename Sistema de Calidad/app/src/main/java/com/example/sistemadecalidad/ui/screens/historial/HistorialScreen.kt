@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.CheckCircle
@@ -63,9 +64,16 @@ fun HistorialScreen(
     val currentUser by (authViewModel?.currentUser?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) })
     val showTokenExpiredDialog by fichadoViewModel.authStateManager.showTokenExpiredDialog.collectAsStateWithLifecycle()
     
-    // Inicializar datos al cargar la pantalla
+    // Función para recargar historial manualmente
+    val recargarHistorial = {
+        android.util.Log.d("HistorialScreen", "🔄 Recarga manual solicitada - Forzando actualización")
+        fichadoViewModel.obtenerHistorial(forceRefresh = true)
+    }
+    
+    // Cargar historial solo si es necesario (con caché inteligente)
     LaunchedEffect(Unit) {
-        fichadoViewModel.obtenerHistorial()
+        android.util.Log.d("HistorialScreen", "🔄 Verificando si necesita cargar historial (con caché inteligente)")
+        fichadoViewModel.obtenerHistorial() // Usa caché automáticamente
     }
     
     // Observar eventos de token expirado
@@ -206,7 +214,26 @@ fun HistorialScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    // Botón de recarga
+                    IconButton(
+                        onClick = recargarHistorial,
+                        modifier = Modifier.size(32.dp),
+                        enabled = !uiState.isLoadingHistorial
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Recargar historial",
+                            tint = if (uiState.isLoadingHistorial) 
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                            else 
+                                MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(4.dp))
                     
                     // Menú de opciones
                     Box {
@@ -270,6 +297,58 @@ fun HistorialScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
                             )
+                        }
+                    }
+                }
+                
+                uiState.errorMessage != null -> {
+                    // Estado de error
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.EventNote,
+                                contentDescription = "Error",
+                                modifier = Modifier.size(80.dp),
+                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
+                            )
+                            
+                            Spacer(modifier = Modifier.height(24.dp))
+                            
+                            Text(
+                                text = "Error al cargar historial",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.error,
+                                textAlign = TextAlign.Center
+                            )
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Text(
+                                text = uiState.errorMessage ?: "Error desconocido",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            Button(
+                                onClick = {
+                                    fichadoViewModel.clearError()
+                                    recargarHistorial()
+                                }
+                            ) {
+                                Text("Reintentar")
+                            }
                         }
                     }
                 }

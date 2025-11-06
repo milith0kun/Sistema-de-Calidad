@@ -26,7 +26,7 @@ npm start
 
 # Server auto-detects environment (AWS/Local)
 # - Local: http://localhost:3000/api
-# - AWS Production: http://18.118.212.247:3000/api
+# - AWS Production: http://18.216.180.19:3000/api
 ```
 
 **Key Configuration**:
@@ -190,7 +190,7 @@ Services (Axios API calls)
 
 ## API Communication
 
-**Base URL**: `http://18.118.212.247:3000/api` (AWS) or `http://localhost:3000/api` (local)
+**Base URL**: `http://18.216.180.19:3000/api` (AWS) or `http://localhost:3000/api` (local)
 
 **Authentication**: JWT Bearer Token in Authorization header
 
@@ -220,11 +220,11 @@ GET    /api/configuracion/gps               # GPS configuration
 
 ## Deployment (AWS EC2)
 
-**Production Server**: AWS EC2 at `18.118.212.247` (SSH: `ubuntu@18.118.212.247` with `Wino.pem` key)
+**Production Server**: AWS EC2 at `18.216.180.19` (SSH: `ubuntu@18.216.180.19` with `Wino.pem` key)
 
 **Backend** (PM2):
 ```bash
-ssh -i "Wino.pem" ubuntu@18.118.212.247
+ssh -i "Wino.pem" ubuntu@18.216.180.19
 cd ~/SistemaWino
 git pull
 pm2 restart ecosystem.config.js

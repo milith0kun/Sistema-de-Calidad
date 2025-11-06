@@ -75,11 +75,12 @@ fun DashboardScreen(
         }
     }
     
-    // Inicializar datos del dashboard solo cuando el usuario esté cargado
-    LaunchedEffect(currentUser, isInitializing) {
-        if (!isInitializing && currentUser != null) {
-            android.util.Log.d("DashboardScreen", "Usuario cargado, inicializando datos del dashboard")
-            fichadoViewModel.inicializarDatos()
+    // Inicializar datos del dashboard solo UNA VEZ cuando el usuario esté cargado
+    LaunchedEffect(isInitializing) {
+        if (!isInitializing) {
+            android.util.Log.d("DashboardScreen", "✅ Inicialización completada - Dashboard listo (datos ya cargados automáticamente)")
+            // Los datos ya se cargan automáticamente en FichadoViewModel.init con caché inteligente
+            // No necesitamos hacer llamadas adicionales aquí
         }
     }
     
@@ -504,7 +505,10 @@ fun DashboardScreen(
                             
                             // Botón de actualizar
                             IconButton(
-                                onClick = { fichadoViewModel.inicializarDatos() }
+                                onClick = { 
+                                    android.util.Log.d("DashboardScreen", "🔄 Forzando actualización manual del dashboard")
+                                    fichadoViewModel.obtenerDashboardHoy(forceRefresh = true) 
+                                }
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Refresh,

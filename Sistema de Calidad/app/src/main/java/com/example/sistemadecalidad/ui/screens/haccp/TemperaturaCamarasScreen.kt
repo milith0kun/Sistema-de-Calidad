@@ -8,9 +8,11 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.sistemadecalidad.data.local.PreferencesManager
+import com.example.sistemadecalidad.data.api.Camara
 import com.example.sistemadecalidad.ui.viewmodel.HaccpViewModel
 import com.example.sistemadecalidad.utils.TimeUtils
 import java.util.Calendar
@@ -22,15 +24,40 @@ fun TemperaturaCamarasScreen(
     preferencesManager: PreferencesManager,
     onNavigateBack: () -> Unit
 ) {
-    var selectedCamara by remember { mutableStateOf(0) } // 0 = Ref 1, 1 = Ref 2, 2 = Cong 1
-    
-    val camaras = listOf(
-        CamaraInfo(1, "REFRIGERACIÓN 1", "REFRIGERACION", 1.0, 4.0),
-        CamaraInfo(2, "CONGELACIÓN 1", "CONGELACION", -18.0, -15.0),
-        CamaraInfo(3, "CONSERVACIÓN 1", "CONSERVACION", 1.0, 4.0),
-        CamaraInfo(4, "REFRIGERACIÓN 2", "REFRIGERACION", 1.0, 4.0),
-        CamaraInfo(5, "CONGELACIÓN 2", "CONGELACION", -18.0, -15.0)
-    )
+    // Índice de la pestaña seleccionada
+    var selectedCamara by remember { mutableStateOf(0) }
+
+    // CONFIGURACIÓN ESTÁTICA: 3 CÁMARAS (2 Refrigeración + 1 Congelación)
+    // Las cámaras están hardcodeadas en la app (no dependen de la base de datos)
+    // Esto es correcto porque las cámaras físicas no cambian
+    val camaras = remember {
+        listOf(
+            Camara(
+                id = 1,
+                nombre = "REFRIGERACIÓN 1",
+                tipo = "REFRIGERACION",
+                temperaturaMinima = 0.0,
+                temperaturaMaxima = 4.0,
+                ubicacion = "Área de almacenamiento principal"
+            ),
+            Camara(
+                id = 2,
+                nombre = "CONGELACIÓN 1",
+                tipo = "CONGELACION",
+                temperaturaMinima = -25.0,
+                temperaturaMaxima = -18.0,
+                ubicacion = "Área de congelados"
+            ),
+            Camara(
+                id = 3,
+                nombre = "REFRIGERACIÓN 2",
+                tipo = "REFRIGERACION",
+                temperaturaMinima = 0.0,
+                temperaturaMaxima = 4.0,
+                ubicacion = "Área de almacenamiento secundaria"
+            )
+        )
+    }
     
     Scaffold(
         topBar = {
@@ -59,7 +86,7 @@ fun TemperaturaCamarasScreen(
                     )
                 }
             }
-            
+
             // Formulario de la cámara seleccionada
             CamaraFormulario(
                 camara = camaras[selectedCamara],
@@ -73,7 +100,7 @@ fun TemperaturaCamarasScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CamaraFormulario(
-    camara: CamaraInfo,
+    camara: Camara,
     haccpViewModel: HaccpViewModel,
     preferencesManager: PreferencesManager
 ) {
@@ -87,6 +114,8 @@ private fun CamaraFormulario(
     
     // Detectar turno automáticamente (mañana: 00:00-12:00, tarde: 12:00-00:00)
     val turnoActual = if (horaActual < 12) "mañana" else "tarde"
+    // Mapeo para backend: el backend espera "manana" (sin ñ) o "tarde"
+    val turnoParam = if (turnoActual == "mañana") "manana" else "tarde"
     val horaDisplay = if (turnoActual == "mañana") "08:00" else "16:00"
     
     // Obtener usuario logueado
@@ -98,8 +127,12 @@ private fun CamaraFormulario(
     var mensajeRegistroExistente by remember { mutableStateOf<String?>(null) }
     
     // Verificar si ya existe un registro para esta cámara y turno hoy
-    LaunchedEffect(camara.id, turnoActual) {
-        haccpViewModel.verificarRegistroTemperaturaCamara(camara.id) { existe, mensaje ->
+    // Usar turnoParam para evitar error de parámetro inválido en backend
+    LaunchedEffect(camara.id, turnoParam) {
+        haccpViewModel.verificarRegistroTemperaturaCamara(
+            camaraId = camara.id,
+            turno = turnoParam
+        ) { existe, mensaje ->
             verificacionRealizada = true
             registroExistente = existe
             mensajeRegistroExistente = mensaje
@@ -107,18 +140,11 @@ private fun CamaraFormulario(
     }
     
     // Generar lista de temperaturas según tipo de cámara
+    // Incrementos de 0.1°C para ambos tipos
     val temperaturasDisponibles = remember(camara) {
-        if (camara.tipo == "REFRIGERACION") {
-            // Para refrigeración: 1°C a 4°C con incrementos de 0.1°C
-            val min = (camara.tempMin * 10).toInt()
-            val max = (camara.tempMax * 10).toInt()
-            (min..max).map { it / 10.0 }
-        } else {
-            // Para congelación: -25°C a -18°C con incrementos de 0.1°C
-            val min = (-25.0 * 10).toInt()
-            val max = (-18.0 * 10).toInt()
-            (min..max).map { it / 10.0 }
-        }
+        val min = (camara.temperaturaMinima * 10).toInt()
+        val max = (camara.temperaturaMaxima * 10).toInt()
+        (min..max).map { it / 10.0 }
     }
     
     // Estado para la temperatura del turno actual
@@ -234,9 +260,9 @@ private fun CamaraFormulario(
                 Text("Frecuencia: Todos los días, dos veces al día", style = MaterialTheme.typography.bodySmall)
                 Text(
                     text = if (camara.tipo == "REFRIGERACION") 
-                        "Rango de temperatura: ${camara.tempMin}°C a ${camara.tempMax}°C"
+                        "Rango de temperatura: ${camara.temperaturaMinima}°C a ${camara.temperaturaMaxima}°C"
                     else 
-                        "Rango de temperatura: < ${camara.tempMax}°C",
+                        "Rango de temperatura: < ${camara.temperaturaMaxima}°C",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium
                 )
@@ -266,13 +292,13 @@ private fun CamaraFormulario(
                         placeholder = { Text("Seleccionar temperatura") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTemperatura) },
                         modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
-                        supportingText = { 
+                        supportingText = {
                             Text(
-                                if (camara.tipo == "REFRIGERACION") 
-                                    "Rango permitido: ${camara.tempMin}°C a ${camara.tempMax}°C (variación 0.1°C)"
-                                else 
-                                    "Debe ser menor a ${camara.tempMax}°C (variación 0.1°C)"
-                            ) 
+                                if (camara.tipo == "REFRIGERACION")
+                                    "Rango permitido: ${camara.temperaturaMinima}°C a ${camara.temperaturaMaxima}°C (variación 0.1°C)"
+                                else
+                                    "Debe ser menor a ${camara.temperaturaMaxima}°C (variación 0.1°C)"
+                            )
                         }
                     )
                     ExposedDropdownMenu(
@@ -394,7 +420,8 @@ private fun CamaraFormulario(
                     haccpViewModel.registrarTemperaturaCamaras(
                         camaraId = camara.id,
                         fecha = fecha,
-                        turno = turnoActual,
+                        // Enviar turno normalizado al backend ("manana"/"tarde")
+                        turno = turnoParam,
                         temperatura = temperatura!!,
                         accionesCorrectivas = accionesCorrectivas.ifEmpty { null }
                     )
@@ -443,11 +470,15 @@ private fun CamaraFormulario(
             },
             confirmButton = {
                 TextButton(
-                    onClick = { 
+                    onClick = {
                         showSuccessDialog = false
                         haccpViewModel.clearMessages()
                         // Recargar la verificación para actualizar el estado
-                        haccpViewModel.verificarRegistroTemperaturaCamara(camara.id) { _, _ ->
+                        haccpViewModel.verificarRegistroTemperaturaCamara(
+                            camaraId = camara.id,
+                            // Usar turnoParam para mantener consistencia con backend
+                            turno = turnoParam
+                        ) { _, _ ->
                             // La verificación se actualizará automáticamente por el LaunchedEffect
                         }
                     }
@@ -459,16 +490,8 @@ private fun CamaraFormulario(
     }
 }
 
-/**
- * Data class para información de cámara
- */
-private data class CamaraInfo(
-    val id: Int,
-    val nombre: String,
-    val tipo: String, // REFRIGERACION, CONGELACION
-    val tempMin: Double,
-    val tempMax: Double
-)
+// Eliminado CamaraInfo: ahora usamos el modelo Camara cargado desde el backend,
+// asegurando IDs y rangos correctos según la tabla camaras_frigorificas.
 
 /**
  * Función helper para obtener el nombre del mes

@@ -2,6 +2,7 @@ package com.example.sistemadecalidad.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -63,10 +64,14 @@ fun HaccpNavigation(
     // Utils
     val locationManager = LocationManager(context)
 
-    // ViewModels
-    val authViewModel = AuthViewModel(authRepository, preferencesManager, authStateManager, context)
-    val fichadoViewModel = FichadoViewModel(fichadoRepository, preferencesManager, locationManager, authStateManager)
-    val haccpViewModel = com.example.sistemadecalidad.ui.viewmodel.HaccpViewModel(haccpRepository, preferencesManager)
+    // ViewModels - IMPORTANTE: Usar remember para evitar recrear instancias en cada recomposición
+    // Esto previene que la UI se quede en 'Inicializando' y que los estados se pierdan
+    val authViewModel = remember { AuthViewModel(authRepository, preferencesManager, authStateManager, context) }
+    val fichadoViewModel = remember { FichadoViewModel(fichadoRepository, preferencesManager, locationManager, authStateManager) }
+    val haccpViewModel = remember { com.example.sistemadecalidad.ui.viewmodel.HaccpViewModel(haccpRepository, preferencesManager) }
+
+    // Obtener el usuario actual desde el AuthViewModel (fuente única de verdad)
+    val currentUser = authViewModel.currentUser.collectAsState()
 
     // Manejar navegación desde notificaciones
     val isAuthenticated = authViewModel.isAuthenticated.collectAsState()
@@ -264,11 +269,11 @@ fun HaccpNavigation(
         composable(NavigationDestinations.RECEPCION_MERCADERIA) {
             RecepcionMercaderiaScreen(
                 haccpViewModel = haccpViewModel,
-                usuario = preferencesManager.getUser().collectAsState(initial = null).value,
+                usuario = currentUser.value,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-        
+
         composable(NavigationDestinations.CONTROL_COCCION) {
             ControlCoccionScreen(
                 haccpViewModel = haccpViewModel,
@@ -276,7 +281,7 @@ fun HaccpNavigation(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-        
+
         composable(NavigationDestinations.LAVADO_FRUTAS) {
             LavadoFrutasScreen(
                 haccpViewModel = haccpViewModel,
@@ -284,7 +289,7 @@ fun HaccpNavigation(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-        
+
         composable(NavigationDestinations.LAVADO_MANOS) {
             LavadoManosScreen(
                 haccpViewModel = haccpViewModel,
@@ -292,7 +297,7 @@ fun HaccpNavigation(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-        
+
         composable(NavigationDestinations.TEMPERATURA_CAMARAS) {
             TemperaturaCamarasScreen(
                 haccpViewModel = haccpViewModel,
@@ -300,7 +305,7 @@ fun HaccpNavigation(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-        
+
         composable(NavigationDestinations.RECEPCION_ABARROTES) {
             RecepcionAbarrotesScreen(
                 haccpViewModel = haccpViewModel,

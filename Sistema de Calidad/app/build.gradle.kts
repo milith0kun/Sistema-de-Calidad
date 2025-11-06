@@ -22,13 +22,8 @@ android {
             useSupportLibrary = true
         }
 
-        // Nombre profesional para el APK
-        setProperty("archivesBaseName", "SistemaHACCP-v${versionName}")
-
-        // BuildConfig fields para URLs configurables
-        buildConfigField("String", "BASE_URL_AWS_PRIMARY", "\"http://18.216.180.19:3000/api/\"")
-        buildConfigField("String", "BASE_URL_AWS_SECONDARY", "\"http://18.118.212.247:3000/api/\"")
-        buildConfigField("String", "BASE_URL_LOCAL", "\"http://192.168.1.100:3000/api/\"")
+        // URL del servidor AWS EC2 - Producción
+        buildConfigField("String", "BASE_URL_AWS", "\"http://18.216.180.19:3000/api/\"")
 
         // Soporte para múltiples arquitecturas de dispositivos
         ndk {
@@ -82,6 +77,11 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+}
+
+// Nombre profesional para el APK
+base {
+    archivesName.set("SistemaHACCP-v${android.defaultConfig.versionName}")
 }
 
 dependencies {

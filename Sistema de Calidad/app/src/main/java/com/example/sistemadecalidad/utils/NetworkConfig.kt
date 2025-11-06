@@ -1,30 +1,16 @@
 package com.example.sistemadecalidad.utils
 
-import android.content.Context
-import android.content.SharedPreferences
-import android.util.Log
-import com.example.sistemadecalidad.data.api.NetworkModule
-import com.example.sistemadecalidad.data.api.AutoNetworkDetector
-import com.example.sistemadecalidad.data.api.ConnectionType
-
 /**
- * Utilidad para gestionar la configuración de red de la aplicación
- * Permite cambiar dinámicamente la URL del servidor según el entorno
- * Sincronizado con especificaciones del backend HACCP
+ * Configuración de red de la aplicación
+ * URL fija del servidor AWS EC2 en producción
  */
 object NetworkConfig {
     
-    private const val PREFS_NAME = "network_config"
-    private const val KEY_SERVER_URL = "server_url"
-    private const val KEY_ENVIRONMENT = "environment"
-    
-    val ENVIRONMENTS = mapOf(
-        "aws_production" to "http://18.216.180.19:3000/api/", // AWS Producción (EC2)
-        "local_development" to "http://localhost:3000/api/" // Servidor local
-    )
-    
-    // URL por defecto: AWS Producción (EC2)
-    const val DEFAULT_BASE_URL = "http://18.216.180.19:3000/api/"
+    // URL del servidor AWS EC2 - Producción
+    const val AWS_PRODUCTION_URL = "http://18.216.180.19:3000/api/"
+
+    // URL por defecto
+    const val DEFAULT_BASE_URL = AWS_PRODUCTION_URL
     
     // Endpoints principales del backend HACCP según especificaciones
     object Endpoints {
@@ -101,143 +87,9 @@ object NetworkConfig {
     }
     
     /**
-     * Inicializa la configuración de red
-     * Por defecto usa AWS Production en dispositivos reales
+     * Obtiene la URL actual del servidor - siempre AWS Production
      */
-    fun initialize(context: Context) {
-        // Limpiar cualquier configuración obsoleta
-        clearSavedConfiguration(context)
-        
-        // Siempre usar la configuración por defecto actualizada: AWS Producción
-        val awsUrl = ENVIRONMENTS["aws_production"] ?: DEFAULT_BASE_URL
-        setEnvironment(context, "aws_production")
-        Log.d("NetworkConfig", "Usando servidor AWS por defecto: $awsUrl")
+    fun getCurrentUrl(): String {
+        return DEFAULT_BASE_URL
     }
-    
-    /**
-     * Configura el entorno del servidor
-     */
-    fun setEnvironment(context: Context, environment: String) {
-        val prefs = getPreferences(context)
-        prefs.edit()
-            .putString(KEY_ENVIRONMENT, environment)
-            .remove(KEY_SERVER_URL) // Limpiar URL personalizada
-            .apply()
-        
-        Log.d("NetworkConfig", "🌐 Entorno establecido: $environment")
-    }
-    
-    /**
-     * Configura una URL personalizada
-     */
-    fun setCustomUrl(context: Context, url: String) {
-        val prefs = getPreferences(context)
-        prefs.edit()
-            .putString(KEY_SERVER_URL, url)
-            .remove(KEY_ENVIRONMENT) // Limpiar entorno predefinido
-            .apply()
-        
-        Log.d("NetworkConfig", "🔧 URL personalizada establecida: $url")
-    }
-    
-    /**
-     * Obtiene la URL actual del servidor
-     */
-    fun getCurrentUrl(context: Context): String {
-        val customUrl = getCustomUrl(context)
-        if (!customUrl.isNullOrEmpty()) {
-            return customUrl
-        }
-        
-        val environment = getCurrentEnvironment(context)
-        return ENVIRONMENTS[environment] ?: DEFAULT_BASE_URL
-    }
-    
-    /**
-     * Obtiene el entorno actual
-     */
-    fun getCurrentEnvironment(context: Context): String? {
-        return getPreferences(context).getString(KEY_ENVIRONMENT, null)
-    }
-    
-    /**
-     * Obtiene la URL personalizada actual
-     */
-    fun getCustomUrl(context: Context): String? {
-        return getPreferences(context).getString(KEY_SERVER_URL, null)
-    }
-    
-    /**
-     * Detección automática del entorno según la conectividad
-     * Simplificado: siempre AWS
-     */
-    @Suppress("UNUSED_PARAMETER")
-    fun autoDetectEnvironment(context: Context): String {
-        return "aws_production"
-    }
-    
-    /**
-     * Configura una URL pública específica para datos móviles
-     */
-    fun setPublicTunnelUrl(context: Context, publicUrl: String) {
-        val prefs = getPreferences(context)
-        prefs.edit()
-            .putString("public_tunnel_url", publicUrl)
-            .apply()
-        
-        Log.d("NetworkConfig", "📱 URL pública configurada: $publicUrl")
-    }
-    
-    /**
-     * Obtiene la URL pública configurada para datos móviles
-     */
-    fun getPublicTunnelUrl(context: Context): String? {
-        return getPreferences(context).getString("public_tunnel_url", null)
-    }
-    
-    /**
-     * Verifica si hay una URL pública configurada
-     */
-    fun hasPublicTunnelUrl(context: Context): Boolean {
-        return !getPublicTunnelUrl(context).isNullOrEmpty()
-    }
-    
-    /**
-      * Guarda la URL detectada automáticamente
-      */
-     fun saveDetectedUrl(context: Context, url: String) {
-         val prefs = getPreferences(context)
-         prefs.edit()
-             .putString(KEY_SERVER_URL, url)
-             .apply()
-     }
-    
-    /**
-      * Obtiene la última URL detectada
-      */
-     fun getLastDetectedUrl(context: Context): String? {
-         return getPreferences(context).getString(KEY_SERVER_URL, null)
-     }
-    
-    /**
-      * Limpia la configuración guardada
-      */
-     fun clearSavedConfiguration(context: Context) {
-         val prefs = getPreferences(context)
-         prefs.edit().clear().apply()
-     }
-    
-    /**
-      * Obtiene las preferencias compartidas
-      */
-     private fun getPreferences(context: Context): SharedPreferences {
-         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-     }
-     
-     /**
-      * URLs de respaldo para información (solo lectura)
-      */
-     val FALLBACK_URLS = listOf(
-        DEFAULT_BASE_URL
-    )
 }

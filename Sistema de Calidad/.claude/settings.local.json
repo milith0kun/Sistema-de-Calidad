@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew assembleDebug:*)",
+      "Bash(curl:*)",
+      "Bash(./gradlew clean:*)",
+      "Bash(md5sum:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

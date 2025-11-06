@@ -40,13 +40,38 @@ class FichadoViewModel /* @Inject constructor( */ (
     private val _resumen = MutableStateFlow<ResumenResponse?>(null)
     val resumen: StateFlow<ResumenResponse?> = _resumen.asStateFlow()
     
+    // Sistema de caché para evitar recargas innecesarias
+    private var lastDashboardUpdate: Long = 0
+    private var lastHistorialUpdate: Long = 0
+    private var lastResumenUpdate: Long = 0
+    private val cacheValidityMs = 300_000L // 5 minutos de validez del caché (era 30 segundos)
+    
+    /**
+     * Invalidar caché para forzar actualización de datos
+     */
+    private fun invalidateCache() {
+        lastDashboardUpdate = 0
+        lastHistorialUpdate = 0
+        lastResumenUpdate = 0
+        android.util.Log.d("FichadoViewModel", "🗑️ Caché invalidado - próximas consultas cargarán datos frescos")
+    }
+    
     init {
         // Observar eventos de token expirado
         observeTokenExpiredEvents()
-        
+
         // Sincronizar configuración GPS al inicializar
         android.util.Log.i("FichadoViewModel", "Inicializando ViewModel - Sincronizando GPS automáticamente")
         sincronizarConfiguracionGPS()
+
+        // Cargar datos inmediatamente si hay usuario autenticado
+        viewModelScope.launch {
+            val token = getAuthToken()
+            if (token != null) {
+                android.util.Log.d("FichadoViewModel", "⚡ Token encontrado en init, cargando datos inmediatamente")
+                obtenerDashboardHoy()
+            }
+        }
     }
     
     /**
@@ -119,12 +144,16 @@ class FichadoViewModel /* @Inject constructor( */ (
                                 isEntradaExitosa = true,
                                 ultimaHoraEntrada = response.hora
                             )
+                            
+                            // Invalidar caché para que los datos se actualicen en la próxima consulta
+                            invalidateCache()
+                            
                             // Actualizar dashboard después de registrar entrada con un pequeño delay
                             // para asegurar que el backend haya procesado completamente
                             viewModelScope.launch {
                                 kotlinx.coroutines.delay(1000) // 1 segundo de delay
                                 android.util.Log.d("FichadoViewModel", "Actualizando dashboard después de entrada exitosa")
-                                obtenerDashboardHoy()
+                                obtenerDashboardHoy(forceRefresh = true)
                             }
                         },
                         onFailure = { exception ->
@@ -181,12 +210,16 @@ class FichadoViewModel /* @Inject constructor( */ (
                                 ultimaHoraSalida = response.hora,
                                 horasTrabajadas = response.horasTrabajadas
                             )
+                            
+                            // Invalidar caché para que los datos se actualicen en la próxima consulta
+                            invalidateCache()
+                            
                             // Actualizar dashboard después de registrar salida con un pequeño delay
                             // para asegurar que el backend haya procesado completamente
                             viewModelScope.launch {
                                 kotlinx.coroutines.delay(1000) // 1 segundo de delay
                                 android.util.Log.d("FichadoViewModel", "Actualizando dashboard después de salida exitosa")
-                                obtenerDashboardHoy()
+                                obtenerDashboardHoy(forceRefresh = true)
                             }
                         },
                         onFailure = { exception ->
@@ -201,22 +234,59 @@ class FichadoViewModel /* @Inject constructor( */ (
     }
     
     /**
-     * Obtener información del dashboard del día actual
+     * Obtener información del dashboard del día actual con caché inteligente
      */
-    fun obtenerDashboardHoy() {
+    fun obtenerDashboardHoy(forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            val token = getAuthToken()
-            if (token == null) return@launch
+            val currentTime = System.currentTimeMillis()
             
+            // Si no es forzado y el caché es válido, no recargar
+            if (!forceRefresh && 
+                _dashboardHoy.value != null && 
+                (currentTime - lastDashboardUpdate) < cacheValidityMs) {
+                android.util.Log.d("FichadoViewModel", "📋 Dashboard: Usando datos del caché")
+                return@launch
+            }
+            
+            // Marcar estado de carga del dashboard para que la UI muestre progreso
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            val token = getAuthToken()
+            if (token == null) {
+                // No hay sesión, cerrar spinner
+                _uiState.value = _uiState.value.copy(isLoading = false)
+                return@launch
+            }
+            
+            android.util.Log.d("FichadoViewModel", "📋 Dashboard: Cargando datos desde servidor")
             fichadoRepository.obtenerDashboardHoy(token).collect { result ->
                 result.fold(
                     onSuccess = { dashboard ->
                         _dashboardHoy.value = dashboard
+                        lastDashboardUpdate = currentTime
+                        // Finalizar carga exitosa
+                        _uiState.value = _uiState.value.copy(isLoading = false)
+                        android.util.Log.d("FichadoViewModel", "📋 Dashboard: Datos actualizados correctamente")
                     },
                     onFailure = { exception ->
+                        // Mejorar el manejo de errores con mensajes más específicos
+                        val errorMessage = when {
+                            exception.message?.contains("failed to connect") == true -> 
+                                "Sin conexión al servidor. Verifica tu conexión a internet."
+                            exception.message?.contains("timeout") == true -> 
+                                "Tiempo de espera agotado. El servidor está tardando en responder."
+                            exception.message?.contains("UnknownHostException") == true -> 
+                                "No se puede conectar al servidor. Verifica tu conexión."
+                            exception.message?.contains("ConnectException") == true -> 
+                                "Error de conexión al servidor. Intenta más tarde."
+                            else -> "Error al cargar datos: ${exception.message}"
+                        }
+                        
                         _uiState.value = _uiState.value.copy(
-                            errorMessage = "Error al obtener dashboard: ${exception.message}"
+                            errorMessage = errorMessage,
+                            isLoading = false
                         )
+                        android.util.Log.e("FichadoViewModel", "📋 Dashboard: Error - ${exception.message}")
                     }
                 )
             }
@@ -224,14 +294,26 @@ class FichadoViewModel /* @Inject constructor( */ (
     }
     
     /**
-     * Obtener historial de fichados
+     * Obtener historial de fichados con caché inteligente
      */
-    fun obtenerHistorial() {
+    fun obtenerHistorial(forceRefresh: Boolean = false) {
         viewModelScope.launch {
+            val currentTime = System.currentTimeMillis()
+            
+            // Si no es forzado y el caché es válido, no recargar
+            if (!forceRefresh && 
+                _historial.value.isNotEmpty() && 
+                (currentTime - lastHistorialUpdate) < cacheValidityMs) {
+                android.util.Log.d("FichadoViewModel", "📋 Historial: Usando datos del caché")
+                return@launch
+            }
+            
+            android.util.Log.d("FichadoViewModel", "📋 Historial: Cargando datos desde servidor")
             _uiState.value = _uiState.value.copy(isLoadingHistorial = true)
             
             val token = getAuthToken()
             if (token == null) {
+                android.util.Log.w("FichadoViewModel", "❌ No hay token disponible para obtener historial")
                 _uiState.value = _uiState.value.copy(isLoadingHistorial = false)
                 return@launch
             }
@@ -239,10 +321,13 @@ class FichadoViewModel /* @Inject constructor( */ (
             fichadoRepository.obtenerHistorial(token).collect { result ->
                 result.fold(
                     onSuccess = { fichados ->
+                        android.util.Log.d("FichadoViewModel", "✅ Historial obtenido exitosamente: ${fichados.size} registros")
                         _historial.value = fichados
+                        lastHistorialUpdate = currentTime
                         _uiState.value = _uiState.value.copy(isLoadingHistorial = false)
                     },
                     onFailure = { exception ->
+                        android.util.Log.e("FichadoViewModel", "❌ Error al obtener historial: ${exception.message}")
                         _uiState.value = _uiState.value.copy(
                             isLoadingHistorial = false,
                             errorMessage = "Error al obtener historial: ${exception.message}"
@@ -254,10 +339,21 @@ class FichadoViewModel /* @Inject constructor( */ (
     }
     
     /**
-     * Obtener resumen para analítica
+     * Obtener resumen para analítica con caché inteligente
      */
-    fun obtenerResumen() {
+    fun obtenerResumen(forceRefresh: Boolean = false) {
         viewModelScope.launch {
+            val currentTime = System.currentTimeMillis()
+            
+            // Si no es forzado y el caché es válido, no recargar
+            if (!forceRefresh && 
+                _resumen.value != null && 
+                (currentTime - lastResumenUpdate) < cacheValidityMs) {
+                android.util.Log.d("FichadoViewModel", "📊 Resumen: Usando datos del caché")
+                return@launch
+            }
+            
+            android.util.Log.d("FichadoViewModel", "📊 Resumen: Cargando datos desde servidor")
             _uiState.value = _uiState.value.copy(isLoadingResumen = true)
             
             val token = getAuthToken()
@@ -270,13 +366,16 @@ class FichadoViewModel /* @Inject constructor( */ (
                 result.fold(
                     onSuccess = { resumen ->
                         _resumen.value = resumen
+                        lastResumenUpdate = currentTime
                         _uiState.value = _uiState.value.copy(isLoadingResumen = false)
+                        android.util.Log.d("FichadoViewModel", "📊 Resumen: Datos actualizados correctamente")
                     },
                     onFailure = { exception ->
                         _uiState.value = _uiState.value.copy(
                             isLoadingResumen = false,
                             errorMessage = "Error al obtener resumen: ${exception.message}"
                         )
+                        android.util.Log.e("FichadoViewModel", "📊 Resumen: Error - ${exception.message}")
                     }
                 )
             }

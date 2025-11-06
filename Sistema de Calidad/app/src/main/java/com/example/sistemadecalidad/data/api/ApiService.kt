@@ -150,12 +150,13 @@ interface ApiService {
     
     /**
      * Verificar si ya existe un registro de temperatura para una cámara en el día actual
-     * GET /haccp/temperatura-camaras/verificar/{camara_id}
+     * GET /haccp/temperatura-camaras/verificar/{camara_id}?turno=manana|tarde
      */
     @GET("haccp/temperatura-camaras/verificar/{camara_id}")
     suspend fun verificarRegistroTemperaturaCamara(
         @Header("Authorization") token: String,
-        @Path("camara_id") camaraId: Int
+        @Path("camara_id") camaraId: Int,
+        @Query("turno") turno: String? = null
     ): Response<VerificacionTemperaturaResponse>
     
     /**
@@ -366,10 +367,14 @@ data class TemperaturaCamarasRequest(
     
     @SerializedName("turno")
     val turno: String, // "manana" o "tarde"
-    
-    @SerializedName("temperatura")
-    val temperatura: Double,
-    
+
+    // El backend espera campos separados por turno
+    @SerializedName("temperatura_manana")
+    val temperaturaManana: Double?,
+
+    @SerializedName("temperatura_tarde")
+    val temperaturaTarde: Double?,
+
     @SerializedName("acciones_correctivas")
     val accionesCorrectivas: String?
 )
@@ -649,16 +654,26 @@ data class ProveedoresResponse(
 data class VerificacionTemperaturaResponse(
     @SerializedName("success")
     val success: Boolean,
-    
+
     @SerializedName("existe_registro")
     val existeRegistro: Boolean,
-    
+
+    @SerializedName("puede_registrar")
+    val puedeRegistrar: Boolean = true,
+
+    @SerializedName("mensaje")
+    val mensaje: String?,
+
+    @SerializedName("registro")
+    val registro: RegistroTemperaturaExistente?,
+
+    // Mantener compatibilidad con versiones anteriores
     @SerializedName("data")
     val data: RegistroTemperaturaExistente?,
-    
+
     @SerializedName("message")
     val message: String?,
-    
+
     @SerializedName("error")
     val error: String?
 )
@@ -668,28 +683,52 @@ data class VerificacionTemperaturaResponse(
  */
 data class RegistroTemperaturaExistente(
     @SerializedName("id")
-    val id: Int,
-    
+    val id: Int? = null,
+
     @SerializedName("camara_id")
-    val camaraId: Int,
-    
+    val camaraId: Int? = null,
+
     @SerializedName("fecha")
     val fecha: String,
-    
+
+    @SerializedName("turno_manana")
+    val turnoManana: TurnoInfo?,
+
+    @SerializedName("turno_tarde")
+    val turnoTarde: TurnoInfo?,
+
+    // Mantener compatibilidad con versiones anteriores
     @SerializedName("temperatura_manana")
     val temperaturaManana: Double?,
-    
+
     @SerializedName("temperatura_tarde")
     val temperaturaTarde: Double?,
-    
+
     @SerializedName("responsable")
     val responsable: String?,
-    
+
     @SerializedName("supervisor")
     val supervisor: String?,
-    
+
+    @SerializedName("timestamp_creacion")
+    val timestampCreacion: String?,
+
     @SerializedName("created_at")
     val createdAt: String?
+)
+
+/**
+ * Información de un turno específico
+ */
+data class TurnoInfo(
+    @SerializedName("completado")
+    val completado: Boolean,
+
+    @SerializedName("responsable")
+    val responsable: String?,
+
+    @SerializedName("temperatura")
+    val temperatura: Double?
 )
 
 /**

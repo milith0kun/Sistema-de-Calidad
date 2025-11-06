@@ -85,9 +85,9 @@ class ConnectivityManager(
             return@flow
         }
         
-        // Luego verificar conectividad con el servidor
+        // Luego verificar conectividad con el servidor con timeout reducido
         try {
-            val result = withTimeoutOrNull(10000) { // 10 segundos de timeout
+            val result = withTimeoutOrNull(5000) { // Reducido de 10 a 5 segundos
                 apiService.healthCheck()
             }
             
@@ -95,7 +95,7 @@ class ConnectivityManager(
                 val healthResponse = result.body()
                 if (healthResponse != null && healthResponse.status == "OK") {
                     emit(ServerConnectivityResult.Connected(
-                        serverUrl = NetworkConfig.getCurrentUrl(context),
+                        serverUrl = NetworkConfig.AWS_PRODUCTION_URL,
                         connectionType = getConnectionType(),
                         responseTime = System.currentTimeMillis() // Simplificado
                     ))
@@ -123,36 +123,24 @@ class ConnectivityManager(
     }
     
     /**
-     * Prueba múltiples configuraciones de red para encontrar la mejor
+     * Verifica la configuración de red AWS Production
      */
     suspend fun findBestConfiguration(): Flow<NetworkTestResult> = flow {
-        val environments = listOf("aws_production") // Solo producción AWS
-        
-        for (environment in environments) {
-            emit(NetworkTestResult.Testing(environment))
-            
-            val originalUrl = NetworkConfig.getCurrentUrl(context)
-            NetworkConfig.setEnvironment(context, environment)
-            
-            try {
-                val result = withTimeoutOrNull(5000) {
-                    apiService.healthCheck()
-                }
-                
-                if (result?.isSuccessful == true) {
-                    emit(NetworkTestResult.Success(environment, NetworkConfig.getCurrentUrl(context)))
-                    return@flow
-                } else {
-                    emit(NetworkTestResult.Failed(environment, "No responde"))
-                }
-            } catch (e: Exception) {
-                emit(NetworkTestResult.Failed(environment, e.message ?: "Error"))
+        emit(NetworkTestResult.Testing("aws_production"))
+
+        try {
+            val result = withTimeoutOrNull(5000) {
+                apiService.healthCheck()
             }
-            
-            NetworkConfig.setCustomUrl(context, originalUrl)
+
+            if (result?.isSuccessful == true) {
+                emit(NetworkTestResult.Success("aws_production", NetworkConfig.AWS_PRODUCTION_URL))
+            } else {
+                emit(NetworkTestResult.Failed("aws_production", "No responde"))
+            }
+        } catch (e: Exception) {
+            emit(NetworkTestResult.Failed("aws_production", e.message ?: "Error"))
         }
-        
-        emit(NetworkTestResult.AllFailed)
     }
 }
 
