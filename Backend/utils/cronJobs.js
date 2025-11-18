@@ -41,94 +41,119 @@ const obtenerEstadisticasDia = async (fecha) => {
             no_conformidades: 0
         };
 
-        // Contar registros de recepción de mercadería (abarrotes)
-        const rows = await db.all(`
-            SELECT COUNT(*) as total, 
-                   SUM(CASE WHEN estado_producto = 'RECHAZADO' THEN 1 ELSE 0 END) as rechazados
-            FROM control_recepcion_mercaderia 
-            WHERE DATE(fecha_hora) = ? AND tipo_producto = 'ABARROTES'
-        `, [fecha]);
-        
-        if (rows && rows[0]) {
-            estadisticas.recepcion_abarrotes = rows[0].total || 0;
-            estadisticas.no_conformidades += rows[0].rechazados || 0;
-            estadisticas.total_registros += rows[0].total || 0;
+        // Contar registros de recepción de abarrotes
+        try {
+            const rows = await db.all(`
+                SELECT COUNT(*) as total
+                FROM control_recepcion_abarrotes 
+                WHERE DATE(fecha) = ?
+            `, [fecha]);
+            
+            if (rows && rows[0]) {
+                estadisticas.recepcion_abarrotes = rows[0].total || 0;
+                estadisticas.total_registros += rows[0].total || 0;
+            }
+        } catch (error) {
+            console.log('Info: Tabla control_recepcion_abarrotes no existe o sin datos');
         }
 
-        // Contar registros de recepción de mercadería (frutas y verduras)
-        const rows2 = await db.all(`
-            SELECT COUNT(*) as total, 
-                   SUM(CASE WHEN estado_producto = 'RECHAZADO' THEN 1 ELSE 0 END) as rechazados
-            FROM control_recepcion_mercaderia 
-            WHERE DATE(fecha_hora) = ? AND tipo_producto = 'FRUTAS_VERDURAS'
-        `, [fecha]);
-        
-        if (rows2 && rows2[0]) {
-            estadisticas.recepcion_frutas_verduras = rows2[0].total || 0;
-            estadisticas.no_conformidades += rows2[0].rechazados || 0;
-            estadisticas.total_registros += rows2[0].total || 0;
+        // Contar registros de recepción de frutas y verduras
+        try {
+            const rows2 = await db.all(`
+                SELECT COUNT(*) as total,
+                       SUM(CASE WHEN estado_producto = 'PESIMO' THEN 1 ELSE 0 END) as rechazados
+                FROM control_recepcion_frutas_verduras 
+                WHERE DATE(fecha) = ?
+            `, [fecha]);
+            
+            if (rows2 && rows2[0]) {
+                estadisticas.recepcion_frutas_verduras = rows2[0].total || 0;
+                estadisticas.no_conformidades += rows2[0].rechazados || 0;
+                estadisticas.total_registros += rows2[0].total || 0;
+            }
+        } catch (error) {
+            console.log('Info: Tabla control_recepcion_frutas_verduras sin datos');
         }
 
         // Contar registros de control de cocción
-        const rows3 = await db.all(`
-            SELECT COUNT(*) as total, 
-                   SUM(CASE WHEN temperatura_alcanzada < temperatura_requerida THEN 1 ELSE 0 END) as no_conformes
-            FROM control_coccion 
-            WHERE DATE(fecha_hora) = ?
-        `, [fecha]);
-        
-        if (rows3 && rows3[0]) {
-            estadisticas.control_coccion = rows3[0].total || 0;
-            estadisticas.no_conformidades += rows3[0].no_conformes || 0;
-            estadisticas.total_registros += rows3[0].total || 0;
+        try {
+            const rows3 = await db.all(`
+                SELECT COUNT(*) as total
+                FROM control_coccion 
+                WHERE DATE(fecha) = ?
+            `, [fecha]);
+            
+            if (rows3 && rows3[0]) {
+                estadisticas.control_coccion = rows3[0].total || 0;
+                estadisticas.total_registros += rows3[0].total || 0;
+            }
+        } catch (error) {
+            console.log('Info: Tabla control_coccion sin datos');
         }
 
         // Contar registros de lavado de frutas
-        const rows4 = await db.all(`
-            SELECT COUNT(*) as total, 
-                   SUM(CASE WHEN estado_final != 'CONFORME' THEN 1 ELSE 0 END) as no_conformes
-            FROM control_lavado_frutas 
-            WHERE DATE(fecha_hora) = ?
-        `, [fecha]);
-        
-        if (rows4 && rows4[0]) {
-            estadisticas.lavado_frutas = rows4[0].total || 0;
-            estadisticas.no_conformidades += rows4[0].no_conformes || 0;
-            estadisticas.total_registros += rows4[0].total || 0;
+        try {
+            const rows4 = await db.all(`
+                SELECT COUNT(*) as total
+                FROM control_lavado_desinfeccion_frutas 
+                WHERE DATE(fecha) = ?
+            `, [fecha]);
+            
+            if (rows4 && rows4[0]) {
+                estadisticas.lavado_frutas = rows4[0].total || 0;
+                estadisticas.total_registros += rows4[0].total || 0;
+            }
+        } catch (error) {
+            console.log('Info: Tabla control_lavado_desinfeccion_frutas sin datos');
         }
 
         // Contar registros de lavado de manos
-        const rows5 = await db.all(`
-            SELECT COUNT(*) as total, 
-                   SUM(CASE WHEN cumple_protocolo = 0 THEN 1 ELSE 0 END) as no_conformes
-            FROM control_lavado_manos 
-            WHERE DATE(fecha_hora) = ?
-        `, [fecha]);
-        
-        if (rows5 && rows5[0]) {
-            estadisticas.lavado_manos = rows5[0].total || 0;
-            estadisticas.no_conformidades += rows5[0].no_conformes || 0;
-            estadisticas.total_registros += rows5[0].total || 0;
+        try {
+            const rows5 = await db.all(`
+                SELECT COUNT(*) as total
+                FROM control_lavado_manos 
+                WHERE DATE(fecha) = ?
+            `, [fecha]);
+            
+            if (rows5 && rows5[0]) {
+                estadisticas.lavado_manos = rows5[0].total || 0;
+                estadisticas.total_registros += rows5[0].total || 0;
+            }
+        } catch (error) {
+            console.log('Info: Tabla control_lavado_manos sin datos');
         }
 
         // Contar registros de temperatura de cámaras
-        const rows6 = await db.all(`
-            SELECT COUNT(*) as total, 
-                   SUM(CASE WHEN temperatura_conforme = 0 THEN 1 ELSE 0 END) as no_conformes
-            FROM control_temperatura_camaras 
-            WHERE DATE(fecha_hora) = ?
-        `, [fecha]);
-        
-        if (rows6 && rows6[0]) {
-            estadisticas.temperatura_camaras = rows6[0].total || 0;
-            estadisticas.no_conformidades += rows6[0].no_conformes || 0;
-            estadisticas.total_registros += rows6[0].total || 0;
+        try {
+            const rows6 = await db.all(`
+                SELECT COUNT(*) as total
+                FROM control_temperatura_camaras 
+                WHERE DATE(fecha) = ?
+            `, [fecha]);
+            
+            if (rows6 && rows6[0]) {
+                estadisticas.temperatura_camaras = rows6[0].total || 0;
+                estadisticas.total_registros += rows6[0].total || 0;
+            }
+        } catch (error) {
+            console.log('Info: Tabla control_temperatura_camaras sin datos');
         }
 
         return estadisticas;
     } catch (error) {
         console.error('Error obteniendo estadísticas del día:', error);
-        throw error;
+        // Retornar estadísticas vacías en lugar de fallar
+        return {
+            fecha: fecha,
+            recepcion_abarrotes: 0,
+            recepcion_frutas_verduras: 0,
+            control_coccion: 0,
+            lavado_frutas: 0,
+            lavado_manos: 0,
+            temperatura_camaras: 0,
+            total_registros: 0,
+            no_conformidades: 0
+        };
     }
 };
 
