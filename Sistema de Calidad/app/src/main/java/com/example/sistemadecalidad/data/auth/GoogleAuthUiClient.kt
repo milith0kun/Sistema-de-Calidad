@@ -47,11 +47,23 @@ class GoogleAuthUiClient(
         return try {
             val result = buildCredentialRequest()
             handleSignInResult(result)
+        } catch (e: androidx.credentials.exceptions.NoCredentialException) {
+            android.util.Log.e("GoogleAuthUiClient", "No credentials available - App not registered in Google Console", e)
+            SignInResult(
+                data = null,
+                errorMessage = "Autenticación con Google no configurada. Contacta al administrador."
+            )
+        } catch (e: androidx.credentials.exceptions.GetCredentialException) {
+            android.util.Log.e("GoogleAuthUiClient", "Credential error: ${e.message}", e)
+            SignInResult(
+                data = null,
+                errorMessage = "Error de autenticación: ${e.message}"
+            )
         } catch (e: Exception) {
             android.util.Log.e("GoogleAuthUiClient", "Error en signIn: ${e.message}", e)
             SignInResult(
                 data = null,
-                errorMessage = e.message
+                errorMessage = "Error inesperado: ${e.message}"
             )
         }
     }
