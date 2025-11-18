@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(sqlite3:*)",
-      "Bash(./gradlew assembleDebug:*)"
+      "Bash(./gradlew assembleDebug:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nchore: clean up documentation files and update OAuth comment\n\n- Remove outdated documentation files (CONFIGURAR_GOOGLE_OAUTH.md, DOCUMENTACION_SISTEMA.md, GOOGLE_SIGNIN_IMPLEMENTATION.md, INSTALL_APK.md)\n- Update Google OAuth Client ID comment in strings.xml to clarify Android type for Credential Manager\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
