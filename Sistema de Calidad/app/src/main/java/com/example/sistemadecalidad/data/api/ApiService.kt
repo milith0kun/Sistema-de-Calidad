@@ -21,6 +21,13 @@ interface ApiService {
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
     
     /**
+     * Login con Google - Envía ID token para validación
+     * POST /auth/google
+     */
+    @POST("auth/google")
+    suspend fun loginWithGoogle(@Body request: Map<String, String>): Response<LoginResponse>
+    
+    /**
      * Verificar token JWT
      * GET /auth/verify
      */

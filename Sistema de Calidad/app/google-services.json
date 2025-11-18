@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "802542269966",
+    "project_id": "sistema-haccp-wino",
+    "storage_bucket": "sistema-haccp-wino.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802542269966:android:PLACEHOLDER",
+        "android_client_info": {
+          "package_name": "com.sistemahaccp.calidad"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "802542269966-jb3ubba1iiq9o4qpm7eakh7d7epheqqu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEMO_KEY_PLACEHOLDER"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "802542269966-jb3ubba1iiq9o4qpm7eakh7d7epheqqu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

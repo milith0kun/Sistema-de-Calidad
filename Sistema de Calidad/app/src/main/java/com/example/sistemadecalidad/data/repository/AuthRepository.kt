@@ -100,6 +100,33 @@ class AuthRepository /* @Inject constructor */ (
     }
     
     /**
+     * Login con Google - Envía ID token al backend para validación
+     */
+    suspend fun loginWithGoogle(idToken: String): Flow<Result<LoginResponse>> = flow {
+        try {
+            val request = mapOf("idToken" to idToken)
+            val response = apiService.loginWithGoogle(request)
+            
+            if (response.isSuccessful) {
+                val loginResponse = response.body()
+                if (loginResponse != null) {
+                    if (loginResponse.success && loginResponse.token != null) {
+                        emit(Result.success(loginResponse))
+                    } else {
+                        emit(Result.failure(Exception(loginResponse.error ?: "Error en autenticación con Google")))
+                    }
+                } else {
+                    emit(Result.failure(Exception("Respuesta vacía del servidor")))
+                }
+            } else {
+                emit(Result.failure(Exception("Error HTTP: ${response.code()} - ${response.message()}")))
+            }
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+    
+    /**
      * Verificar conectividad con el servidor
      */
     suspend fun checkServerHealth(): Flow<Result<Boolean>> = flow {

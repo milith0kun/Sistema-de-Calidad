@@ -2,3 +2,6 @@
 keystore/
 *.jks
 *.keystore
+
+# Secrets (OAuth credentials, API keys)
+src/main/res/values/secrets.xml

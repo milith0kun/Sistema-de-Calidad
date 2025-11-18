@@ -8,6 +8,7 @@ import com.example.sistemadecalidad.data.model.User
 import com.example.sistemadecalidad.data.repository.AuthRepository
 import com.example.sistemadecalidad.data.auth.AuthStateManager
 import com.example.sistemadecalidad.data.auth.AuthState
+import com.example.sistemadecalidad.data.auth.GoogleAuthUiClient
 import com.example.sistemadecalidad.services.NotificationIntegrationService
 // import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -25,6 +26,9 @@ class AuthViewModel /* @Inject constructor( */ (
     private val authStateManager: AuthStateManager,
     private val context: Context
 ) : ViewModel() {
+    
+    // Cliente de autenticación con Google
+    private val googleAuthUiClient = GoogleAuthUiClient(context)
     
     // Estado de la UI
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -223,6 +227,96 @@ class AuthViewModel /* @Inject constructor( */ (
                             errorMessage = exception.message ?: "Error desconocido"
                         )
                     }
+                )
+            }
+        }
+    }
+    
+    /**
+     * Login con Google - Envía ID token al backend para validación
+     */
+    fun loginWithGoogle() {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("AuthViewModel", "=== INICIANDO LOGIN CON GOOGLE ===")
+                _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+                
+                // Obtener credenciales de Google
+                val signInResult = googleAuthUiClient.signIn()
+                
+                if (signInResult.data != null) {
+                    val googleUser = signInResult.data
+                    android.util.Log.d("AuthViewModel", "✅ Autenticación con Google exitosa")
+                    android.util.Log.d("AuthViewModel", "Email: ${googleUser.email}")
+                    android.util.Log.d("AuthViewModel", "Nombre: ${googleUser.username}")
+                    android.util.Log.d("AuthViewModel", "ID Token: ${googleUser.idToken.take(20)}...")
+                    
+                    // Enviar ID token al backend para validación y obtener sesión
+                    authRepository.loginWithGoogle(googleUser.idToken).collect { result ->
+                        result.fold(
+                            onSuccess = { loginResponse ->
+                                android.util.Log.d("AuthViewModel", "✅ Validación en backend exitosa")
+                                
+                                try {
+                                    // Guardar token y datos del usuario
+                                    loginResponse.token?.let { token ->
+                                        preferencesManager.saveToken(token)
+                                        android.util.Log.d("AuthViewModel", "Token guardado")
+                                    }
+                                    
+                                    loginResponse.user?.let { user ->
+                                        preferencesManager.saveUser(user)
+                                        _currentUser.value = user
+                                        android.util.Log.d("AuthViewModel", "Usuario guardado: ${user.nombreCompleto}")
+                                    }
+                                    
+                                    // Actualizar estado
+                                    _isAuthenticated.value = true
+                                    authStateManager.updateAuthState(AuthState.AUTHENTICATED)
+                                    _uiState.value = _uiState.value.copy(
+                                        isLoading = false,
+                                        isLoginSuccessful = true
+                                    )
+                                    
+                                    // Iniciar notificaciones
+                                    try {
+                                        NotificationIntegrationService.startNotificationsForUser(context)
+                                        android.util.Log.d("AuthViewModel", "✅ Notificaciones iniciadas")
+                                    } catch (e: Exception) {
+                                        android.util.Log.e("AuthViewModel", "Error iniciando notificaciones: ${e.message}")
+                                    }
+                                    
+                                    android.util.Log.d("AuthViewModel", "✅ Login con Google completado")
+                                } catch (e: Exception) {
+                                    android.util.Log.e("AuthViewModel", "Error guardando sesión: ${e.message}", e)
+                                    _uiState.value = _uiState.value.copy(
+                                        isLoading = false,
+                                        errorMessage = "Error al guardar sesión: ${e.message}"
+                                    )
+                                }
+                            },
+                            onFailure = { exception ->
+                                android.util.Log.e("AuthViewModel", "Error en validación backend: ${exception.message}")
+                                _uiState.value = _uiState.value.copy(
+                                    isLoading = false,
+                                    errorMessage = "Error validando con el servidor: ${exception.message}"
+                                )
+                            }
+                        )
+                    }
+                } else {
+                    // Error en autenticación con Google
+                    android.util.Log.e("AuthViewModel", "Error Google: ${signInResult.errorMessage}")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = signInResult.errorMessage ?: "Error al iniciar sesión con Google"
+                    )
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("AuthViewModel", "Excepción en loginWithGoogle: ${e.message}", e)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Error: ${e.message}"
                 )
             }
         }
