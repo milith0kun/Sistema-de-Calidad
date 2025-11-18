@@ -3,7 +3,6 @@
     <string name="app_version">1.0.4</string>
     <string name="app_description">Sistema de Control de Calidad y Asistencias</string>
     
-    <!-- Google OAuth 2.0 Client ID -->
-    <!-- NOTA: Configurar en local.properties o usar variables de entorno -->
-    <string name="google_client_id" translatable="false">YOUR_GOOGLE_CLIENT_ID_HERE</string>
+    <!-- Google OAuth 2.0 Client ID (Web Application type) -->
+    <string name="google_client_id" translatable="false">802542269966-jb3ubba1iiq9o4qpm7eakh7d7epheqqu.apps.googleusercontent.com</string>
 </resources>
