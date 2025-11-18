@@ -5,5 +5,5 @@
     
     <!-- Google OAuth 2.0 Client ID (Android type para Credential Manager) -->
         <!-- Google OAuth Client ID -->
-    <string name="google_client_id" translatable="false">802542269966-jb3ubba1iiq9o4qpm7eakh7d7epheqqu.apps.googleusercontent.com</string>
+    <string name="google_client_id" translatable="false">802542269966-bg9ron54a1qrtddc23osnbof1unte90v.apps.googleusercontent.com</string>
 </resources>

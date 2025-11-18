@@ -9,7 +9,7 @@ const { config } = require('../config-app-universal');
 const router = express.Router();
 
 // Cliente de OAuth2 de Google
-const GOOGLE_CLIENT_ID = '802542269966-jb3ubba1iiq9o4qpm7eakh7d7epheqqu.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '802542269966-bg9ron54a1qrtddc23osnbof1unte90v.apps.googleusercontent.com';
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // POST /api/auth/login - Iniciar sesión
