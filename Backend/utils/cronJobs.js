@@ -28,7 +28,7 @@ const cerrarFormulariosDiarios = async () => {
 
 // Función para obtener estadísticas del día
 const obtenerEstadisticasDia = async (fecha) => {
-    return new Promise((resolve, reject) => {
+    try {
         const estadisticas = {
             fecha: fecha,
             recepcion_abarrotes: 0,
@@ -42,121 +42,94 @@ const obtenerEstadisticasDia = async (fecha) => {
         };
 
         // Contar registros de recepción de mercadería (abarrotes)
-        db.all(`
+        const rows = await db.all(`
             SELECT COUNT(*) as total, 
                    SUM(CASE WHEN estado_producto = 'RECHAZADO' THEN 1 ELSE 0 END) as rechazados
             FROM control_recepcion_mercaderia 
             WHERE DATE(fecha_hora) = ? AND tipo_producto = 'ABARROTES'
-        `, [fecha], (err, rows) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            
-            if (rows && rows[0]) {
-                estadisticas.recepcion_abarrotes = rows[0].total || 0;
-                estadisticas.no_conformidades += rows[0].rechazados || 0;
-                estadisticas.total_registros += rows[0].total || 0;
-            }
+        `, [fecha]);
+        
+        if (rows && rows[0]) {
+            estadisticas.recepcion_abarrotes = rows[0].total || 0;
+            estadisticas.no_conformidades += rows[0].rechazados || 0;
+            estadisticas.total_registros += rows[0].total || 0;
+        }
 
-            // Contar registros de recepción de mercadería (frutas y verduras)
-            db.all(`
-                SELECT COUNT(*) as total, 
-                       SUM(CASE WHEN estado_producto = 'RECHAZADO' THEN 1 ELSE 0 END) as rechazados
-                FROM control_recepcion_mercaderia 
-                WHERE DATE(fecha_hora) = ? AND tipo_producto = 'FRUTAS_VERDURAS'
-            `, [fecha], (err, rows2) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                
-                if (rows2 && rows2[0]) {
-                    estadisticas.recepcion_frutas_verduras = rows2[0].total || 0;
-                    estadisticas.no_conformidades += rows2[0].rechazados || 0;
-                    estadisticas.total_registros += rows2[0].total || 0;
-                }
+        // Contar registros de recepción de mercadería (frutas y verduras)
+        const rows2 = await db.all(`
+            SELECT COUNT(*) as total, 
+                   SUM(CASE WHEN estado_producto = 'RECHAZADO' THEN 1 ELSE 0 END) as rechazados
+            FROM control_recepcion_mercaderia 
+            WHERE DATE(fecha_hora) = ? AND tipo_producto = 'FRUTAS_VERDURAS'
+        `, [fecha]);
+        
+        if (rows2 && rows2[0]) {
+            estadisticas.recepcion_frutas_verduras = rows2[0].total || 0;
+            estadisticas.no_conformidades += rows2[0].rechazados || 0;
+            estadisticas.total_registros += rows2[0].total || 0;
+        }
 
-                // Contar registros de control de cocción
-                db.all(`
-                    SELECT COUNT(*) as total, 
-                           SUM(CASE WHEN temperatura_alcanzada < temperatura_requerida THEN 1 ELSE 0 END) as no_conformes
-                    FROM control_coccion 
-                    WHERE DATE(fecha_hora) = ?
-                `, [fecha], (err, rows3) => {
-                    if (err) {
-                        reject(err);
-                        return;
-                    }
-                    
-                    if (rows3 && rows3[0]) {
-                        estadisticas.control_coccion = rows3[0].total || 0;
-                        estadisticas.no_conformidades += rows3[0].no_conformes || 0;
-                        estadisticas.total_registros += rows3[0].total || 0;
-                    }
+        // Contar registros de control de cocción
+        const rows3 = await db.all(`
+            SELECT COUNT(*) as total, 
+                   SUM(CASE WHEN temperatura_alcanzada < temperatura_requerida THEN 1 ELSE 0 END) as no_conformes
+            FROM control_coccion 
+            WHERE DATE(fecha_hora) = ?
+        `, [fecha]);
+        
+        if (rows3 && rows3[0]) {
+            estadisticas.control_coccion = rows3[0].total || 0;
+            estadisticas.no_conformidades += rows3[0].no_conformes || 0;
+            estadisticas.total_registros += rows3[0].total || 0;
+        }
 
-                    // Contar registros de lavado de frutas
-                    db.all(`
-                        SELECT COUNT(*) as total, 
-                               SUM(CASE WHEN estado_final != 'CONFORME' THEN 1 ELSE 0 END) as no_conformes
-                        FROM control_lavado_frutas 
-                        WHERE DATE(fecha_hora) = ?
-                    `, [fecha], (err, rows4) => {
-                        if (err) {
-                            reject(err);
-                            return;
-                        }
-                        
-                        if (rows4 && rows4[0]) {
-                            estadisticas.lavado_frutas = rows4[0].total || 0;
-                            estadisticas.no_conformidades += rows4[0].no_conformes || 0;
-                            estadisticas.total_registros += rows4[0].total || 0;
-                        }
+        // Contar registros de lavado de frutas
+        const rows4 = await db.all(`
+            SELECT COUNT(*) as total, 
+                   SUM(CASE WHEN estado_final != 'CONFORME' THEN 1 ELSE 0 END) as no_conformes
+            FROM control_lavado_frutas 
+            WHERE DATE(fecha_hora) = ?
+        `, [fecha]);
+        
+        if (rows4 && rows4[0]) {
+            estadisticas.lavado_frutas = rows4[0].total || 0;
+            estadisticas.no_conformidades += rows4[0].no_conformes || 0;
+            estadisticas.total_registros += rows4[0].total || 0;
+        }
 
-                        // Contar registros de lavado de manos
-                        db.all(`
-                            SELECT COUNT(*) as total, 
-                                   SUM(CASE WHEN cumple_protocolo = 0 THEN 1 ELSE 0 END) as no_conformes
-                            FROM control_lavado_manos 
-                            WHERE DATE(fecha_hora) = ?
-                        `, [fecha], (err, rows5) => {
-                            if (err) {
-                                reject(err);
-                                return;
-                            }
-                            
-                            if (rows5 && rows5[0]) {
-                                estadisticas.lavado_manos = rows5[0].total || 0;
-                                estadisticas.no_conformidades += rows5[0].no_conformes || 0;
-                                estadisticas.total_registros += rows5[0].total || 0;
-                            }
+        // Contar registros de lavado de manos
+        const rows5 = await db.all(`
+            SELECT COUNT(*) as total, 
+                   SUM(CASE WHEN cumple_protocolo = 0 THEN 1 ELSE 0 END) as no_conformes
+            FROM control_lavado_manos 
+            WHERE DATE(fecha_hora) = ?
+        `, [fecha]);
+        
+        if (rows5 && rows5[0]) {
+            estadisticas.lavado_manos = rows5[0].total || 0;
+            estadisticas.no_conformidades += rows5[0].no_conformes || 0;
+            estadisticas.total_registros += rows5[0].total || 0;
+        }
 
-                            // Contar registros de temperatura de cámaras
-                            db.all(`
-                                SELECT COUNT(*) as total, 
-                                       SUM(CASE WHEN temperatura_conforme = 0 THEN 1 ELSE 0 END) as no_conformes
-                                FROM control_temperatura_camaras 
-                                WHERE DATE(fecha_hora) = ?
-                            `, [fecha], (err, rows6) => {
-                                if (err) {
-                                    reject(err);
-                                    return;
-                                }
-                                
-                                if (rows6 && rows6[0]) {
-                                    estadisticas.temperatura_camaras = rows6[0].total || 0;
-                                    estadisticas.no_conformidades += rows6[0].no_conformes || 0;
-                                    estadisticas.total_registros += rows6[0].total || 0;
-                                }
+        // Contar registros de temperatura de cámaras
+        const rows6 = await db.all(`
+            SELECT COUNT(*) as total, 
+                   SUM(CASE WHEN temperatura_conforme = 0 THEN 1 ELSE 0 END) as no_conformes
+            FROM control_temperatura_camaras 
+            WHERE DATE(fecha_hora) = ?
+        `, [fecha]);
+        
+        if (rows6 && rows6[0]) {
+            estadisticas.temperatura_camaras = rows6[0].total || 0;
+            estadisticas.no_conformidades += rows6[0].no_conformes || 0;
+            estadisticas.total_registros += rows6[0].total || 0;
+        }
 
-                                resolve(estadisticas);
-                            });
-                        });
-                    });
-                });
-            });
-        });
-    });
+        return estadisticas;
+    } catch (error) {
+        console.error('Error obteniendo estadísticas del día:', error);
+        throw error;
+    }
 };
 
 // Función para registrar el cierre automático en auditoría
