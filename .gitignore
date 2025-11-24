@@ -36,14 +36,17 @@ wino.pem
 conectar-servidor.ps1
 
 # Firebase / Google secrets
+# NOTA: google-services.json SÍ debe estar en el repo (no contiene secretos)
+# Solo client_secret.json debe ser ignorado (contiene OAuth Client Secret)
 Sistema de Calidad/app/client_secret.json
 
 # Certificates and keys
 Sistema de Calidad/app/*.der
 Sistema de Calidad/app/*.jks
+Sistema de Calidad/app/keystore/*.jks
 
-# Google services config (optional, keep out of repo if you prefer)
-Sistema de Calidad/app/google-services.json
+# Keystore configuration (contains passwords)
+Sistema de Calidad/keystore.properties
 
 # Build artifacts
 dist.tar.gz

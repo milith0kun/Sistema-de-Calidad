@@ -71,9 +71,6 @@ HOST=0.0.0.0
 # JWT Secret (cambiar en producción)
 JWT_SECRET=tu_secret_key_super_segura_cambiar_en_produccion
 
-# Google OAuth Client ID (Web)
-GOOGLE_CLIENT_ID=888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com
-
 # Base de datos SQLite
 DB_PATH=./database/haccp.db
 
@@ -386,9 +383,10 @@ fuser database/haccp.db
 ```
 
 ### Error: Google OAuth falla
-- Verificar que `GOOGLE_CLIENT_ID` en `.env` coincide con Firebase Console
-- Comprobar que SHA-1 de Play Store está registrado en Firebase
-- Ver logs: `console.log` en `routes/auth.js` línea ~80
+- Verificar que el Web Client ID hardcodeado en `routes/auth.js` (línea 12) coincide con Firebase Console
+- Web Client ID actual: `888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com`
+- Comprobar que los 3 SHA-1 (Debug, Upload, Play Store) están registrados en Firebase
+- Ver logs: `console.log` en `routes/auth.js` línea ~200
 
 ## 📝 Notas de Desarrollo
 

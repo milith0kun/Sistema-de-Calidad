@@ -158,20 +158,36 @@ interface ApiService {
 
 ## 🔐 Autenticación Google OAuth
 
-### Configuración Firebase
+### Configuración Firebase (ya completada ✅)
 
-1. **`google-services.json`** contiene:
-   - Project ID: `sistema-de-calidad-463d4`
-   - Web Client ID: `888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu`
-   - 3 certificados SHA-1 registrados:
-     - Debug: `31:fa:5a:e9:46:6d:ca:fc:b2:73:48:8b:e4:61:20:fb:3e:c8:98:9d`
-     - Upload: `60:e8:b3:c3:f1:1e:9e:6a:3d:e4:7f:06:aa:6d:25:8d:c9:3e:e7:e8`
-     - **Play Store**: `c9:1d:5a:9b:02:7e:7c:22:3d:e6:b7:49:73:50:d1:93:b0:e3:3f:b2` ✅
+**Proyecto Firebase**: `sistema-de-calidad-463d4`  
+**Package Name**: `com.sistemahaccp.calidad`  
+**Web Client ID**: `888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com`
 
-2. **Client ID en `strings.xml`**:
+1. **Archivo `google-services.json`** (ya está en `app/`):
+   - Contiene configuración del proyecto Firebase
+   - Tiene registrados 3 OAuth clients (Debug, Upload, Play Store)
+   - **NO modificar** este archivo manualmente
+
+2. **Certificados SHA-1 registrados en Firebase** (3 de 3 ✅):
+   ```
+   Debug:      31:fa:5a:e9:46:6d:ca:fc:b2:73:48:8b:e4:61:20:fb:3e:c8:98:9d
+   Upload:     60:e8:b3:c3:f1:1e:9e:6a:3d:e4:7f:06:aa:6d:25:8d:c9:3e:e7:e8
+   Play Store: c9:1d:5a:9b:02:7e:7c:22:3d:e6:b7:49:73:50:d1:93:b0:e3:3f:b2
+   ```
+
+3. **Web Client ID en `app/src/main/res/values/strings.xml`**:
    ```xml
+   <!-- Este es el Client ID que usa GoogleAuthUiClient.kt -->
    <string name="default_web_client_id">888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com</string>
    ```
+
+### ⚠️ IMPORTANTE: Credenciales correctas
+
+- ✅ **USAR**: Web Client ID de Firebase (888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu)
+- ❌ **NO USAR**: Archivo `client_secret.json` (ya eliminado - era de proyecto antiguo)
+- La app usa **Credential Manager API** (no GoogleSignInClient legacy)
+- El backend valida tokens con `google-auth-library` en Node.js
 
 ### Flujo de autenticación
 

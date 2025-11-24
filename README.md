@@ -207,32 +207,44 @@ RELEASE_KEY_PASSWORD=tu_password
 
 ### Firebase Console
 
+**Proyecto Firebase**: `sistema-de-calidad-463d4`  
+**Web Client ID**: `888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com`
+
 1. Ir a: https://console.firebase.google.com/project/sistema-de-calidad-463d4
 2. Project Settings → Your apps → Sistema de Calidad (Android)
 3. **Verificar 3 certificados SHA-1** estén registrados:
-   - Debug: `31:fa:5a:e9:46:6d:ca:fc:b2:73:48:8b:e4:61:20:fb:3e:c8:98:9d`
-   - Upload: `60:e8:b3:c3:f1:1e:9e:6a:3d:e4:7f:06:aa:6d:25:8d:c9:3e:e7:e8`
+   - **Debug**: `31:fa:5a:e9:46:6d:ca:fc:b2:73:48:8b:e4:61:20:fb:3e:c8:98:9d`
+   - **Upload**: `60:e8:b3:c3:f1:1e:9e:6a:3d:e4:7f:06:aa:6d:25:8d:c9:3e:e7:e8`
    - **Play Store**: `c9:1d:5a:9b:02:7e:7c:22:3d:e6:b7:49:73:50:d1:93:b0:e3:3f:b2` ✅
+4. Descargar `google-services.json` (ya está en `Sistema de Calidad/app/`)
 
-4. Descargar `google-services.json` actualizado
+### Cómo funciona la autenticación
+
+1. **App Android**: 
+   - Usa Credential Manager API + Firebase Auth
+   - Obtiene Google ID Token del usuario
+   - Envía `idToken` al Backend vía `POST /api/auth/google`
+
+2. **Backend Node.js**:
+   - Valida el `idToken` con `google-auth-library`
+   - Verifica que el `audience` sea el Web Client ID correcto
+   - Crea/actualiza usuario en SQLite
+   - Retorna JWT propio para sesiones
+
+3. **WebPanel React**:
+   - Usa login tradicional (email/password)
+   - NO implementa Google OAuth directamente
 
 ### Obtener SHA-1 de Google Play
 
-1. Google Play Console → App → Setup → App Integrity
+```bash
+# Acceder a Google Play Console
+1. Google Play Console → Tu App → Setup → App Integrity
 2. Copiar SHA-1 del "App signing key certificate"
-3. Agregarlo en Firebase Console (paso 3 arriba)
-
-### Variables de Entorno
-
-**Backend** (`.env`):
-```env
-GOOGLE_CLIENT_ID=888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com
-```
-
-**WebPanel**: Detección automática de entorno
-
-**App Android** (`strings.xml`):
+3. Agregarlo en Firebase Console → Project Settings → Add Fingerprint
+```pp Android** (`strings.xml`):
 ```xml
+<!-- Web Client ID de Firebase (proyecto: sistema-de-calidad-463d4) -->
 <string name="default_web_client_id">888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com</string>
 ```
 
