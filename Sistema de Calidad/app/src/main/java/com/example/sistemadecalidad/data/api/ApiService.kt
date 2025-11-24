@@ -41,6 +41,20 @@ interface ApiService {
     @POST("auth/refresh")
     suspend fun refreshToken(@Header("Authorization") token: String): Response<LoginResponse>
     
+    /**
+     * Registrar nuevo usuario
+     * POST /auth/register
+     */
+    @POST("auth/register")
+    suspend fun register(@Body request: RegisterRequest): Response<RegisterResponse>
+    
+    /**
+     * Recuperar contraseña
+     * POST /auth/forgot-password
+     */
+    @POST("auth/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<ForgotPasswordResponse>
+    
     // ========== FICHADO ==========
     
     /**

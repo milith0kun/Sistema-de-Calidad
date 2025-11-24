@@ -446,6 +446,114 @@ class AuthViewModel /* @Inject constructor( */ (
             }
         }
     }
+    
+    /**
+     * Registrar nuevo usuario
+     */
+    fun register(
+        nombre: String,
+        apellido: String,
+        email: String,
+        password: String,
+        cargo: String,
+        area: String
+    ) {
+        viewModelScope.launch {
+            android.util.Log.d("AuthViewModel", "=== INICIANDO REGISTRO ===")
+            android.util.Log.d("AuthViewModel", "Email: $email, Nombre: $nombre $apellido")
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            
+            authRepository.register(nombre, apellido, email, password, cargo, area).collect { result ->
+                result.fold(
+                    onSuccess = { registerResponse ->
+                        android.util.Log.d("AuthViewModel", "✅ Registro exitoso")
+                        
+                        try {
+                            // Si el backend devuelve token, guardar sesión automáticamente
+                            registerResponse.token?.let { token ->
+                                android.util.Log.d("AuthViewModel", "Guardando token del registro...")
+                                preferencesManager.saveToken(token)
+                                
+                                // Obtener datos del usuario recién registrado
+                                viewModelScope.launch {
+                                    authRepository.verifyToken(token).collect { verifyResult ->
+                                        verifyResult.fold(
+                                            onSuccess = { user ->
+                                                preferencesManager.saveUser(user)
+                                                _currentUser.value = user
+                                                _isAuthenticated.value = true
+                                                authStateManager.updateAuthState(AuthState.AUTHENTICATED)
+                                                
+                                                // Iniciar notificaciones
+                                                try {
+                                                    NotificationIntegrationService.startNotificationsForUser(context)
+                                                } catch (e: Exception) {
+                                                    android.util.Log.e("AuthViewModel", "Error iniciando notificaciones: ${e.message}")
+                                                }
+                                                
+                                                android.util.Log.d("AuthViewModel", "✅ Usuario registrado y sesión iniciada")
+                                            },
+                                            onFailure = { error ->
+                                                android.util.Log.e("AuthViewModel", "Error verificando usuario: ${error.message}")
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                isLoginSuccessful = true
+                            )
+                        } catch (e: Exception) {
+                            android.util.Log.e("AuthViewModel", "Error guardando sesión tras registro: ${e.message}", e)
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                errorMessage = "Registro exitoso pero error al iniciar sesión: ${e.message}"
+                            )
+                        }
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("AuthViewModel", "❌ Error en registro: ${exception.message}")
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = exception.message ?: "Error desconocido en registro"
+                        )
+                    }
+                )
+            }
+        }
+    }
+    
+    /**
+     * Solicitar recuperación de contraseña
+     */
+    fun forgotPassword(email: String) {
+        viewModelScope.launch {
+            android.util.Log.d("AuthViewModel", "=== SOLICITUD DE RECUPERACIÓN DE CONTRASEÑA ===")
+            android.util.Log.d("AuthViewModel", "Email: $email")
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            
+            authRepository.forgotPassword(email).collect { result ->
+                result.fold(
+                    onSuccess = { message ->
+                        android.util.Log.d("AuthViewModel", "✅ Solicitud exitosa: $message")
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = null // Usar un estado específico si se necesita mostrar el mensaje de éxito
+                        )
+                    },
+                    onFailure = { exception ->
+                        android.util.Log.e("AuthViewModel", "❌ Error en recuperación: ${exception.message}")
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = exception.message ?: "Error desconocido en recuperación"
+                        )
+                    }
+                )
+            }
+        }
+    }
 }
 
 /**

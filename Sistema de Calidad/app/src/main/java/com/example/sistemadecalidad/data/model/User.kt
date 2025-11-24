@@ -102,3 +102,65 @@ data class LoginRequest(
     @SerializedName("password")
     val password: String
 )
+
+/**
+ * Modelo para la petición de registro
+ */
+data class RegisterRequest(
+    @SerializedName("nombre")
+    val nombre: String,
+    
+    @SerializedName("apellido")
+    val apellido: String,
+    
+    @SerializedName("email")
+    val email: String,
+    
+    @SerializedName("password")
+    val password: String,
+    
+    @SerializedName("cargo")
+    val cargo: String,
+    
+    @SerializedName("area")
+    val area: String
+)
+
+/**
+ * Modelo para la respuesta de registro
+ */
+data class RegisterResponse(
+    @SerializedName("success")
+    val success: Boolean,
+    
+    @SerializedName("token")
+    val token: String?,
+    
+    @SerializedName("message")
+    val message: String?,
+    
+    @SerializedName("error")
+    val error: String?
+)
+
+/**
+ * Modelo para la petición de recuperación de contraseña
+ */
+data class ForgotPasswordRequest(
+    @SerializedName("email")
+    val email: String
+)
+
+/**
+ * Modelo para la respuesta de recuperación de contraseña
+ */
+data class ForgotPasswordResponse(
+    @SerializedName("success")
+    val success: Boolean,
+    
+    @SerializedName("message")
+    val message: String?,
+    
+    @SerializedName("error")
+    val error: String?
+)

@@ -10,18 +10,21 @@ import androidx.credentials.GetCredentialResponse
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.example.sistemadecalidad.R
+import kotlinx.coroutines.tasks.await
 import java.security.MessageDigest
 import java.util.UUID
 
 /**
- * Cliente para manejar autenticación con Google usando Credential Manager API
- * Implementación moderna recomendada por Google (reemplaza GoogleSignInClient)
+ * Cliente para manejar autenticación con Google usando Credential Manager API y Firebase Auth
  */
 class GoogleAuthUiClient(
     private val context: Context
 ) {
     private val credentialManager = CredentialManager.create(context)
+    private val auth = FirebaseAuth.getInstance()
     
     /**
      * Datos del usuario autenticado con Google
@@ -36,22 +39,30 @@ class GoogleAuthUiClient(
         val username: String?,
         val email: String?,
         val profilePictureUrl: String?,
-        val idToken: String  // Token JWT de Google para enviar al backend
+        val idToken: String // Token JWT de Google (para compatibilidad con backend actual)
     )
     
     /**
-     * Iniciar el flujo de autenticación con Google
-     * Usa Credential Manager API (Android 14+) con fallback a Play Services
+     * Iniciar el flujo de autenticación con Google y luego con Firebase
      */
     suspend fun signIn(): SignInResult {
         return try {
             val result = buildCredentialRequest()
-            handleSignInResult(result)
+            val googleToken = getGoogleIdToken(result)
+            
+            if (googleToken != null) {
+                signInWithFirebase(googleToken)
+            } else {
+                SignInResult(
+                    data = null,
+                    errorMessage = "No se pudo obtener el token de Google"
+                )
+            }
         } catch (e: androidx.credentials.exceptions.NoCredentialException) {
-            android.util.Log.e("GoogleAuthUiClient", "No credentials available - App not registered in Google Console", e)
+            android.util.Log.e("GoogleAuthUiClient", "No credentials available", e)
             SignInResult(
                 data = null,
-                errorMessage = "Autenticación con Google no configurada. Contacta al administrador."
+                errorMessage = "No se encontraron cuentas de Google."
             )
         } catch (e: androidx.credentials.exceptions.GetCredentialException) {
             android.util.Log.e("GoogleAuthUiClient", "Credential error: ${e.message}", e)
@@ -72,101 +83,102 @@ class GoogleAuthUiClient(
      * Construir la solicitud de credenciales de Google
      */
     private suspend fun buildCredentialRequest(): GetCredentialResponse {
-        // Generar nonce único para seguridad (previene ataques de replay)
         val rawNonce = UUID.randomUUID().toString()
         val hashedNonce = hashNonce(rawNonce)
         
-        // Configurar opciones para Google ID
+        // El Web Client ID debe estar configurado en strings.xml
+        val clientId = context.getString(R.string.default_web_client_id)
+        
+        android.util.Log.d("GoogleAuthUiClient", "Using Client ID: $clientId")
+        
         val googleIdOption = GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(false) // Mostrar todas las cuentas de Google
-            .setServerClientId(context.getString(R.string.google_client_id))
-            .setNonce(hashedNonce) // Prevenir ataques de replay
+            .setFilterByAuthorizedAccounts(false) // Mostrar todas las cuentas, no solo autorizadas
+            .setServerClientId(clientId)
+            .setNonce(hashedNonce)
             .setAutoSelectEnabled(true) // Auto-seleccionar si solo hay una cuenta
             .build()
         
-        // Crear request con opciones de Google
         val request = GetCredentialRequest.Builder()
             .addCredentialOption(googleIdOption)
             .build()
         
-        // Ejecutar request (mostrará UI de Google para seleccionar cuenta)
         return credentialManager.getCredential(
             request = request,
             context = context
         )
     }
-    
+
     /**
-     * Procesar el resultado de autenticación
+     * Extraer el ID Token de la respuesta de Credential Manager
      */
-    private fun handleSignInResult(result: GetCredentialResponse): SignInResult {
-        return when (val credential = result.credential) {
-            is CustomCredential -> {
-                if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                    try {
-                        // Parsear credencial de Google
-                        val googleIdTokenCredential = GoogleIdTokenCredential
-                            .createFrom(credential.data)
-                        
-                        // Extraer datos del usuario
-                        SignInResult(
-                            data = UserData(
-                                userId = googleIdTokenCredential.id,
-                                username = googleIdTokenCredential.displayName,
-                                email = googleIdTokenCredential.id, // El ID de Google es el email
-                                profilePictureUrl = googleIdTokenCredential.profilePictureUri?.toString(),
-                                idToken = googleIdTokenCredential.idToken // Token JWT para backend
-                            ),
-                            errorMessage = null
-                        )
-                    } catch (e: GoogleIdTokenParsingException) {
-                        android.util.Log.e("GoogleAuthUiClient", "Error parseando token: ${e.message}", e)
-                        SignInResult(
-                            data = null,
-                            errorMessage = "Error al procesar credenciales de Google"
-                        )
-                    }
-                } else {
-                    android.util.Log.e("GoogleAuthUiClient", "Tipo de credencial no soportado: ${credential.type}")
-                    SignInResult(
-                        data = null,
-                        errorMessage = "Tipo de credencial no soportado"
-                    )
-                }
+    private fun getGoogleIdToken(result: GetCredentialResponse): String? {
+        val credential = result.credential
+        if (credential is CustomCredential && 
+            credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+            try {
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                return googleIdTokenCredential.idToken
+            } catch (e: GoogleIdTokenParsingException) {
+                android.util.Log.e("GoogleAuthUiClient", "Error parseando token", e)
             }
-            else -> {
-                android.util.Log.e("GoogleAuthUiClient", "Tipo de credencial desconocido")
+        }
+        return null
+    }
+
+    /**
+     * Iniciar sesión en Firebase con el token de Google
+     */
+    private suspend fun signInWithFirebase(googleIdToken: String): SignInResult {
+        return try {
+            val credential = GoogleAuthProvider.getCredential(googleIdToken, null)
+            val authResult = auth.signInWithCredential(credential).await()
+            val user = authResult.user
+            
+            // NOTA: Usamos googleIdToken para el backend porque probablemente espera
+            // validar contra Google directamente, no contra Firebase Admin.
+            // Si el backend usara Firebase Admin, usaríamos user.getIdToken(true)
+            
+            if (user != null) {
+                SignInResult(
+                    data = UserData(
+                        userId = user.uid,
+                        username = user.displayName,
+                        email = user.email,
+                        profilePictureUrl = user.photoUrl?.toString(),
+                        idToken = googleIdToken // Enviamos el token de Google original
+                    ),
+                    errorMessage = null
+                )
+            } else {
                 SignInResult(
                     data = null,
-                    errorMessage = "Error: tipo de credencial desconocido"
+                    errorMessage = "Error al obtener usuario de Firebase"
                 )
             }
+        } catch (e: Exception) {
+            android.util.Log.e("GoogleAuthUiClient", "Error en Firebase Auth", e)
+            SignInResult(
+                data = null,
+                errorMessage = "Error al iniciar sesión en Firebase: ${e.message}"
+            )
         }
     }
     
-    /**
-     * Cerrar sesión de Google (limpiar caché de Credential Manager)
-     * Nota: Credential Manager no tiene método de logout explícito,
-     * el logout se maneja desde el AuthViewModel limpiando la sesión local
-     */
     suspend fun signOut() {
-        // No hay acción específica necesaria con Credential Manager
-        // La sesión se limpia desde PreferencesManager en el ViewModel
-        android.util.Log.d("GoogleAuthUiClient", "Sesión de Google limpiada")
+        try {
+            auth.signOut()
+            credentialManager.clearCredentialState(androidx.credentials.ClearCredentialStateRequest())
+        } catch (e: Exception) {
+            android.util.Log.e("GoogleAuthUiClient", "Error en signOut", e)
+        }
     }
     
-    /**
-     * Obtener usuario actual (si existe sesión activa)
-     * Con Credential Manager, no hay concepto de "usuario actual" persistente
-     * La sesión se maneja completamente desde el backend
-     */
-    suspend fun getSignedInUser(): UserData? {
-        return null // Credential Manager no mantiene estado de sesión
+    fun getSignedInUser(): UserData? {
+        // No podemos obtener el idToken sincrónicamente desde currentUser
+        // Este método solo se usa para verificar si hay sesión activa
+        return null
     }
     
-    /**
-     * Hash del nonce para seguridad
-     */
     private fun hashNonce(nonce: String): String {
         val bytes = nonce.toByteArray()
         val md = MessageDigest.getInstance("SHA-256")
