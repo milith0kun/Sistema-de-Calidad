@@ -8,8 +8,8 @@ const { config } = require('../config-app-universal');
 
 const router = express.Router();
 
-// Cliente de OAuth2 de Google
-const GOOGLE_CLIENT_ID = '802542269966-ul9gdhgsl5u5ja7ionfqa1ffceqog7di.apps.googleusercontent.com';
+// Cliente de OAuth2 de Google - Client ID real del token JWT (audience)
+const GOOGLE_CLIENT_ID = '888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com';
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // POST /api/auth/login - Iniciar sesión
