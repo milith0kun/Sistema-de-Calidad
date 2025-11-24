@@ -91,7 +91,7 @@ fun ValidatedTextField(
         )
         
         // Mostrar mensaje de error
-        if (isError && displayError != null) {
+        if (displayError != null) {
             Text(
                 text = displayError,
                 color = MaterialTheme.colorScheme.error,

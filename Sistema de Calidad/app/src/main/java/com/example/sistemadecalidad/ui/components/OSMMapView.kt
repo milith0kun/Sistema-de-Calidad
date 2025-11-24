@@ -104,7 +104,7 @@ fun OSMMapView(
                         MapView(context).apply {
                             setTileSource(TileSourceFactory.MAPNIK)
                             setMultiTouchControls(true)
-                            setBuiltInZoomControls(false)
+                            zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
                             
                             // Configurar el mapa
                             controller.setZoom(16.0)

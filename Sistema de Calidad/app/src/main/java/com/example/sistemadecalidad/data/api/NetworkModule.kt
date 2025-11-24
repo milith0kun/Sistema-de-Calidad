@@ -94,7 +94,7 @@ object NetworkModule {
      */
     fun provideGson(): Gson {
         return GsonBuilder()
-            .setLenient()
+            //.setLenient() // Deprecated
             .registerTypeAdapter(Boolean::class.java, com.example.sistemadecalidad.data.model.BooleanDeserializer())
             .create()
     }

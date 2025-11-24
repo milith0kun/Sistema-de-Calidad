@@ -339,7 +339,7 @@ fun LoginScreen(
                 containerColor = Color.White,
                 contentColor = Color.Black
             ),
-            border = ButtonDefaults.outlinedButtonBorder
+            border = ButtonDefaults.outlinedButtonBorder(enabled = !uiState.isLoading)
         ) {
             Row(
                 horizontalArrangement = Arrangement.Center,

@@ -35,6 +35,7 @@ class ConnectivityManager(
             @Suppress("DEPRECATION")
             val networkInfo = connectivityManager.activeNetworkInfo
             // Usar isConnectedOrConnecting en lugar de isConnected para mejor compatibilidad
+            @Suppress("DEPRECATION")
             networkInfo?.isConnectedOrConnecting == true
         }
     }
