@@ -21,6 +21,13 @@ interface ApiService {
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
     
     /**
+     * Login con Google - Envía ID token para validación
+     * POST /auth/google
+     */
+    @POST("auth/google")
+    suspend fun loginWithGoogle(@Body request: Map<String, String>): Response<LoginResponse>
+    
+    /**
      * Verificar token JWT
      * GET /auth/verify
      */
@@ -33,6 +40,20 @@ interface ApiService {
      */
     @POST("auth/refresh")
     suspend fun refreshToken(@Header("Authorization") token: String): Response<LoginResponse>
+    
+    /**
+     * Registrar nuevo usuario
+     * POST /auth/register
+     */
+    @POST("auth/register")
+    suspend fun register(@Body request: RegisterRequest): Response<RegisterResponse>
+    
+    /**
+     * Recuperar contraseña
+     * POST /auth/forgot-password
+     */
+    @POST("auth/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<ForgotPasswordResponse>
     
     // ========== FICHADO ==========
     

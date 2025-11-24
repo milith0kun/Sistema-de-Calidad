@@ -35,6 +35,16 @@ wino.pem
 # PowerShell scripts con información sensible
 conectar-servidor.ps1
 
+# Firebase / Google secrets
+Sistema de Calidad/app/client_secret.json
+
+# Certificates and keys
+Sistema de Calidad/app/*.der
+Sistema de Calidad/app/*.jks
+
+# Google services config (optional, keep out of repo if you prefer)
+Sistema de Calidad/app/google-services.json
+
 # Build artifacts
 dist.tar.gz
 *.tar.gz

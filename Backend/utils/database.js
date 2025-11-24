@@ -46,7 +46,10 @@ const initializeDatabase = () => {
                 nombre TEXT NOT NULL,
                 apellido TEXT,
                 email TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
+                password TEXT,
+                google_id TEXT UNIQUE,
+                google_photo TEXT,
+                auth_provider TEXT DEFAULT 'local' CHECK(auth_provider IN ('local', 'google')),
                 rol TEXT NOT NULL CHECK(rol IN ('Empleador', 'Supervisor')),
                 cargo TEXT,
                 area TEXT,
@@ -128,6 +131,25 @@ const initializeDatabase = () => {
                     return;
                 }
                 console.log('Tabla códigos QR creada o ya existe');
+                
+                // Agregar columnas de Google si no existen
+                db.run(`ALTER TABLE usuarios ADD COLUMN google_id TEXT UNIQUE`, (err) => {
+                    if (err && !err.message.includes('duplicate column name')) {
+                        console.log('Info: columna google_id ya existe o no se pudo agregar');
+                    }
+                });
+                
+                db.run(`ALTER TABLE usuarios ADD COLUMN google_photo TEXT`, (err) => {
+                    if (err && !err.message.includes('duplicate column name')) {
+                        console.log('Info: columna google_photo ya existe o no se pudo agregar');
+                    }
+                });
+                
+                db.run(`ALTER TABLE usuarios ADD COLUMN auth_provider TEXT DEFAULT 'local'`, (err) => {
+                    if (err && !err.message.includes('duplicate column name')) {
+                        console.log('Info: columna auth_provider ya existe o no se pudo agregar');
+                    }
+                });
                 
                 // Insertar usuarios por defecto después de crear todas las tablas
                 insertDefaultUsers().then(() => {
