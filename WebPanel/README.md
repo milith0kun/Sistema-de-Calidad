@@ -1,232 +1,572 @@
-# 🌐 Sistema HACCP - Panel Web Administrativo
+# WebPanel - Sistema de Calidad HACCP
 
-Panel web administrativo para gestión del Sistema de Calidad HACCP desarrollado con React + Vite + Material-UI.
+## 📋 Descripción
 
-## 🚀 Tecnologías
+Panel web administrativo desarrollado en React para la gestión del sistema de control de calidad HACCP. Proporciona una interfaz visual para monitorear asistencias, registrar formularios HACCP, generar reportes y administrar usuarios.
 
-- **Frontend**: React 18 + Vite
-- **UI**: Material-UI (MUI)
-- **Routing**: React Router v6
-- **State Management**: Zustand + Context API
-- **HTTP Client**: Axios
-- **Charts**: Recharts
-- **Export**: XLSX
+## 🛠️ Tecnologías
 
-## 📦 Instalación
-
-```bash
-# Instalar dependencias
-npm install
-
-# Copiar variables de entorno
-cp .env.example .env
-
-# Editar .env con tu configuración
-# VITE_API_URL=http://18.220.8.226:3000/api
-```
-
-## 🛠️ Desarrollo
-
-```bash
-# Modo desarrollo (puerto 5173)
-npm run dev
-
-# Build para producción
-npm run build
-
-# Preview del build
-npm run preview
-```
+- **Framework**: React 18.2
+- **Build Tool**: Vite 5.0
+- **UI Library**: Material-UI (MUI) 5.14
+- **Routing**: React Router DOM 6.20
+- **State Management**: Zustand 4.4 + React Context API
+- **Forms**: React Hook Form 7.48
+- **Charts**: Recharts 2.10
+- **HTTP Client**: Axios 1.6
+- **Excel Export**: ExcelJS 4.4 + XLSX
+- **Date Handling**: date-fns 2.30
 
 ## 📁 Estructura del Proyecto
 
 ```
 WebPanel/
+├── index.html              # HTML raíz
+├── vite.config.js          # Configuración de Vite
+├── package.json            # Dependencias y scripts
+├── nginx.conf              # Configuración Nginx para producción
 ├── src/
-│   ├── components/          # Componentes reutilizables
-│   │   ├── Layout.jsx       # Layout principal con sidebar
-│   │   └── ProtectedRoute.jsx
-│   ├── context/             # Context API
-│   │   └── AuthContext.jsx  # Autenticación global
-│   ├── pages/               # Páginas principales
-│   │   ├── Login.jsx
-│   │   ├── Dashboard.jsx
-│   │   ├── Asistencias.jsx
-│   │   ├── Usuarios.jsx
-│   │   ├── Reportes.jsx
-│   │   ├── Auditoria.jsx
-│   │   └── HACCP/           # Submódulos HACCP
+│   ├── main.jsx           # Punto de entrada React
+│   ├── App.jsx            # Componente raíz + Router
+│   ├── index.css          # Estilos globales
+│   ├── components/        # Componentes reutilizables
+│   │   ├── Layout.jsx            # Layout principal con Sidebar
+│   │   ├── ProtectedRoute.jsx   # HOC para rutas protegidas
+│   │   ├── DataTable.jsx         # Tabla genérica con paginación
+│   │   ├── DigitalSignature.jsx  # Canvas para firmas digitales
+│   │   ├── FormularioLavadoManos.jsx
+│   │   └── Footer.jsx
+│   ├── pages/             # Vistas principales
+│   │   ├── Login.jsx             # Pantalla de login
+│   │   ├── Dashboard.jsx         # Dashboard con estadísticas
+│   │   ├── Asistencias.jsx       # Registro de fichajes
+│   │   ├── Usuarios.jsx          # CRUD de usuarios
+│   │   ├── Reportes.jsx          # Exportación Excel
+│   │   ├── Auditoria.jsx         # Logs del sistema
+│   │   ├── Configuracion.jsx     # Ajustes globales
+│   │   └── HACCP/                # Formularios HACCP
 │   │       ├── RecepcionMercaderia.jsx
+│   │       ├── RecepcionAbarrotes.jsx
 │   │       ├── ControlCoccion.jsx
 │   │       ├── LavadoFrutas.jsx
 │   │       ├── LavadoManos.jsx
 │   │       └── TemperaturaCamaras.jsx
-│   ├── services/            # Servicios API
-│   │   └── api.js           # Cliente Axios + endpoints
-│   ├── utils/               # Utilidades
-│   │   └── exportExcel.js   # Exportación a Excel
-│   ├── App.jsx              # Componente principal
-│   └── main.jsx             # Entry point
-├── index.html
-├── vite.config.js
-└── package.json
+│   ├── context/
+│   │   └── AuthContext.jsx      # Context de autenticación global
+│   ├── services/
+│   │   └── api.js               # Cliente Axios + endpoints
+│   ├── config/
+│   │   └── environment.js       # Detección de entorno (dev/prod)
+│   ├── styles/
+│   │   └── buttons.css          # Estilos personalizados
+│   └── utils/
+│       ├── exportExcel.js       # Helper para exportar a Excel
+│       └── timeConfig.js        # Configuración de zona horaria
 ```
 
-## 🔐 Autenticación
+## 🚀 Scripts Disponibles
 
-El sistema usa JWT (JSON Web Tokens) almacenados en `localStorage`:
+```json
+{
+  "dev": "vite",                          // Servidor desarrollo (localhost:5173)
+  "build": "vite build",                  // Build para producción
+  "build:prod": "vite build --mode production",
+  "preview": "vite preview",              // Preview del build
+  "lint": "eslint . --ext js,jsx",        // Linter de código
+  "deploy": "npm run build && echo ...",  // Build + instrucciones
+  "deploy:prod": "npm run build:prod ...",
+  "clean": "rm -rf dist node_modules/.cache",
+  "dev:remote": "vite --host 0.0.0.0 --port 3000"  // Acceso desde red local
+}
+```
+
+## ⚙️ Configuración y Variables de Entorno
+
+El frontend detecta automáticamente el entorno usando `config/environment.js`:
 
 ```javascript
-// Login
-const { login } = useAuth();
-await login('admin@hotel.com', 'admin123');
+// Configuración automática
+export function detectEnvironment() {
+  const hostname = window.location.hostname;
+  
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'development';
+  } else if (hostname.includes('18.216.180.19')) {
+    return 'production-aws';
+  }
+  return 'production';
+}
 
-// Logout
-const { logout } = useAuth();
-logout();
-
-// Verificar autenticación
-const { isAuthenticated, user } = useAuth();
+export function getEnvironmentConfig() {
+  const env = detectEnvironment();
+  
+  const configs = {
+    'development': {
+      API_URL: 'http://localhost:3000/api',
+      ENV_NAME: 'Desarrollo Local'
+    },
+    'production-aws': {
+      API_URL: 'http://18.216.180.19:3000/api',
+      ENV_NAME: 'Producción AWS'
+    }
+  };
+  
+  return configs[env];
+}
 ```
 
-## 📊 Funcionalidades
+### Crear archivo `.env` (opcional para override)
 
-### ✅ Implementadas
-
-1. **Login** - Autenticación con email + password
-2. **Dashboard** - Resumen con gráficos y estadísticas
-3. **Asistencias** - Tabla con filtros + exportación Excel
-4. **Recepción Mercadería** - Tabla HACCP con filtros por tipo
-
-### 🚧 En desarrollo
-
-5. **Control Cocción** - Tabla de control de cocción
-6. **Lavado Frutas** - Tabla de lavado de frutas/verduras
-7. **Lavado Manos** - Tabla de lavado de manos
-8. **Temperatura Cámaras** - Tabla de temperatura + gráficos
-9. **Usuarios** - CRUD completo de usuarios
-10. **Reportes** - Reportes de no conformidades
-11. **Auditoría** - Logs de auditoría
-
-## 📤 Exportación a Excel
-
-Todas las tablas incluyen botón "Exportar a Excel":
-
-```javascript
-import { exportarAsistencias } from '../utils/exportExcel';
-
-// Exportar asistencias
-exportarAsistencias(datos, mes, anio);
-
-// Exportar recepción mercadería
-exportarRecepcionMercaderia(datos, mes, anio, 'FRUTAS_VERDURAS');
+```env
+VITE_API_URL=http://localhost:3000/api
+VITE_ENV_NAME=development
 ```
 
-## 🌐 Deploy a AWS EC2
+## 🎨 Tema y Diseño
 
-### Opción 1: Nginx como servidor estático
-
-```bash
-# 1. Build local
-npm run build
-
-# 2. Transferir archivos al servidor
-scp -r dist/* ubuntu@18.220.8.226:/var/www/sistema-haccp/
-
-# 3. Configurar Nginx (ver DEPLOY.md)
-```
-
-### Opción 2: Servir con Node.js
-
-```bash
-# 1. Build local
-npm run build
-
-# 2. Copiar dist al servidor
-# 3. Servir con serve o express
-npm install -g serve
-serve -s dist -p 80
-```
-
-## 🔧 Configuración de Nginx
-
-Ver archivo `DEPLOY.md` para instrucciones completas de deployment.
-
-## 📱 Responsive Design
-
-El panel es completamente responsive:
-- Desktop: Sidebar fijo
-- Tablet: Sidebar colapsable
-- Mobile: Drawer hamburger menu
-
-## 🎨 Personalización
-
-### Cambiar tema
-
-Editar `src/App.jsx`:
+El panel usa un tema personalizado tipo UNIFYDATA con Material-UI:
 
 ```javascript
 const theme = createTheme({
   palette: {
+    mode: 'light',
     primary: {
-      main: '#1976d2', // Tu color primario
+      main: '#6366F1',  // Indigo
+      light: '#818CF8',
+      dark: '#4F46E5'
     },
     secondary: {
-      main: '#dc004e', // Tu color secundario
+      main: '#4ADE80',  // Verde menta
+      light: '#86EFAC',
+      dark: '#22C55E'
     },
+    background: {
+      default: '#F8F9FA',
+      paper: '#FFFFFF'
+    }
   },
+  typography: {
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+    h1: { fontSize: '2.5rem', fontWeight: 700 },
+    h2: { fontSize: '2rem', fontWeight: 600 },
+    // ...
+  }
 });
 ```
 
-### Cambiar logo
+## 🗺️ Rutas de la Aplicación
 
-Reemplazar `public/vite.svg` con tu logo.
+```jsx
+<Routes>
+  <Route path="/login" element={<Login />} />
+  
+  {/* Rutas protegidas */}
+  <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+    <Route path="/" element={<Dashboard />} />
+    <Route path="/asistencias" element={<Asistencias />} />
+    <Route path="/usuarios" element={<Usuarios />} />
+    <Route path="/reportes" element={<Reportes />} />
+    <Route path="/auditoria" element={<Auditoria />} />
+    <Route path="/configuracion" element={<Configuracion />} />
+    
+    {/* HACCP */}
+    <Route path="/haccp/recepcion-mercaderia" element={<RecepcionMercaderia />} />
+    <Route path="/haccp/recepcion-abarrotes" element={<RecepcionAbarrotes />} />
+    <Route path="/haccp/control-coccion" element={<ControlCoccion />} />
+    <Route path="/haccp/lavado-frutas" element={<LavadoFrutas />} />
+    <Route path="/haccp/lavado-manos" element={<LavadoManos />} />
+    <Route path="/haccp/temperatura-camaras" element={<TemperaturaCamaras />} />
+  </Route>
+  
+  <Route path="*" element={<Navigate to="/" replace />} />
+</Routes>
+```
 
-## 📝 API Endpoints
+## 🔐 Autenticación (AuthContext)
 
-Documentación completa en `Backend/BACKEND_ARCHITECTURE.md`
+```jsx
+// Uso en componentes
+import { useAuth } from './context/AuthContext';
 
-Base URL: `http://18.220.8.226:3000/api`
+function MyComponent() {
+  const { user, login, logout, loading } = useAuth();
+  
+  const handleLogin = async (email, password) => {
+    const success = await login(email, password);
+    if (success) {
+      // Redirigir al dashboard
+    }
+  };
+  
+  return (
+    <div>
+      {user ? `Hola ${user.nombre}` : 'No autenticado'}
+      <button onClick={logout}>Cerrar sesión</button>
+    </div>
+  );
+}
+```
 
-### Autenticación
-- `POST /auth/login`
-- `GET /auth/verify`
+### Token Storage
+- JWT guardado en `localStorage` con key `token`
+- Se incluye automáticamente en headers de API:
+  ```javascript
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  ```
+
+## 📡 Cliente API (`services/api.js`)
+
+```javascript
+import axios from 'axios';
+import { getEnvironmentConfig } from '../config/environment';
+
+const config = getEnvironmentConfig();
+const API_URL = config.API_URL;
+
+// Configuración global Axios
+axios.defaults.baseURL = API_URL;
+axios.defaults.headers.common['Content-Type'] = 'application/json';
+
+// Interceptor para incluir token
+axios.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Interceptor para manejar errores 401 (token expirado)
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default axios;
+```
+
+### Endpoints disponibles
+
+```javascript
+// Autenticación
+POST /auth/login
+POST /auth/google
+GET  /auth/me
+
+// Dashboard
+GET /dashboard/stats
+GET /dashboard/asistencias-hoy
+GET /dashboard/empleados-activos
+
+// Asistencias
+GET  /fichado/hoy
+GET  /fichado/mis-fichajes
+POST /fichado/marcar
+
+// HACCP
+GET  /haccp/recepcion-mercaderia
+POST /haccp/recepcion-mercaderia
+GET  /haccp/lavado-frutas
+POST /haccp/lavado-frutas
+// ... otros formularios
+
+// Usuarios (admin)
+GET    /usuarios
+POST   /usuarios
+PUT    /usuarios/:id
+DELETE /usuarios/:id
+
+// Reportes
+GET /reportes/asistencias?start=2025-01-01&end=2025-01-31
+GET /reportes/haccp/:tipo?start=...&end=...
+
+// Auditoría
+GET /auditoria
+```
+
+## 📊 Componentes Principales
 
 ### Dashboard
-- `GET /dashboard/hoy`
-- `GET /dashboard/admin`
+- **Estadísticas en tiempo real**: Empleados activos, asistencias del día, formularios pendientes
+- **Gráficos**: Recharts (líneas, barras, donuts)
+- **Filtros**: Por fecha, empleado, tipo de formulario
 
-### Fichado
-- `GET /fichado/historial?mes=X&anio=Y`
+### DataTable
+Tabla genérica reutilizable con:
+- Paginación
+- Ordenamiento por columnas
+- Búsqueda/filtrado
+- Acciones personalizables (editar, eliminar, ver)
+- Exportación a CSV/Excel
 
-### HACCP
-- `GET /haccp/recepcion-mercaderia?mes=X&anio=Y&tipo=FRUTAS_VERDURAS`
-- `GET /haccp/control-coccion?mes=X&anio=Y`
-- (ver más en BACKEND_ARCHITECTURE.md)
+```jsx
+<DataTable
+  columns={[
+    { id: 'nombre', label: 'Nombre', sortable: true },
+    { id: 'email', label: 'Email' },
+    { id: 'rol', label: 'Rol', render: (row) => <Chip label={row.rol} /> }
+  ]}
+  data={usuarios}
+  onEdit={(row) => handleEdit(row)}
+  onDelete={(row) => handleDelete(row)}
+  searchable
+  exportable
+/>
+```
+
+### DigitalSignature
+Canvas HTML5 para firmas digitales:
+```jsx
+<DigitalSignature
+  onSave={(signatureBase64) => {
+    // Guardar firma en formulario
+    setFormData({ ...formData, firma: signatureBase64 });
+  }}
+  onClear={() => console.log('Firma borrada')}
+/>
+```
+
+### ProtectedRoute
+HOC que protege rutas requiriendo autenticación:
+```jsx
+<ProtectedRoute>
+  <Dashboard />
+</ProtectedRoute>
+```
+
+## 📦 Build y Deployment
+
+### Desarrollo Local
+
+```bash
+# Instalar dependencias
+npm install
+
+# Iniciar servidor desarrollo (puerto 5173)
+npm run dev
+
+# Abrir en navegador
+http://localhost:5173
+```
+
+### Build de Producción
+
+```bash
+# Generar build optimizado
+npm run build
+
+# La carpeta dist/ contendrá los archivos estáticos
+
+# Preview del build localmente
+npm run preview
+```
+
+### Deployment en AWS EC2 (Nginx)
+
+1. **Compilar localmente**:
+   ```bash
+   npm run build:prod
+   ```
+
+2. **Subir archivos al servidor**:
+   ```bash
+   # Vía SCP
+   scp -r dist/* ubuntu@18.216.180.19:/var/www/webpanel/
+   
+   # O vía FTP/FileZilla
+   ```
+
+3. **Configurar Nginx** (`/etc/nginx/sites-available/default`):
+   ```nginx
+   server {
+       listen 80;
+       server_name 18.216.180.19;
+       
+       root /var/www/webpanel;
+       index index.html;
+       
+       # SPA: todas las rutas → index.html
+       location / {
+           try_files $uri $uri/ /index.html;
+       }
+       
+       # Proxy API al backend
+       location /api/ {
+           proxy_pass http://localhost:3000;
+           proxy_http_version 1.1;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+       }
+       
+       # Cache estáticos
+       location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
+           expires 1y;
+           add_header Cache-Control "public, immutable";
+       }
+   }
+   ```
+
+4. **Reiniciar Nginx**:
+   ```bash
+   sudo systemctl reload nginx
+   ```
+
+### Vite Build Optimizations
+
+```javascript
+// vite.config.js
+export default defineConfig({
+  plugins: [react()],
+  build: {
+    outDir: 'dist',
+    sourcemap: false,  // Desactivar en producción
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true  // Eliminar console.log
+      }
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['react', 'react-dom', 'react-router-dom'],
+          'mui': ['@mui/material', '@mui/icons-material'],
+          'charts': ['recharts']
+        }
+      }
+    }
+  },
+  server: {
+    port: 5173,
+    host: true  // Permitir acceso desde red local
+  }
+});
+```
+
+## 📊 Exportación de Reportes
+
+### Excel con ExcelJS
+
+```javascript
+import ExcelJS from 'exceljs';
+
+async function exportarAsistencias(datos) {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Asistencias');
+  
+  // Encabezados
+  worksheet.columns = [
+    { header: 'Fecha', key: 'fecha', width: 12 },
+    { header: 'Empleado', key: 'empleado', width: 30 },
+    { header: 'Entrada', key: 'entrada', width: 10 },
+    { header: 'Salida', key: 'salida', width: 10 }
+  ];
+  
+  // Datos
+  datos.forEach(row => worksheet.addRow(row));
+  
+  // Estilos
+  worksheet.getRow(1).font = { bold: true };
+  worksheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF4F81BD' }
+  };
+  
+  // Descargar
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `asistencias_${new Date().toISOString().split('T')[0]}.xlsx`;
+  link.click();
+}
+```
+
+## 🔍 Debugging
+
+### Ver logs de red
+```javascript
+// Activar logs detallados de Axios
+axios.interceptors.request.use(config => {
+  console.log('→ Request:', config.method.toUpperCase(), config.url);
+  return config;
+});
+
+axios.interceptors.response.use(response => {
+  console.log('← Response:', response.status, response.config.url);
+  return response;
+});
+```
+
+### React DevTools
+- Instalar extensión React Developer Tools
+- Ver árbol de componentes, props y estado
 
 ## 🐛 Troubleshooting
 
-### Error de CORS
+### Error: CORS blocked
+- Verificar que backend tenga `cors` habilitado
+- Comprobar que `API_URL` en `environment.js` sea correcta
 
-Si ves errores de CORS, asegúrate de que el backend tenga configurado:
+### Error: 401 Unauthorized
+- Token expirado → hacer logout y login nuevamente
+- Token no enviado → verificar `axios.interceptors.request`
 
-```javascript
-// server.js
-const cors = require('cors');
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://18.220.8.226'],
-  credentials: true
-}));
+### Build falla
+```bash
+# Limpiar cache y reinstalar
+npm run clean
+rm -rf node_modules package-lock.json
+npm install
+npm run build
 ```
 
-### Token expirado
+### Vite no actualiza cambios
+```bash
+# Ctrl+C para detener servidor
+# Limpiar cache de Vite
+rm -rf node_modules/.vite
+npm run dev
+```
 
-Los tokens JWT expiran en 24h. Si ves error 403, haz logout y vuelve a iniciar sesión.
+## 📱 Responsive Design
 
-## 📄 Licencia
+El panel es responsivo usando breakpoints de MUI:
+- **xs** (móviles): < 600px
+- **sm** (tablets): 600px - 960px
+- **md** (laptops): 960px - 1280px
+- **lg** (desktops): 1280px - 1920px
 
-Proyecto privado - Todos los derechos reservados
+```jsx
+// Ejemplo de diseño adaptable
+<Box sx={{
+  display: 'grid',
+  gridTemplateColumns: {
+    xs: '1fr',              // 1 columna en móvil
+    sm: 'repeat(2, 1fr)',   // 2 columnas en tablet
+    md: 'repeat(3, 1fr)'    // 3 columnas en desktop
+  },
+  gap: 2
+}}>
+  {/* Cards */}
+</Box>
+```
 
-## 👨‍💻 Autor
+## 🔗 Enlaces Relacionados
 
-Sistema desarrollado para gestión HACCP en hoteles/restaurantes
+- [Backend (API REST)](../Backend/README.md)
+- [App Android](../Sistema%20de%20Calidad/README.md)
+- [Documentación Principal](../README.md)
+
+---
+
+**Versión**: 1.0.0  
+**Última actualización**: 24 de noviembre de 2025
