@@ -213,33 +213,50 @@ router.post('/salida', authenticateToken, requireGPSValidation(false), (req, res
 router.get('/historial', authenticateToken, (req, res) => {
     try {
         const usuarioId = req.user.id;
-        const { limite = 30, pagina = 1, fecha_inicio, fecha_fin } = req.query;
+        const usuarioRol = req.user.rol;
+        const { limite = 30, pagina = 1, fecha_inicio, fecha_fin, mes, anio } = req.query;
         const offset = (pagina - 1) * limite;
 
-        // Construir filtros de fecha si se proporcionan
-        let whereClause = 'WHERE usuario_id = ?';
-        let queryParams = [usuarioId];
+        // Construir filtros según el rol del usuario
+        let whereClause = '';
+        let queryParams = [];
 
+        // Si es Supervisor o Empleador, puede ver todas las asistencias
+        // Si es Empleado, solo ve sus propias asistencias
+        if (usuarioRol !== 'Supervisor' && usuarioRol !== 'Empleador') {
+            whereClause = 'WHERE a.usuario_id = ?';
+            queryParams.push(usuarioId);
+        } else {
+            whereClause = 'WHERE 1=1'; // Condición siempre verdadera para supervisores
+        }
+
+        // Filtros de fecha
         if (fecha_inicio) {
-            whereClause += ' AND fecha >= ?';
+            whereClause += ' AND a.fecha >= ?';
             queryParams.push(fecha_inicio);
         }
 
         if (fecha_fin) {
-            whereClause += ' AND fecha <= ?';
+            whereClause += ' AND a.fecha <= ?';
             queryParams.push(fecha_fin);
         }
 
+        // Filtros por mes y año (para compatibilidad con web panel)
+        if (mes && anio) {
+            whereClause += ' AND strftime("%m", a.fecha) = ? AND strftime("%Y", a.fecha) = ?';
+            queryParams.push(String(mes).padStart(2, '0'), String(anio));
+        }
+
         const query = `
-            SELECT 
+            SELECT
                 a.id,
                 a.fecha,
                 a.hora_entrada,
                 a.hora_salida,
-                CASE 
-                    WHEN a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL 
+                CASE
+                    WHEN a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
                     THEN ROUND((julianday(a.fecha || ' ' || a.hora_salida) - julianday(a.fecha || ' ' || a.hora_entrada)) * 24, 2)
-                    ELSE NULL 
+                    ELSE NULL
                 END as horas_trabajadas,
                 a.latitud,
                 a.longitud,
@@ -248,11 +265,17 @@ router.get('/historial', authenticateToken, (req, res) => {
                 a.metodo_fichado,
                 a.observaciones,
                 a.timestamp_creacion,
-                CASE 
-                    WHEN a.latitud IS NOT NULL AND a.longitud IS NOT NULL 
+                CASE
+                    WHEN a.latitud IS NOT NULL AND a.longitud IS NOT NULL
                     THEN 'GPS_DISPONIBLE'
                     ELSE 'SIN_GPS'
                 END as estado_gps,
+                CASE
+                    WHEN TIME(a.hora_entrada) <= '08:00:00' THEN 'PUNTUAL'
+                    WHEN TIME(a.hora_entrada) > '08:00:00' AND TIME(a.hora_entrada) <= '08:15:00' THEN 'TARDANZA'
+                    WHEN a.hora_entrada IS NULL THEN 'FALTA'
+                    ELSE 'TARDANZA'
+                END as estado,
                 u.nombre,
                 u.apellido,
                 u.cargo,
@@ -260,7 +283,7 @@ router.get('/historial', authenticateToken, (req, res) => {
                 u.email
             FROM asistencia a
             INNER JOIN usuarios u ON a.usuario_id = u.id
-            ${whereClause.replace('WHERE usuario_id', 'WHERE a.usuario_id')}
+            ${whereClause}
             ORDER BY a.fecha DESC, a.hora_entrada DESC
             LIMIT ? OFFSET ?
         `;
@@ -277,7 +300,7 @@ router.get('/historial', authenticateToken, (req, res) => {
             }
 
             // Obtener total de registros para paginación
-            const countQuery = `SELECT COUNT(*) as total FROM asistencia a ${whereClause.replace('WHERE usuario_id', 'WHERE a.usuario_id')}`;
+            const countQuery = `SELECT COUNT(*) as total FROM asistencia a INNER JOIN usuarios u ON a.usuario_id = u.id ${whereClause}`;
             const countParams = queryParams.slice(0, -2); // Remover limite y offset
 
             db.get(countQuery, countParams, (err, countResult) => {

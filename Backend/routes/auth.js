@@ -263,13 +263,13 @@ router.post('/google', async (req, res) => {
         } else {
             // Usuario no existe - crearlo automáticamente
             console.log('Usuario no encontrado. Creando nuevo usuario de Google...');
-            
-            // Determinar rol por defecto (Supervisor para usuarios de Google nuevos)
-            const rolPorDefecto = 'Supervisor';
-            
+
+            // Determinar rol por defecto (Empleado para usuarios de Google nuevos)
+            const rolPorDefecto = 'Empleado';
+
             try {
                 const result = await db.run(
-                    `INSERT INTO usuarios (nombre, apellido, email, password, google_id, google_photo, auth_provider, rol, cargo, area, activo) 
+                    `INSERT INTO usuarios (nombre, apellido, email, password, google_id, google_photo, auth_provider, rol, cargo, area, activo)
                      VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 1)`,
                     [nombre, apellido, email, googleId, photo, 'google', rolPorDefecto, 'Personal', 'General']
                 );
@@ -393,14 +393,14 @@ router.post('/register', async (req, res) => {
         // Crear usuario
         console.log('Creando nuevo usuario...');
         const result = await db.run(
-            `INSERT INTO usuarios (nombre, apellido, email, password, rol, cargo, area, activo, auth_provider) 
+            `INSERT INTO usuarios (nombre, apellido, email, password, rol, cargo, area, activo, auth_provider)
              VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'local')`,
             [
                 nombre,
                 apellido,
                 email,
                 hashedPassword,
-                'Supervisor', // Rol por defecto
+                'Empleado', // Rol por defecto
                 cargo || 'Personal',
                 area || 'General'
             ]
