@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './context/AuthContext';
-import { ProtectedRoute, RoleProtectedRoute } from './components/ProtectedRoute';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { detectEnvironment, getEnvironmentConfig } from './config/environment';
 
 // Pages
@@ -315,20 +315,16 @@ function App() {
         >
           <Routes>
             <Route path="/login" element={<Login />} />
-            
+
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
-              <Route path="asistencias" element={
-                <RoleProtectedRoute allowedRoles={['Supervisor', 'Empleador']}>
-                  <Asistencias />
-                </RoleProtectedRoute>
-              } />
+              <Route path="asistencias" element={<Asistencias />} />
               <Route path="usuarios" element={<Usuarios />} />
               <Route path="reportes" element={<Reportes />} />
               <Route path="auditoria" element={<Auditoria />} />
               <Route path="configuracion" element={<Configuracion />} />
-              
+
               {/* HACCP Routes */}
               <Route path="haccp/recepcion-mercaderia" element={<RecepcionMercaderia />} />
               <Route path="haccp/recepcion-abarrotes" element={<RecepcionAbarrotes />} />

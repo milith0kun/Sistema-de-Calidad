@@ -20,20 +20,33 @@ export const AuthProvider = ({ children }) => {
     });
 
     if (token && savedUser) {
-      console.log('✅ Token y usuario encontrados, estableciendo usuario...');
-      setUser(JSON.parse(savedUser));
+      const parsedUser = JSON.parse(savedUser);
+      const userRole = parsedUser?.rol;
+      const allowedRoles = ['Supervisor', 'Empleador'];
 
-      // Verificar que el token siga siendo válido (sin logout automático)
-      console.log('🔍 Iniciando verificación de token...');
-      authService.verifyToken()
-        .then(() => {
-          console.log('✅ Verificación de token exitosa');
-        })
-        .catch((error) => {
-          console.warn('⚠️ Token verification failed:', error);
-          // No hacer logout automático, solo log del error
-          // El interceptor de axios manejará la redirección si es necesario
-        });
+      // Verificar si el usuario tiene rol permitido para el WebPanel
+      if (!allowedRoles.includes(userRole)) {
+        console.log('❌ Usuario con rol no autorizado detectado:', userRole);
+        console.log('🚪 Cerrando sesión automáticamente...');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+      } else {
+        console.log('✅ Token y usuario encontrados, estableciendo usuario...');
+        setUser(parsedUser);
+
+        // Verificar que el token siga siendo válido (sin logout automático)
+        console.log('🔍 Iniciando verificación de token...');
+        authService.verifyToken()
+          .then(() => {
+            console.log('✅ Verificación de token exitosa');
+          })
+          .catch((error) => {
+            console.warn('⚠️ Token verification failed:', error);
+            // No hacer logout automático, solo log del error
+            // El interceptor de axios manejará la redirección si es necesario
+          });
+      }
     } else {
       console.log('❌ No hay token o usuario guardado');
     }
@@ -49,6 +62,18 @@ export const AuthProvider = ({ children }) => {
       console.log('📡 Respuesta del servidor:', response);
 
       if (response.success) {
+        // Verificar que el usuario tenga rol de Supervisor o Empleador
+        const userRole = response.user?.rol;
+        const allowedRoles = ['Supervisor', 'Empleador'];
+
+        if (!allowedRoles.includes(userRole)) {
+          console.log('❌ Acceso denegado - Rol no autorizado:', userRole);
+          return {
+            success: false,
+            error: `Acceso denegado. Solo Supervisores y Empleadores pueden acceder al WebPanel. Tu rol actual es: ${userRole || 'Desconocido'}`
+          };
+        }
+
         console.log('✅ Login exitoso, guardando datos...');
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
@@ -56,7 +81,8 @@ export const AuthProvider = ({ children }) => {
 
         console.log('💾 Datos guardados en localStorage:', {
           token: response.token.substring(0, 20) + '...',
-          user: response.user.nombre
+          user: response.user.nombre,
+          rol: response.user.rol
         });
 
         // Verificar que se guardó correctamente
