@@ -12,17 +12,17 @@ export const AuthProvider = ({ children }) => {
     // Verificar si hay token al cargar
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
-    
-    console.log('📋 Estado inicial:', { 
-      hasToken: !!token, 
+
+    console.log('📋 Estado inicial:', {
+      hasToken: !!token,
       hasSavedUser: !!savedUser,
       tokenPreview: token ? token.substring(0, 20) + '...' : null
     });
-    
+
     if (token && savedUser) {
       console.log('✅ Token y usuario encontrados, estableciendo usuario...');
       setUser(JSON.parse(savedUser));
-      
+
       // Verificar que el token siga siendo válido (sin logout automático)
       console.log('🔍 Iniciando verificación de token...');
       authService.verifyToken()
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       console.log('❌ No hay token o usuario guardado');
     }
-    
+
     setLoading(false);
     console.log('🏁 AuthContext useEffect completado');
   }, []);
@@ -47,18 +47,18 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.login(email, password);
       console.log('📡 Respuesta del servidor:', response);
-      
+
       if (response.success) {
         console.log('✅ Login exitoso, guardando datos...');
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
-        
+
         console.log('💾 Datos guardados en localStorage:', {
           token: response.token.substring(0, 20) + '...',
           user: response.user.nombre
         });
-        
+
         // Verificar que se guardó correctamente
         const savedToken = localStorage.getItem('token');
         const savedUser = localStorage.getItem('user');
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
           tokenSaved: !!savedToken,
           userSaved: !!savedUser
         });
-        
+
         return { success: true };
       } else {
         console.log('❌ Login fallido:', response.error);
@@ -74,9 +74,9 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('💥 Error en login:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Error de conexión' 
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Error de conexión'
       };
     }
   };
@@ -95,6 +95,7 @@ export const AuthProvider = ({ children }) => {
     isAdmin: user?.rol === 'Empleador',
     isSupervisor: user?.rol === 'Supervisor',
     isEmpleador: user?.rol === 'Empleador',
+    isEmpleado: user?.rol === 'Empleado',
   };
 
   return (
