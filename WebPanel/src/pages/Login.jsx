@@ -28,7 +28,7 @@ const Login = () => {
 
     try {
       const result = await login(email, password);
-      
+
       if (result.success) {
         navigate('/dashboard');
       } else {
@@ -62,9 +62,9 @@ const Login = () => {
       }}
     >
       <Container maxWidth="sm">
-        <Paper 
-          elevation={24} 
-          sx={{ 
+        <Paper
+          elevation={24}
+          sx={{
             borderRadius: 3,
             overflow: 'hidden',
             position: 'relative',
@@ -79,17 +79,17 @@ const Login = () => {
               textAlign: 'center',
             }}
           >
-            <Typography 
-              variant="h3" 
-              component="h1" 
-              gutterBottom 
+            <Typography
+              variant="h3"
+              component="h1"
+              gutterBottom
               fontWeight="700"
               sx={{ color: 'white' }}
             >
               Sistema HACCP
             </Typography>
-            <Typography 
-              variant="subtitle1" 
+            <Typography
+              variant="subtitle1"
               sx={{ color: 'rgba(255,255,255,0.9)' }}
             >
               Panel de Control Administrativo
@@ -125,7 +125,7 @@ const Login = () => {
                     },
                   }}
                 />
-                
+
                 <TextField
                   label="Contraseña"
                   type="password"
@@ -150,8 +150,8 @@ const Login = () => {
                   variant="contained"
                   fullWidth
                   size="large"
-                  sx={{ 
-                    mt: 3, 
+                  sx={{
+                    mt: 3,
                     mb: 2,
                     py: 1.5,
                     fontWeight: 600,
@@ -172,7 +172,7 @@ const Login = () => {
 
               <Box textAlign="center" mt={2}>
                 <Typography variant="body2" color="text.secondary">
-                  Credenciales de prueba: 174449@unsaac.edu.pe / password123
+                  Solo Supervisores y Empleadores pueden acceder al WebPanel
                 </Typography>
               </Box>
             </CardContent>
