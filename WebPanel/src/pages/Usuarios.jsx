@@ -42,23 +42,23 @@ const Usuarios = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   // Estados del diálogo
   const [openDialog, setOpenDialog] = useState(false);
   const [openPasswordDialog, setOpenPasswordDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  
+
   // Estados del formulario
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
     email: '',
     password: '',
-    rol: 'Supervisor',
+    rol: 'Empleado',
     cargo: '',
     area: '',
   });
-  
+
   const [newPassword, setNewPassword] = useState('');
   const [selectedUserId, setSelectedUserId] = useState(null);
 
@@ -72,7 +72,7 @@ const Usuarios = () => {
       setError('');
       const response = await usuariosService.getAll();
       console.log('Response usuarios:', response);
-      
+
       if (response && response.success) {
         setUsuarios(Array.isArray(response.data) ? response.data : []);
       } else {
@@ -107,7 +107,7 @@ const Usuarios = () => {
         apellido: '',
         email: '',
         password: '',
-        rol: 'Supervisor',
+        rol: 'Empleado',
         cargo: '',
         area: '',
       });
@@ -123,7 +123,7 @@ const Usuarios = () => {
       apellido: '',
       email: '',
       password: '',
-      rol: 'Supervisor',
+      rol: 'Empleado',
       cargo: '',
       area: '',
     });
@@ -136,7 +136,7 @@ const Usuarios = () => {
       setSuccess('');
 
       const userData = { ...formData };
-      
+
       // Si estamos editando y no se cambió la contraseña, no la enviamos
       if (editingUser && !userData.password) {
         delete userData.password;
@@ -145,7 +145,7 @@ const Usuarios = () => {
       const response = editingUser
         ? await usuariosService.update(editingUser.id, userData)
         : await usuariosService.create(userData);
-      
+
       if (response.success) {
         setSuccess(editingUser ? 'Usuario actualizado correctamente' : 'Usuario creado correctamente');
         handleCloseDialog();
@@ -166,9 +166,9 @@ const Usuarios = () => {
     // Convertir ambos a número para comparación segura
     const currentUserId = currentUser ? parseInt(currentUser.id) : null;
     const targetUserId = parseInt(userId);
-    
+
     console.log('Intentando eliminar usuario:', { currentUserId, targetUserId, currentUser });
-    
+
     if (currentUserId && currentUserId === targetUserId) {
       setError('No puedes eliminar tu propia cuenta');
       return;
@@ -182,11 +182,11 @@ const Usuarios = () => {
       setLoading(true);
       setError('');
       setSuccess('');
-      
+
       console.log('Llamando a usuariosService.delete con ID:', userId);
       const response = await usuariosService.delete(userId);
       console.log('Respuesta del servidor:', response);
-      
+
       if (response.success) {
         setSuccess('Usuario desactivado correctamente');
         loadUsuarios();
@@ -228,9 +228,9 @@ const Usuarios = () => {
       setLoading(true);
       setError('');
       setSuccess('');
-      
+
       const response = await usuariosService.changePassword(selectedUserId, newPassword);
-      
+
       if (response.success) {
         setSuccess('Contraseña actualizada correctamente');
         handleClosePasswordDialog();
@@ -247,6 +247,8 @@ const Usuarios = () => {
 
   const getRolColor = (rol) => {
     switch (rol) {
+      case 'Empleado':
+        return 'info';
       case 'Supervisor':
         return 'primary';
       case 'Empleador':
@@ -257,22 +259,22 @@ const Usuarios = () => {
   };
 
   return (
-    <Box sx={{ 
+    <Box sx={{
       p: 3,
       backgroundColor: '#f8f9fa',
       minHeight: '100vh'
     }}>
       {/* Encabezado de la página */}
-      <Box sx={{ 
+      <Box sx={{
         mb: 4,
         pb: 2,
         borderBottom: '2px solid',
         borderColor: 'primary.main'
       }}>
-        <Typography 
-          variant="h4" 
-          component="h1" 
-          sx={{ 
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
             fontWeight: 600,
             color: 'primary.main',
             mb: 1
@@ -280,8 +282,8 @@ const Usuarios = () => {
         >
           Gestión de Usuarios
         </Typography>
-        <Typography 
-          variant="subtitle1" 
+        <Typography
+          variant="subtitle1"
           color="text.secondary"
           sx={{ fontWeight: 400 }}
         >
@@ -290,15 +292,15 @@ const Usuarios = () => {
       </Box>
 
       {/* Sección de controles */}
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        mb: 3 
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 3
       }}>
-        <Typography 
-          variant="h6" 
-          sx={{ 
+        <Typography
+          variant="h6"
+          sx={{
             fontWeight: 600,
             color: 'text.primary'
           }}
@@ -322,9 +324,9 @@ const Usuarios = () => {
 
       {/* Mensajes de estado */}
       {error && (
-        <Alert 
-          severity="error" 
-          sx={{ 
+        <Alert
+          severity="error"
+          sx={{
             mb: 3,
             borderRadius: 1
           }}
@@ -332,11 +334,11 @@ const Usuarios = () => {
           {error}
         </Alert>
       )}
-      
+
       {success && (
-        <Alert 
-          severity="success" 
-          sx={{ 
+        <Alert
+          severity="success"
+          sx={{
             mb: 3,
             borderRadius: 1
           }}
@@ -346,7 +348,7 @@ const Usuarios = () => {
       )}
 
       {/* Tabla de usuarios */}
-      <Paper sx={{ 
+      <Paper sx={{
         borderRadius: 2,
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         border: '1px solid',
@@ -369,9 +371,9 @@ const Usuarios = () => {
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
+                    <Box sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
                       gap: 2
                     }}>
@@ -385,9 +387,9 @@ const Usuarios = () => {
               ) : usuarios.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
+                    <Box sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
                       gap: 1
                     }}>
@@ -402,8 +404,8 @@ const Usuarios = () => {
                 </TableRow>
               ) : (
                 usuarios.map((usuario) => (
-                  <TableRow 
-                    key={usuario.id} 
+                  <TableRow
+                    key={usuario.id}
                     hover
                     sx={{
                       '&:hover': {
@@ -420,7 +422,7 @@ const Usuarios = () => {
                         label={usuario.rol}
                         color={getRolColor(usuario.rol)}
                         size="small"
-                        sx={{ 
+                        sx={{
                           borderRadius: 1,
                           fontWeight: 500
                         }}
@@ -433,7 +435,7 @@ const Usuarios = () => {
                         label={usuario.activo ? 'Activo' : 'Inactivo'}
                         color={usuario.activo ? 'success' : 'default'}
                         size="small"
-                        sx={{ 
+                        sx={{
                           borderRadius: 1,
                           fontWeight: 500
                         }}
@@ -487,10 +489,10 @@ const Usuarios = () => {
       </Paper>
 
       {/* Diálogo para crear/editar usuario */}
-      <Dialog 
-        open={openDialog} 
-        onClose={handleCloseDialog} 
-        maxWidth="md" 
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="md"
         fullWidth
         sx={{
           '& .MuiDialog-paper': {
@@ -509,7 +511,7 @@ const Usuarios = () => {
           fontWeight: 600
         }}>
           {editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
-          <IconButton 
+          <IconButton
             onClick={handleCloseDialog}
             size="small"
             sx={{
@@ -523,7 +525,7 @@ const Usuarios = () => {
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        
+
         <DialogContent sx={{ pt: 3, pb: 2 }}>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
@@ -589,7 +591,7 @@ const Usuarios = () => {
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <FormControl 
+              <FormControl
                 fullWidth
                 sx={{
                   '& .MuiOutlinedInput-root': {
@@ -604,8 +606,9 @@ const Usuarios = () => {
                   label="Rol"
                   onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
                 >
+                  <MenuItem value="Empleado">Empleado</MenuItem>
                   <MenuItem value="Supervisor">Supervisor</MenuItem>
-                  <MenuItem value="Empleador">Empleador</MenuItem>
+                  <MenuItem value="Empleador">Empleador (Admin)</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -639,14 +642,14 @@ const Usuarios = () => {
             </Grid>
           </Grid>
         </DialogContent>
-        
+
         <DialogActions sx={{
           p: 3,
           borderTop: '1px solid',
           borderColor: 'divider',
           gap: 1.5
         }}>
-          <Button 
+          <Button
             onClick={handleCloseDialog}
             variant="outlined"
             sx={{
@@ -659,8 +662,8 @@ const Usuarios = () => {
           >
             Cancelar
           </Button>
-          <Button 
-            onClick={handleSaveUser} 
+          <Button
+            onClick={handleSaveUser}
             variant="contained"
             disabled={loading}
             sx={{

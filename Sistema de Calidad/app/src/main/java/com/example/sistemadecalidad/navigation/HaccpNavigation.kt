@@ -20,6 +20,7 @@ import com.example.sistemadecalidad.ui.screens.profile.ProfileScreen
 // import com.example.sistemadecalidad.ui.screens.settings.LocationSettingsScreen // ELIMINADO - configuración GPS solo desde WebPanel
 import com.example.sistemadecalidad.ui.screens.about.AboutScreen
 import com.example.sistemadecalidad.ui.screens.welcome.WelcomeScreen
+import com.example.sistemadecalidad.ui.screens.register.RegisterScreen
 import com.example.sistemadecalidad.ui.screens.haccp.HaccpMenuScreen
 import com.example.sistemadecalidad.ui.screens.haccp.RecepcionMercaderiaScreen
 import com.example.sistemadecalidad.ui.screens.haccp.ControlCoccionScreen
@@ -120,6 +121,24 @@ fun HaccpNavigation(
                     navController.navigate(NavigationDestinations.DASHBOARD) {
                         popUpTo(NavigationDestinations.LOGIN) { inclusive = true }
                     }
+                },
+                onNavigateToRegister = {
+                    navController.navigate(NavigationDestinations.REGISTER)
+                },
+                viewModel = authViewModel
+            )
+        }
+        
+        // Pantalla de registro
+        composable(NavigationDestinations.REGISTER) {
+            RegisterScreen(
+                onRegisterSuccess = {
+                    navController.navigate(NavigationDestinations.DASHBOARD) {
+                        popUpTo(NavigationDestinations.REGISTER) { inclusive = true }
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.popBackStack()
                 },
                 viewModel = authViewModel
             )

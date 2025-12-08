@@ -39,6 +39,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
+    onNavigateToRegister: () -> Unit = {},
     viewModel: AuthViewModel // = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -385,6 +386,31 @@ fun LoginScreen(
             modifier = Modifier.padding(top = 16.dp)
         ) {
             Text("¿Olvidaste tu contraseña?")
+        }
+        
+        // Separador y enlace para crear cuenta
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "¿No tienes cuenta?",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            TextButton(
+                onClick = onNavigateToRegister,
+                enabled = !uiState.isLoading
+            ) {
+                Text(
+                    text = "Crear cuenta",
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }

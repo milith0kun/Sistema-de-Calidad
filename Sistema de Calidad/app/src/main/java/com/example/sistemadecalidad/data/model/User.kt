@@ -123,7 +123,10 @@ data class RegisterRequest(
     val cargo: String,
     
     @SerializedName("area")
-    val area: String
+    val area: String,
+    
+    @SerializedName("rol")
+    val rol: String = "Empleado" // Por defecto, nuevos usuarios son Empleado
 )
 
 /**

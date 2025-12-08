@@ -6,6 +6,7 @@ package com.example.sistemadecalidad.navigation
 object NavigationDestinations {
     const val WELCOME = "welcome"
     const val LOGIN = "login"
+    const val REGISTER = "register"
     const val DASHBOARD = "dashboard"
     const val MARCACIONES = "marcaciones"
     const val HISTORIAL = "historial"
