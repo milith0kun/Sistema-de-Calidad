@@ -1,13 +1,14 @@
 # Backend - Node.js API
+# Optimizado para Dokploy
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Copiar archivos de dependencias
+# Copiar archivos de dependencias primero (mejor cache de Docker)
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci --only=production
+# Instalar dependencias (usando --omit=dev en lugar de --only=production)
+RUN npm ci --omit=dev
 
 # Copiar código fuente
 COPY . .
@@ -23,4 +24,4 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Comando para iniciar la aplicación
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

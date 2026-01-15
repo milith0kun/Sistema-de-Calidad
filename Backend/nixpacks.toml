@@ -1,12 +1,18 @@
 # Configuración de Nixpacks para Backend Node.js
-[phases.build]
-cmds = ["npm ci --only=production"]
+# Sistema HACCP - API
 
 [phases.setup]
-nixPkgs = ["nodejs-18_x"]
+nixPkgs = ["nodejs-18_x", "npm-9_x"]
+
+[phases.install]
+cmds = ["npm ci --omit=dev"]
+
+[phases.build]
+cmds = []
 
 [start]
-cmd = "npm start"
+cmd = "node server.js"
 
 [variables]
 NODE_ENV = "production"
+NPM_CONFIG_PRODUCTION = "true"
