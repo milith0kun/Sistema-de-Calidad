@@ -10,11 +10,11 @@ COPY package*.json ./
 # Instalar dependencias (usando --omit=dev en lugar de --only=production)
 RUN npm ci --omit=dev
 
-# Copiar código fuente
+# Copiar código fuente (incluye la base de datos)
 COPY . .
 
-# Crear directorio para la base de datos SQLite
-RUN mkdir -p /app/database
+# Asegurar que el directorio de base de datos existe y tiene permisos correctos
+RUN chmod -R 755 /app/database 2>/dev/null || true
 
 # Puerto de la aplicación
 EXPOSE 3000
