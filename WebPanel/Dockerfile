@@ -1,14 +1,24 @@
 # WebPanel - Vite React App
+# Optimizado para Dokploy
+
 # Etapa de construcción
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copiar archivos de dependencias
+# Argumentos de build para variables de entorno de Vite
+ARG VITE_API_URL
+ARG VITE_BACKEND_URL
+
+# Convertir ARGs a ENV para el build de Vite
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+
+# Copiar archivos de dependencias primero
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci
+# Instalar TODAS las dependencias (incluyendo devDependencies para el build)
+RUN npm install
 
 # Copiar código fuente
 COPY . .
@@ -22,7 +32,7 @@ FROM nginx:alpine
 # Copiar la configuración de nginx para Docker
 COPY nginx.docker.conf /etc/nginx/conf.d/default.conf
 
-# Copiar los archivos construidos
+# Copiar los archivos construidos desde la etapa builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Puerto de la aplicación

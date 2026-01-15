@@ -1,9 +1,19 @@
 # Configuración de Nixpacks para WebPanel (Vite React)
-[phases.build]
-cmds = ["npm ci", "npm run build"]
+# Sistema HACCP
 
 [phases.setup]
-nixPkgs = ["nodejs-18_x"]
+nixPkgs = ["nodejs-18_x", "npm-9_x"]
 
+[phases.install]
+cmds = ["npm install"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+# Deshabilitar cache para evitar conflictos EBUSY
+[options]
+no-cache = true
+
+# Servir como sitio estático
 [staticAssets]
 path = "dist"
