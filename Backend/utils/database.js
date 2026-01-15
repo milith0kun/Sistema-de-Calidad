@@ -109,14 +109,14 @@ const initializeDatabase = () => {
                     return;
                 }
                 console.log('Tabla asistencia creada o ya existe');
-                
+
                 // Agregar columnas de GPS de salida si no existen
                 db.run(`ALTER TABLE asistencia ADD COLUMN latitud_salida REAL`, (err) => {
                     if (err && !err.message.includes('duplicate column name')) {
                         console.error('Error agregando columna latitud_salida:', err.message);
                     }
                 });
-                
+
                 db.run(`ALTER TABLE asistencia ADD COLUMN longitud_salida REAL`, (err) => {
                     if (err && !err.message.includes('duplicate column name')) {
                         console.error('Error agregando columna longitud_salida:', err.message);
@@ -131,26 +131,26 @@ const initializeDatabase = () => {
                     return;
                 }
                 console.log('Tabla códigos QR creada o ya existe');
-                
+
                 // Agregar columnas de Google si no existen
                 db.run(`ALTER TABLE usuarios ADD COLUMN google_id TEXT UNIQUE`, (err) => {
                     if (err && !err.message.includes('duplicate column name')) {
                         console.log('Info: columna google_id ya existe o no se pudo agregar');
                     }
                 });
-                
+
                 db.run(`ALTER TABLE usuarios ADD COLUMN google_photo TEXT`, (err) => {
                     if (err && !err.message.includes('duplicate column name')) {
                         console.log('Info: columna google_photo ya existe o no se pudo agregar');
                     }
                 });
-                
+
                 db.run(`ALTER TABLE usuarios ADD COLUMN auth_provider TEXT DEFAULT 'local'`, (err) => {
                     if (err && !err.message.includes('duplicate column name')) {
                         console.log('Info: columna auth_provider ya existe o no se pudo agregar');
                     }
                 });
-                
+
                 // Insertar usuarios por defecto después de crear todas las tablas
                 insertDefaultUsers().then(() => {
                     resolve();
@@ -163,7 +163,46 @@ const initializeDatabase = () => {
 // Función para insertar usuarios por defecto
 const insertDefaultUsers = async () => {
     return new Promise((resolve, reject) => {
-        // Verificar si ya existen usuarios
+        // Primero, asegurar que el admin principal siempre exista
+        const adminEmail = '174449@unsaac.edu.pe';
+        const adminPassword = '$2a$10$1Eh3e/UVagpgP4R/KZTwQeNI/GxMKU4JViFIbH6gYEPjpXA6Qn0r2'; // 1997281qA
+
+        db.get("SELECT id FROM usuarios WHERE email = ?", [adminEmail], async (err, existingAdmin) => {
+            if (err) {
+                console.error('Error verificando admin:', err.message);
+            }
+
+            if (!existingAdmin) {
+                // Crear usuario admin
+                db.run(
+                    `INSERT INTO usuarios (nombre, apellido, email, password, rol, cargo, area, activo)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+                    ['Edmil Jampier', 'Saire Bustamante', adminEmail, adminPassword, 'Supervisor', 'Administrador', 'Sistema'],
+                    (err) => {
+                        if (err) {
+                            console.error('Error creando admin:', err.message);
+                        } else {
+                            console.log('✅ Usuario admin creado: ' + adminEmail);
+                        }
+                    }
+                );
+            } else {
+                // Actualizar contraseña y rol del admin existente
+                db.run(
+                    `UPDATE usuarios SET password = ?, rol = 'Supervisor' WHERE email = ?`,
+                    [adminPassword, adminEmail],
+                    (err) => {
+                        if (err) {
+                            console.error('Error actualizando admin:', err.message);
+                        } else {
+                            console.log('✅ Usuario admin actualizado: ' + adminEmail);
+                        }
+                    }
+                );
+            }
+        });
+
+        // Verificar si ya existen otros usuarios
         db.get("SELECT COUNT(*) as count FROM usuarios", async (err, row) => {
             if (err) {
                 reject(err);
@@ -262,7 +301,7 @@ const dbHybrid = {
             return db.run(sql, [], params);
         }
         return new Promise((resolve, reject) => {
-            db.run(sql, params || [], function(err) {
+            db.run(sql, params || [], function (err) {
                 if (err) reject(err);
                 else resolve({ lastID: this.lastID, changes: this.changes });
             });
