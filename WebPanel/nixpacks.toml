@@ -1,0 +1,9 @@
+# Configuración de Nixpacks para WebPanel (Vite React)
+[phases.build]
+cmds = ["npm ci", "npm run build"]
+
+[phases.setup]
+nixPkgs = ["nodejs-18_x"]
+
+[staticAssets]
+path = "dist"

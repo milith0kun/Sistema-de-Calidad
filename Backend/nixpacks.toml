@@ -1,0 +1,12 @@
+# Configuración de Nixpacks para Backend Node.js
+[phases.build]
+cmds = ["npm ci --only=production"]
+
+[phases.setup]
+nixPkgs = ["nodejs-18_x"]
+
+[start]
+cmd = "npm start"
+
+[variables]
+NODE_ENV = "production"
