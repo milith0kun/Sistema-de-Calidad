@@ -46,7 +46,12 @@ import { reportesService } from '../services/api';
 import { 
   exportarResumenNC,
   exportarFormularioVacioFrutasVerduras,
-  exportarRecepcionFrutasVerduras
+  exportarRecepcionFrutasVerduras,
+  exportarFormularioVacioAbarrotes,
+  exportarFormularioVacioCoccion,
+  exportarFormularioVacioLavadoManos,
+  exportarFormularioVacioLavadoFrutas,
+  exportarFormularioVacioTemperaturaCamaras
 } from '../utils/exportExcel';
 
 const Reportes = () => {
@@ -223,17 +228,48 @@ const Reportes = () => {
   const exportarPlantillaVacia = async (tipoFormulario) => {
     try {
       setLoading(true);
+      setError(null);
       
-      // Manejar casos especiales con funciones locales
-      if (tipoFormulario === 'frutas-verduras') {
-        await exportarFormularioVacioFrutasVerduras(mes, anio);
-        return;
+      // Usar funciones locales para generar plantillas sin depender del backend
+      switch (tipoFormulario) {
+        case 'frutas-verduras':
+          await exportarFormularioVacioFrutasVerduras(mes, anio);
+          break;
+        case 'abarrotes':
+          await exportarFormularioVacioAbarrotes(mes, anio);
+          break;
+        case 'coccion':
+          await exportarFormularioVacioCoccion(mes, anio);
+          break;
+        case 'temperatura':
+          await exportarFormularioVacioTemperaturaCamaras(mes, anio);
+          break;
+        case 'lavado-manos':
+          await exportarFormularioVacioLavadoManos(mes, anio);
+          break;
+        case 'lavado-frutas':
+          await exportarFormularioVacioLavadoFrutas(mes, anio);
+          break;
+        case 'general':
+          // Exportar todos los formularios vacíos para 'general'
+          await exportarFormularioVacioAbarrotes(mes, anio);
+          break;
+        case 'todos':
+          // Exportar todos los formularios vacíos
+          await exportarFormularioVacioAbarrotes(mes, anio);
+          await exportarFormularioVacioFrutasVerduras(mes, anio);
+          await exportarFormularioVacioCoccion(mes, anio);
+          await exportarFormularioVacioTemperaturaCamaras(mes, anio);
+          await exportarFormularioVacioLavadoManos(mes, anio);
+          await exportarFormularioVacioLavadoFrutas(mes, anio);
+          break;
+        default:
+          // Fallback: intentar con el endpoint del backend
+          await descargarFormularioVacio(tipoFormulario);
       }
-      
-      await descargarFormularioVacio(tipoFormulario);
     } catch (error) {
-      setError('Error al descargar la plantilla');
-      console.error(error);
+      setError(`Error al descargar la plantilla: ${error.message}`);
+      console.error('Error al exportar plantilla:', error);
     } finally {
       setLoading(false);
     }

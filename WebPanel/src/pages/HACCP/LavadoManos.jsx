@@ -24,7 +24,7 @@ import {
   Card,
   CardContent,
 } from '@mui/material';
-import { 
+import {
   Download as DownloadIcon,
   FileDownload as FileDownloadIcon,
   FilterList as FilterListIcon,
@@ -33,7 +33,7 @@ import {
   GetApp as GetAppIcon,
 } from '@mui/icons-material';
 import { haccpService } from '../../services/api';
-import { exportarLavadoManos } from '../../utils/exportExcel';
+import { exportarLavadoManos, exportarFormularioVacioLavadoManos } from '../../utils/exportExcel';
 import { format } from 'date-fns';
 import FormularioLavadoManos from '../../components/FormularioLavadoManos';
 
@@ -41,20 +41,20 @@ const LavadoManos = () => {
   const [registros, setRegistros] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   // Filtros simplificados según especificaciones HACCP
   const [mes, setMes] = useState(new Date().getMonth() + 1);
   const [anio, setAnio] = useState(new Date().getFullYear());
   const [filtroTipo, setFiltroTipo] = useState('mes');
   const [fechaEspecifica, setFechaEspecifica] = useState(format(new Date(), 'yyyy-MM-dd'));
-  
+
   // Eliminado: filtro por área ya que todos los reportes son de "Salón y Cocina"
 
   // Estados para el formulario
   const [formularioAbierto, setFormularioAbierto] = useState(false);
   const [empleados, setEmpleados] = useState([]);
   const [supervisores, setSupervisores] = useState([]);
-  
+
   // Eliminado: áreas fijas ya que no se necesita filtro
 
   // Función para cargar registros sin filtro de área
@@ -62,9 +62,9 @@ const LavadoManos = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       let params = {};
-      
+
       // Filtrado por fecha según tipo seleccionado
       if (filtroTipo === 'dia') {
         params.fecha = fechaEspecifica;
@@ -74,9 +74,9 @@ const LavadoManos = () => {
       } else if (filtroTipo === 'anio') {
         params.anio = anio;
       }
-      
+
       // Eliminado: filtro por área ya que todos los datos son de "Salón y Cocina"
-      
+
       const response = await haccpService.getLavadoManos(params);
       setRegistros(response.data || []);
     } catch (error) {
@@ -132,13 +132,13 @@ const LavadoManos = () => {
     try {
       setError('');
       setLoading(true);
-      
+
       const mesExport = filtroTipo === 'dia' ? new Date(fechaEspecifica).getMonth() + 1 : mes;
       const anioExport = filtroTipo === 'dia' ? new Date(fechaEspecifica).getFullYear() : anio;
-      
+
       // Obtener TODOS los registros sin filtrar por área para el Excel
       let paramsExport = {};
-      
+
       // Solo filtrar por fecha, NO por área
       if (filtroTipo === 'dia') {
         paramsExport.fecha = fechaEspecifica;
@@ -148,17 +148,17 @@ const LavadoManos = () => {
       } else if (filtroTipo === 'anio') {
         paramsExport.anio = anio;
       }
-      
+
       // Obtener todos los registros para el Excel (sin filtro de área)
       const responseExport = await haccpService.getLavadoManos(paramsExport);
       const registrosParaExcel = responseExport.data || [];
-      
+
       if (registrosParaExcel.length === 0) {
         // Exportar plantilla vacía
         await handleExportarPlantilla();
         return;
       }
-      
+
       // Exportar con TODOS los datos (sin filtrar por área)
       await exportarLavadoManos(registrosParaExcel, mesExport, anioExport);
     } catch (err) {
@@ -173,12 +173,12 @@ const LavadoManos = () => {
     try {
       setError('');
       setLoading(true);
-      
+
       const mesExport = filtroTipo === 'dia' ? new Date(fechaEspecifica).getMonth() + 1 : mes;
       const anioExport = filtroTipo === 'dia' ? new Date(fechaEspecifica).getFullYear() : anio;
-      
-      // Exportar plantilla vacía para lavado de manos
-      await exportarLavadoManos([], mesExport, anioExport);
+
+      // Usar función local para exportar plantilla vacía
+      await exportarFormularioVacioLavadoManos(mesExport, anioExport);
     } catch (err) {
       console.error('Error al exportar plantilla:', err);
       setError(`Error al exportar plantilla Excel: ${err.message}`);
@@ -200,22 +200,22 @@ const LavadoManos = () => {
   };
 
   return (
-    <Box sx={{ 
+    <Box sx={{
       p: 3,
       backgroundColor: '#f8f9fa',
       minHeight: '100vh'
     }}>
       {/* Encabezado de la página */}
-      <Box sx={{ 
+      <Box sx={{
         mb: 4,
         pb: 2,
         borderBottom: '2px solid',
         borderColor: 'primary.main'
       }}>
-        <Typography 
-          variant="h4" 
-          component="h1" 
-          sx={{ 
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
             fontWeight: 600,
             color: 'primary.main',
             mb: 1
@@ -223,8 +223,8 @@ const LavadoManos = () => {
         >
           Control de Lavado de Manos
         </Typography>
-        <Typography 
-          variant="subtitle1" 
+        <Typography
+          variant="subtitle1"
           color="text.secondary"
           sx={{ fontWeight: 400 }}
         >
@@ -233,9 +233,9 @@ const LavadoManos = () => {
       </Box>
 
       {/* Botones de exportar */}
-      <Box sx={{ 
-        display: 'flex', 
-        gap: 2, 
+      <Box sx={{
+        display: 'flex',
+        gap: 2,
         mb: 3,
         flexWrap: 'wrap'
       }}>
@@ -270,7 +270,7 @@ const LavadoManos = () => {
       </Box>
 
       {/* Sección de controles */}
-      <Card sx={{ 
+      <Card sx={{
         mb: 3,
         borderRadius: 2,
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
@@ -278,9 +278,9 @@ const LavadoManos = () => {
         borderColor: 'divider'
       }}>
         <CardContent sx={{ p: 3 }}>
-          <Typography 
-            variant="h6" 
-            sx={{ 
+          <Typography
+            variant="h6"
+            sx={{
               mb: 3,
               fontWeight: 600,
               color: 'text.primary',
@@ -291,15 +291,15 @@ const LavadoManos = () => {
           >
             Filtros y Acciones
           </Typography>
-          
+
           <Grid container spacing={3} alignItems="flex-start">
             {/* Selector de tipo de filtro */}
             <Grid item xs={12} sm={6} md={3}>
               <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
                 Período
               </Typography>
-              <ButtonGroup 
-                fullWidth 
+              <ButtonGroup
+                fullWidth
                 variant="outlined"
                 sx={{
                   height: '56px',
@@ -434,8 +434,8 @@ const LavadoManos = () => {
               <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500, visibility: 'hidden' }}>
                 Acciones
               </Typography>
-              <Box sx={{ 
-                display: 'flex', 
+              <Box sx={{
+                display: 'flex',
                 gap: 1.5,
                 flexDirection: { xs: 'column', sm: 'row' }
               }}>
@@ -484,9 +484,9 @@ const LavadoManos = () => {
 
       {/* Mensaje de error */}
       {error && (
-        <Alert 
-          severity="error" 
-          sx={{ 
+        <Alert
+          severity="error"
+          sx={{
             mb: 3,
             borderRadius: 1
           }}
@@ -496,29 +496,29 @@ const LavadoManos = () => {
       )}
 
       {/* Tabla de registros */}
-      <Card sx={{ 
+      <Card sx={{
         borderRadius: 2,
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         border: '1px solid',
         borderColor: 'divider'
       }}>
         <CardContent sx={{ p: 0 }}>
-          <Box sx={{ 
+          <Box sx={{
             p: 3,
             borderBottom: '1px solid',
             borderColor: 'divider'
           }}>
-            <Typography 
-              variant="h6" 
-              sx={{ 
+            <Typography
+              variant="h6"
+              sx={{
                 fontWeight: 600,
                 color: 'text.primary'
               }}
             >
               Registros de Control
             </Typography>
-            <Typography 
-              variant="body2" 
+            <Typography
+              variant="body2"
               color="text.secondary"
               sx={{ mt: 0.5 }}
             >
@@ -529,24 +529,24 @@ const LavadoManos = () => {
           <Box className="table-container">
             <Table>
               <TableHead>
-                  <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
-                    <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Hora</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Área</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Empleado</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Turno</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Procedimiento</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Acción Correctiva</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Supervisor</TableCell>
-                  </TableRow>
-                </TableHead>
+                <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
+                  <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Hora</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Área</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Empleado</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Turno</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Procedimiento</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Acción Correctiva</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Supervisor</TableCell>
+                </TableRow>
+              </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                      <Box sx={{ 
-                        display: 'flex', 
-                        flexDirection: 'column', 
+                      <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
                         gap: 2
                       }}>
@@ -560,9 +560,9 @@ const LavadoManos = () => {
                 ) : registros.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                      <Box sx={{ 
-                        display: 'flex', 
-                        flexDirection: 'column', 
+                      <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
                         gap: 1
                       }}>
@@ -577,8 +577,8 @@ const LavadoManos = () => {
                   </TableRow>
                 ) : (
                   registros.map((registro, index) => (
-                    <TableRow 
-                      key={registro.id || index} 
+                    <TableRow
+                      key={registro.id || index}
                       hover
                       sx={{
                         '&:hover': {
@@ -591,10 +591,10 @@ const LavadoManos = () => {
                       </TableCell>
                       <TableCell>{registro.hora}</TableCell>
                       <TableCell>
-                        <Chip 
-                          label={registro.area_trabajo} 
+                        <Chip
+                          label={registro.area_trabajo}
                           size="small"
-                          sx={{ 
+                          sx={{
                             borderRadius: 1,
                             fontWeight: 500
                           }}
@@ -604,22 +604,22 @@ const LavadoManos = () => {
                         {registro.empleado_nombre}
                       </TableCell>
                       <TableCell>
-                        <Chip 
-                          label={registro.turno || 'No especificado'} 
+                        <Chip
+                          label={registro.turno || 'No especificado'}
                           size="small"
                           color="info"
-                          sx={{ 
+                          sx={{
                             borderRadius: 1,
                             fontWeight: 500
                           }}
                         />
                       </TableCell>
                       <TableCell>
-                        <Chip 
-                          label={registro.procedimiento_correcto === 'C' ? 'Conforme' : 'No Conforme'} 
+                        <Chip
+                          label={registro.procedimiento_correcto === 'C' ? 'Conforme' : 'No Conforme'}
                           size="small"
                           color={registro.procedimiento_correcto === 'C' ? 'success' : 'error'}
-                          sx={{ 
+                          sx={{
                             borderRadius: 1,
                             fontWeight: 500
                           }}

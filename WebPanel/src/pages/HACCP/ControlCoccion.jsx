@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { Download as DownloadIcon } from '@mui/icons-material';
 import { haccpService } from '../../services/api';
-import { exportarControlCoccion } from '../../utils/exportExcel';
+import { exportarControlCoccion, exportarFormularioVacioCoccion } from '../../utils/exportExcel';
 import { format } from 'date-fns';
 
 const ControlCoccion = () => {
@@ -55,7 +55,8 @@ const ControlCoccion = () => {
   const handleExportar = async () => {
     try {
       if (registros.length === 0) {
-        setError('No hay registros para exportar');
+        // Si no hay registros, exportar plantilla vacía
+        await handleExportarPlantilla();
         return;
       }
       setError(null);
@@ -69,8 +70,21 @@ const ControlCoccion = () => {
     }
   };
 
+  const handleExportarPlantilla = async () => {
+    try {
+      setError(null);
+      setLoading(true);
+      await exportarFormularioVacioCoccion(mes, anio);
+    } catch (err) {
+      console.error('Error al exportar plantilla:', err);
+      setError(`Error al exportar plantilla Excel: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getProcesoTexto = (proceso) => {
-    switch(proceso) {
+    switch (proceso) {
       case 'H': return 'Horno';
       case 'P': return 'Plancha';
       case 'C': return 'Cocina';
@@ -93,14 +107,24 @@ const ControlCoccion = () => {
             Registro de temperaturas y tiempos de cocción de alimentos
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportar}
-          disabled={registros.length === 0}
-        >
-          Exportar Excel
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={handleExportarPlantilla}
+            disabled={loading}
+          >
+            Plantilla Vacía
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<DownloadIcon />}
+            onClick={handleExportar}
+            disabled={loading}
+          >
+            {registros.length === 0 ? 'Exportar Plantilla' : 'Exportar Datos'}
+          </Button>
+        </Box>
       </Box>
 
       {error && (
@@ -109,27 +133,27 @@ const ControlCoccion = () => {
         </Alert>
       )}
 
-      <Paper 
-        sx={{ 
-          p: 3, 
+      <Paper
+        sx={{
+          p: 3,
           mb: 3,
           borderRadius: 2,
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
           border: '1px solid #e0e0e0'
         }}
       >
-        <Box 
-          sx={{ 
-            pb: 2, 
-            mb: 2, 
-            borderBottom: '1px solid #e0e0e0' 
+        <Box
+          sx={{
+            pb: 2,
+            mb: 2,
+            borderBottom: '1px solid #e0e0e0'
           }}
         >
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+          <Typography
+            variant="h6"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
               gap: 1,
               fontWeight: 600,
               color: '#2c3e50'
@@ -138,7 +162,7 @@ const ControlCoccion = () => {
             Filtros de Búsqueda
           </Typography>
         </Box>
-        
+
         <Grid container spacing={2} alignItems="flex-start">
           <Grid item xs={12} sm={4}>
             <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#666' }}>

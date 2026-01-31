@@ -40,7 +40,7 @@ import {
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import api, { haccpService } from '../../services/api';
-import { exportarRecepcionAbarrotes } from '../../utils/exportExcel';
+import { exportarRecepcionAbarrotes, exportarFormularioVacioAbarrotes } from '../../utils/exportExcel';
 
 const RecepcionAbarrotes = () => {
   const [registros, setRegistros] = useState([]);
@@ -50,7 +50,7 @@ const RecepcionAbarrotes = () => {
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   // Estados para filtros simplificados según especificaciones HACCP
   const [showFilters, setShowFilters] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState('mes'); // 'dia', 'mes', 'anio'
@@ -59,7 +59,7 @@ const RecepcionAbarrotes = () => {
   const [anio, setAnio] = useState(new Date().getFullYear()); // Año actual
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState('');
   const [productoSeleccionado, setProductoSeleccionado] = useState('');
-  
+
   // Estados para opciones de filtros
   const [proveedores, setProveedores] = useState([]);
   const [productos, setProductos] = useState([]);
@@ -95,10 +95,10 @@ const RecepcionAbarrotes = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       // Construir parámetros solo cuando hay filtros activos
       const params = {};
-      
+
       // Solo agregar filtros de fecha si el usuario los ha aplicado explícitamente
       if (filtroTipo === 'dia' && fechaEspecifica) {
         params.fecha = fechaEspecifica;
@@ -110,15 +110,15 @@ const RecepcionAbarrotes = () => {
         // Solo aplicar filtro de año si los filtros están visibles
         params.anio = anio;
       }
-      
+
       // Agregar filtros adicionales (solo proveedor y producto según especificaciones)
       if (proveedorSeleccionado) params.proveedor = proveedorSeleccionado;
       if (productoSeleccionado) params.producto = productoSeleccionado;
-      
+
       const [registrosRes, supervisoresRes, proveedoresRes, productosRes] = await Promise.all([
         // Si no hay filtros activos, llamar sin parámetros para obtener todos los registros
-        showFilters ? 
-          haccpService.getRecepcionAbarrotes(params.mes, params.anio) : 
+        showFilters ?
+          haccpService.getRecepcionAbarrotes(params.mes, params.anio) :
           haccpService.getRecepcionAbarrotes(),
         haccpService.getSupervisores(),
         api.get('/haccp/proveedores'),
@@ -228,7 +228,7 @@ const RecepcionAbarrotes = () => {
   const handleSubmit = async () => {
     try {
       setError('');
-      
+
       // Validaciones
       if (!formData.nombreProveedor || !formData.nombreProducto || !formData.supervisorId) {
         setError('Por favor complete todos los campos obligatorios');
@@ -266,7 +266,7 @@ const RecepcionAbarrotes = () => {
         handleExportarPlantilla();
         return;
       }
-      
+
       await exportarRecepcionAbarrotes(registros, mes, anio);
       setSuccess('Excel exportado correctamente');
     } catch (err) {
@@ -277,9 +277,8 @@ const RecepcionAbarrotes = () => {
 
   const handleExportarPlantilla = async () => {
     try {
-      // Exportar plantilla vacía con estructura básica
-      const plantillaVacia = [];
-      await exportarRecepcionAbarrotes(plantillaVacia, mes, anio);
+      // Usar función local para exportar plantilla vacía
+      await exportarFormularioVacioAbarrotes(mes, anio);
       setSuccess('Plantilla vacía exportada correctamente');
     } catch (err) {
       console.error('Error al exportar plantilla:', err);
@@ -359,8 +358,8 @@ const RecepcionAbarrotes = () => {
               <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
                 Período
               </Typography>
-              <ButtonGroup 
-                variant="outlined" 
+              <ButtonGroup
+                variant="outlined"
                 fullWidth
                 sx={{
                   height: '56px',
@@ -564,7 +563,7 @@ const RecepcionAbarrotes = () => {
                   startIcon={<FilterListIcon />}
                   onClick={loadData}
                   disabled={loading}
-                  sx={{ 
+                  sx={{
                     flex: 1,
                     height: '56px',
                     fontSize: '0.875rem',
@@ -583,7 +582,7 @@ const RecepcionAbarrotes = () => {
                   startIcon={<ClearIcon />}
                   onClick={limpiarFiltros}
                   disabled={loading}
-                  sx={{ 
+                  sx={{
                     flex: 1,
                     height: '56px',
                     fontSize: '0.875rem',
@@ -615,31 +614,31 @@ const RecepcionAbarrotes = () => {
         </Alert>
       )}
 
-      <TableContainer 
-          component={Paper} 
-          className="custom-scrollbar"
-          sx={{ 
-            borderRadius: '12px', 
-            overflow: 'auto',
-            maxHeight: '70vh',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-              height: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: '#f1f3f4',
-              borderRadius: '4px',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-              borderRadius: '4px',
-              border: '1px solid #f1f3f4',
-            },
-            '&::-webkit-scrollbar-thumb:hover': {
-              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-            },
-          }}
-        >
+      <TableContainer
+        component={Paper}
+        className="custom-scrollbar"
+        sx={{
+          borderRadius: '12px',
+          overflow: 'auto',
+          maxHeight: '70vh',
+          '&::-webkit-scrollbar': {
+            width: '8px',
+            height: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: '#f1f3f4',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+            borderRadius: '4px',
+            border: '1px solid #f1f3f4',
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+          },
+        }}
+      >
         <Table>
           <TableHead>
             <TableRow>
