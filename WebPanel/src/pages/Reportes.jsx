@@ -28,8 +28,8 @@ import {
   IconButton,
   Chip,
 } from '@mui/material';
-import { 
-  Download as DownloadIcon, 
+import {
+  Download as DownloadIcon,
   Assessment as AssessmentIcon,
   Description as DescriptionIcon,
   GetApp as GetAppIcon,
@@ -43,7 +43,7 @@ import {
 } from '@mui/icons-material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { reportesService } from '../services/api';
-import { 
+import {
   exportarResumenNC,
   exportarFormularioVacioFrutasVerduras,
   exportarRecepcionFrutasVerduras,
@@ -51,7 +51,8 @@ import {
   exportarFormularioVacioCoccion,
   exportarFormularioVacioLavadoManos,
   exportarFormularioVacioLavadoFrutas,
-  exportarFormularioVacioTemperaturaCamaras
+  exportarFormularioVacioTemperaturaCamaras,
+  exportarTodosLosFormulariosVacios
 } from '../utils/exportExcel';
 
 const Reportes = () => {
@@ -61,7 +62,7 @@ const Reportes = () => {
   const [anio, setAnio] = useState(new Date().getFullYear());
   const [noConformidades, setNoConformidades] = useState([]);
   const [proveedores, setProveedores] = useState([]);
-  
+
   // Estados para filtros avanzados
   const [showFilters, setShowFilters] = useState(true);
   const [filtroTipo, setFiltroTipo] = useState('mes'); // 'mes', 'trimestre', 'anio'
@@ -70,7 +71,7 @@ const Reportes = () => {
   const [tipoReporte, setTipoReporte] = useState('general'); // 'general', 'detallado', 'comparativo'
   const [grupoSeleccionado, setGrupoSeleccionado] = useState(''); // 'RECEPCION', 'COCCION', etc.
   const [umbralNC, setUmbralNC] = useState(10); // Umbral de no conformidades para alertas
-  
+
   // Estados para datos adicionales
   const [empleadosNC, setEmpleadosNC] = useState([]);
   const [tendencias, setTendencias] = useState([]);
@@ -80,10 +81,10 @@ const Reportes = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Preparar parámetros según el tipo de filtro
       let params = { mes, anio };
-      
+
       if (filtroTipo === 'trimestre') {
         const trimestre = Math.ceil(mes / 3);
         params.trimestre = trimestre;
@@ -91,52 +92,52 @@ const Reportes = () => {
         params.fecha_inicio = fechaInicio;
         params.fecha_fin = fechaFin;
       }
-      
+
       if (grupoSeleccionado) {
         params.grupo = grupoSeleccionado;
       }
-      
+
       if (umbralNC) {
         params.umbral_nc = umbralNC;
       }
-      
+
       const promises = [
         reportesService.getNoConformidades(params.mes || mes, params.anio || anio),
         reportesService.getProveedoresNC(params.mes || mes, params.anio || anio)
       ];
-      
+
       // Agregar llamadas adicionales según el tipo de reporte
       if (tipoReporte === 'detallado') {
         promises.push(reportesService.getEmpleadosNC(params.mes || mes, params.anio || anio));
       }
-      
+
       if (tipoReporte === 'comparativo') {
         promises.push(reportesService.getTemperaturasAlerta());
       }
-      
+
       const responses = await Promise.all(promises);
-      
+
       // Extraer datos de las respuestas
       const ncData = responses[0]?.data && Array.isArray(responses[0].data) ? responses[0].data : [];
       const provData = responses[1]?.data && Array.isArray(responses[1].data) ? responses[1].data : [];
-      
+
       setNoConformidades(ncData);
       setProveedores(provData);
-      
+
       // Procesar datos adicionales si están disponibles
       if (responses[2] && tipoReporte === 'detallado') {
         const empData = responses[2]?.data && Array.isArray(responses[2].data) ? responses[2].data : [];
         setEmpleadosNC(empData);
       }
-      
+
       if (responses[2] && tipoReporte === 'comparativo') {
         const alertData = responses[2]?.data && Array.isArray(responses[2].data) ? responses[2].data : [];
         setAlertas(alertData);
       }
-      
+
       // Generar alertas basadas en el umbral
       generarAlertas(ncData);
-      
+
     } catch (err) {
       setError('Error al cargar reportes');
       console.error(err);
@@ -153,7 +154,7 @@ const Reportes = () => {
         mensaje: `${formatTipoControl(item.tipo_control)} supera el umbral de NC (${item.porcentaje_nc.toFixed(2)}%)`,
         valor: item.porcentaje_nc
       }));
-    
+
     setAlertas(alertasGeneradas);
   };
 
@@ -177,9 +178,9 @@ const Reportes = () => {
       setError('No hay datos para exportar');
       return;
     }
-    
+
     const nombreArchivo = `reporte_${tipoReporte}_${anio}_${mes.toString().padStart(2, '0')}`;
-    
+
     if (tipoReporte === 'detallado') {
       exportarReporteDetallado(nombreArchivo);
     } else if (tipoReporte === 'comparativo') {
@@ -203,7 +204,7 @@ const Reportes = () => {
         umbralNC
       }
     };
-    
+
     // Aquí se podría implementar una función más completa de exportación
     exportarResumenNC(noConformidades, mes, anio, nombreArchivo);
   };
@@ -220,7 +221,7 @@ const Reportes = () => {
         umbralNC
       }
     };
-    
+
     // Aquí se podría implementar una función específica para reportes comparativos
     exportarResumenNC(noConformidades, mes, anio, nombreArchivo);
   };
@@ -229,7 +230,7 @@ const Reportes = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Usar funciones locales para generar plantillas sin depender del backend
       switch (tipoFormulario) {
         case 'frutas-verduras':
@@ -255,13 +256,8 @@ const Reportes = () => {
           await exportarFormularioVacioAbarrotes(mes, anio);
           break;
         case 'todos':
-          // Exportar todos los formularios vacíos
-          await exportarFormularioVacioAbarrotes(mes, anio);
-          await exportarFormularioVacioFrutasVerduras(mes, anio);
-          await exportarFormularioVacioCoccion(mes, anio);
-          await exportarFormularioVacioTemperaturaCamaras(mes, anio);
-          await exportarFormularioVacioLavadoManos(mes, anio);
-          await exportarFormularioVacioLavadoFrutas(mes, anio);
+          // Exportar todos los formularios vacíos EN UN SOLO ARCHIVO con 6 hojas
+          await exportarTodosLosFormulariosVacios(mes, anio);
           break;
         default:
           // Fallback: intentar con el endpoint del backend
@@ -279,32 +275,32 @@ const Reportes = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       const response = await fetch(`/api/formularios-haccp/formulario-vacio/${tipo}/${mes}/${anio}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         }
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Error ${response.status}: ${errorText}`);
       }
-      
+
       // Verificar que el contenido sea realmente un archivo Excel
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('spreadsheetml')) {
         throw new Error('El servidor no devolvió un archivo Excel válido');
       }
-      
+
       const blob = await response.blob();
-      
+
       // Verificar que el blob no esté vacío
       if (blob.size === 0) {
         throw new Error('El archivo descargado está vacío');
       }
-      
+
       // Crear URL temporal y descargar con atributos de seguridad
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -313,19 +309,19 @@ const Reportes = () => {
       a.download = `Formulario_HACCP_${tipo}_${mes.toString().padStart(2, '0')}_${anio}.xlsx`;
       a.setAttribute('rel', 'noopener noreferrer');
       a.setAttribute('target', '_self');
-      
+
       // Agregar al DOM, hacer clic y limpiar
       document.body.appendChild(a);
       a.click();
-      
+
       // Limpiar después de un pequeño delay para asegurar la descarga
       setTimeout(() => {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       }, 100);
-      
+
       console.log(`Formulario ${tipo} descargado exitosamente`);
-      
+
     } catch (err) {
       console.error('Error al descargar formulario:', err);
       setError(`Error al descargar formulario: ${err.message}`);
@@ -338,7 +334,7 @@ const Reportes = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       // Manejar casos especiales con funciones locales
       if (tipo === 'frutas-verduras') {
         // Obtener datos del endpoint específico de frutas y verduras
@@ -348,7 +344,7 @@ const Reportes = () => {
             'Accept': 'application/json'
           }
         });
-        
+
         if (response.ok) {
           const datos = await response.json();
           await exportarRecepcionFrutasVerduras(datos, mes, anio);
@@ -358,32 +354,32 @@ const Reportes = () => {
         }
         return;
       }
-      
+
       const response = await fetch(`/api/formularios-haccp/reporte/${tipo}/${mes}/${anio}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         }
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Error ${response.status}: ${errorText}`);
       }
-      
+
       // Verificar que el contenido sea realmente un archivo Excel
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('spreadsheetml')) {
         throw new Error('El servidor no devolvió un archivo Excel válido');
       }
-      
+
       const blob = await response.blob();
-      
+
       // Verificar que el blob no esté vacío
       if (blob.size === 0) {
         throw new Error('El archivo descargado está vacío');
       }
-      
+
       // Crear URL temporal y descargar con atributos de seguridad
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -392,19 +388,19 @@ const Reportes = () => {
       a.download = `Reporte_HACCP_${tipo}_${mes.toString().padStart(2, '0')}_${anio}.xlsx`;
       a.setAttribute('rel', 'noopener noreferrer');
       a.setAttribute('target', '_self');
-      
+
       // Agregar al DOM, hacer clic y limpiar
       document.body.appendChild(a);
       a.click();
-      
+
       // Limpiar después de un pequeño delay para asegurar la descarga
       setTimeout(() => {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       }, 100);
-      
+
       console.log(`Reporte ${tipo} descargado exitosamente`);
-      
+
     } catch (err) {
       console.error('Error al descargar reporte:', err);
       setError(`Error al descargar reporte: ${err.message}`);
@@ -506,7 +502,7 @@ const Reportes = () => {
             {showFilters ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           </IconButton>
         </Box>
-        
+
         <Collapse in={showFilters}>
           <Grid container spacing={3}>
             {/* Tipo de Filtro Temporal */}
@@ -693,7 +689,7 @@ const Reportes = () => {
             Descargar Todos
           </Button>
         </Box>
-        
+
         <Grid container spacing={3}>
           {/* Recepción de Abarrotes */}
           <Grid item xs={12} md={6} lg={4}>
@@ -1006,9 +1002,9 @@ const Reportes = () => {
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ textAlign: 'center', p: 2 }}>
                 <Typography variant="h4" color="warning.main" fontWeight="bold">
-                  {noConformidades.length > 0 
-                    ? ((noConformidades.reduce((acc, item) => acc + item.no_conformidades, 0) / 
-                       noConformidades.reduce((acc, item) => acc + item.total_registros, 0)) * 100).toFixed(1)
+                  {noConformidades.length > 0
+                    ? ((noConformidades.reduce((acc, item) => acc + item.no_conformidades, 0) /
+                      noConformidades.reduce((acc, item) => acc + item.total_registros, 0)) * 100).toFixed(1)
                     : 0}%
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -1044,14 +1040,14 @@ const Reportes = () => {
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="name" 
+                <XAxis
+                  dataKey="name"
                   angle={-45}
                   textAnchor="end"
                   height={80}
                 />
                 <YAxis />
-                <Tooltip 
+                <Tooltip
                   formatter={(value, name) => [value, name]}
                   labelFormatter={(label) => `Control: ${label}`}
                 />
@@ -1092,7 +1088,7 @@ const Reportes = () => {
                         <TableCell>{formatTipoControl(row.tipo_control)}</TableCell>
                         <TableCell align="center">{row.total_registros}</TableCell>
                         <TableCell align="center">
-                          <Typography 
+                          <Typography
                             color={row.no_conformidades > 0 ? 'error' : 'success'}
                             fontWeight="bold"
                           >
@@ -1100,7 +1096,7 @@ const Reportes = () => {
                           </Typography>
                         </TableCell>
                         <TableCell align="center">
-                          <Typography 
+                          <Typography
                             color={row.porcentaje_nc > 10 ? 'error' : 'text.secondary'}
                             fontWeight={row.porcentaje_nc > 10 ? 'bold' : 'normal'}
                           >
@@ -1145,7 +1141,7 @@ const Reportes = () => {
                         <TableCell>{row.proveedor_nombre}</TableCell>
                         <TableCell align="center">{row.total_entregas}</TableCell>
                         <TableCell align="center">
-                          <Typography 
+                          <Typography
                             color={row.total_rechazos > 0 ? 'error' : 'success'}
                             fontWeight="bold"
                           >
@@ -1153,7 +1149,7 @@ const Reportes = () => {
                           </Typography>
                         </TableCell>
                         <TableCell align="center">
-                          <Typography 
+                          <Typography
                             color={row.porcentaje_rechazo > 10 ? 'error' : 'text.secondary'}
                             fontWeight={row.porcentaje_rechazo > 10 ? 'bold' : 'normal'}
                           >

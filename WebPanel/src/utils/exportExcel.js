@@ -58,9 +58,9 @@ const aplicarEstiloEncabezado = (cell, texto) => {
 const aplicarEstiloCelda = (cell, valor = '', centrado = false) => {
   cell.value = valor;
   cell.font = { name: 'Arial', size: 10 };
-  cell.alignment = { 
-    horizontal: centrado ? 'center' : 'left', 
-    vertical: 'middle' 
+  cell.alignment = {
+    horizontal: centrado ? 'center' : 'left',
+    vertical: 'middle'
   };
   cell.border = {
     top: { style: 'thin' },
@@ -90,7 +90,7 @@ const aplicarEstiloCeldaEditable = (cell, valor = '') => {
 export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = null, anio = null) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Control Abarrotes');
-  
+
   // ============= CONFIGURACIÓN DE PÁGINA =============
   worksheet.pageSetup = {
     paperSize: 9, // A4
@@ -109,7 +109,7 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
     printArea: 'A1:P21',
     showGridLines: false
   };
-  
+
   // ============= CONFIGURACIÓN DE COLUMNAS =============
   // Anchos optimizados para A4 horizontal (16 columnas) - Mejorados para mejor visualización
   const anchos = [10, 8, 15, 15, 12, 8, 12, 12, 15, 10, 10, 10, 16, 18, 18, 18];
@@ -202,14 +202,14 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
   const headers = [
     'FECHA', 'HORA', 'NOMBRE DEL\nPROVEEDOR', 'NOMBRE DEL\nPRODUCTO',
     'CANTIDAD\nSOLICITADA\nPESO O UNIDAD', 'C-NC',
-    'VIGENCIA DE\nREGISTRO\nSANITARIO', 
+    'VIGENCIA DE\nREGISTRO\nSANITARIO',
     'FECHA DE\nVENCIMIENTO\nDEL PRODUCTO',
     'CONFORMIDAD E\nINTEGRIDAD DEL\nEMPAQUE PRIMARIO',
-    'UNIFORME\nCOMPLETO', 
-    'TRANSPORTE\nADECUADO', 
+    'UNIFORME\nCOMPLETO',
+    'TRANSPORTE\nADECUADO',
     'PUNTUALIDAD',
     'NOMBRE DEL\nRESPONSABLE\nDE REGISTRO',
-    'OBSERVACIONES', 
+    'OBSERVACIONES',
     'ACCION\nCORRECTIVA',
     'NOMBRE DEL\nRESPONSABLE DE LA\nSUPERVISION'
   ];
@@ -238,15 +238,15 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
   for (let row = 5; row <= 19; row++) {
     // Altura mejorada para filas de datos
     worksheet.getRow(row).height = 30;
-    
+
     for (let col = 1; col <= 16; col++) {
       const cell = worksheet.getCell(row, col);
-      
+
       // Si hay datos, llenar la celda
       if (datos && datos[row - 5]) {
         const fila = datos[row - 5];
         switch (col) {
-          case 1: 
+          case 1:
             // Formatear fecha si existe
             if (fila.fecha) {
               try {
@@ -271,7 +271,7 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
           case 2: cell.value = fila.hora || ''; break;
           case 3: cell.value = fila.nombre_proveedor || ''; break;
           case 4: cell.value = fila.nombre_producto || ''; break;
-          case 5: 
+          case 5:
             // Formatear cantidad solicitada con peso/unidad recibido
             const cantidad = fila.cantidad_solicitada || '';
             const peso = fila.peso_unidad_recibido || '';
@@ -284,7 +284,7 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
               cell.value = peso || unidad || '';
             }
             break;
-          case 6: 
+          case 6:
             // Columna C-NC - campo no disponible en formulario web actual
             cell.value = '';
             break;
@@ -305,8 +305,8 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
       cell.font = { name: 'Arial', size: 10 };
       // Centrar columnas específicas según el script
       const columnasCentradas = [1, 2, 6, 10, 11, 12];
-      cell.alignment = { 
-        horizontal: columnasCentradas.includes(col) ? 'center' : 'left', 
+      cell.alignment = {
+        horizontal: columnasCentradas.includes(col) ? 'center' : 'left',
         vertical: 'middle',
         wrapText: true
       };
@@ -354,7 +354,7 @@ export const generarFormularioRecepcionAbarrotes = async (datos = null, mes = nu
 export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes = null, anio = null) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Control Frutas Verduras');
-  
+
   // ============= CONFIGURACIÓN DE PÁGINA A4 HORIZONTAL =============
   worksheet.pageSetup = {
     paperSize: 9, // A4
@@ -476,13 +476,13 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
   const headers = [
     'FECHA', 'HORA', 'NOMBRE DEL\nPROVEEDOR', 'NOMBRE DEL\nPRODUCTO',
     'CANTIDAD\nSOLICITADA\nPESO O UNIDAD', 'C-NC',
-    'ESTADO DEL\nPRODUCTO', 
+    'ESTADO DEL\nPRODUCTO',
     'CONFORMIDAD E\nINTEGRIDAD DEL\nPRODUCTO',
     'UNIFORME\nCOMPLETO',
-    'TRANSPORTE\nADECUADO', 
+    'TRANSPORTE\nADECUADO',
     'PUNTUALIDAD',
     'NOMBRE DEL\nRESPONSABLE DE\nREGISTRO',
-    'OBSERVACIONES', 
+    'OBSERVACIONES',
     'ACCION\nCORRECTIVA',
     'NOMBRE DEL\nRESPONSABLE DE LA\nSUPERVISION'
   ];
@@ -490,11 +490,11 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
   headers.forEach((header, index) => {
     const cell = worksheet.getCell(4, index + 1);
     cell.value = header;
-    
+
     // Tamaño de fuente optimizado para mejor legibilidad
     const fontSize = (index < 6 || index === 10) ? 9 : 10;
     cell.font = { name: 'Arial', size: fontSize, bold: true };
-    
+
     cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
     cell.border = {
@@ -513,15 +513,15 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
   for (let row = 5; row <= 19; row++) {
     // Altura estándar para filas de datos
     worksheet.getRow(row).height = 28;
-    
+
     for (let col = 1; col <= 15; col++) {
       const cell = worksheet.getCell(row, col);
-      
+
       // Si hay datos, llenar la celda
       if (datos && datos[row - 5]) {
         const fila = datos[row - 5];
         switch (col) {
-          case 1: 
+          case 1:
             // Formatear fecha si existe
             if (fila.fecha) {
               try {
@@ -537,7 +537,7 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
           case 2: cell.value = fila.hora || ''; break;
           case 3: cell.value = fila.nombre_proveedor || ''; break;
           case 4: cell.value = fila.nombre_producto || ''; break;
-          case 5: 
+          case 5:
             // Cantidad solicitada con peso o unidad - Corregido para usar peso_unidad_recibido
             const cantidad = fila.cantidad_solicitada || '';
             const peso = fila.peso_unidad_recibido || '';
@@ -552,7 +552,7 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
               cell.value = '';
             }
             break;
-          case 6: 
+          case 6:
             // C-NC (Conforme/No Conforme) - Usar conformidad_integridad_producto como base
             const conformidad = fila.conformidad_integridad_producto || '';
             if (conformidad === 'Conforme') {
@@ -563,39 +563,39 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
               cell.value = conformidad;
             }
             break;
-          case 7: 
+          case 7:
             // Estado del producto
             cell.value = fila.estado_producto || '';
             break;
-          case 8: 
+          case 8:
             // Conformidad e integridad del producto
             cell.value = fila.conformidad_integridad_producto || '';
             break;
-          case 9: 
+          case 9:
             // Uniforme completo
             cell.value = fila.uniforme_completo || '';
             break;
-          case 10: 
+          case 10:
             // Transporte adecuado
             cell.value = fila.transporte_adecuado || '';
             break;
-          case 11: 
+          case 11:
             // Puntualidad
             cell.value = fila.puntualidad || '';
             break;
-          case 12: 
+          case 12:
             // Nombre del responsable de registro - Corregido para usar responsable_registro_nombre
             cell.value = fila.responsable_registro_nombre || '';
             break;
-          case 13: 
+          case 13:
             // Observaciones
             cell.value = fila.observaciones || '';
             break;
-          case 14: 
+          case 14:
             // Acción correctiva
             cell.value = fila.accion_correctiva || '';
             break;
-          case 15: 
+          case 15:
             // Nombre del responsable de la supervisión - Corregido para usar responsable_supervision_nombre
             cell.value = fila.responsable_supervision_nombre || '';
             break;
@@ -604,15 +604,15 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
 
       // Aplicar estilos con mejor visibilidad
       cell.font = { name: 'Arial', size: 10, bold: false, color: { argb: 'FF000000' } };
-      
+
       // Centrar columnas específicas según el tipo de dato
       const columnasCentradas = [1, 2, 6, 9, 10, 11]; // Fecha, Hora, C-NC, Uniforme, Transporte, Puntualidad
-      cell.alignment = { 
-        horizontal: columnasCentradas.includes(col) ? 'center' : 'left', 
+      cell.alignment = {
+        horizontal: columnasCentradas.includes(col) ? 'center' : 'left',
         vertical: 'middle',
         wrapText: true
       };
-      
+
       cell.border = {
         top: { style: 'thin', color: { argb: 'FF000000' } },
         left: { style: 'thin', color: { argb: 'FF000000' } },
@@ -657,7 +657,7 @@ export const generarFormularioRecepcionFrutasVerduras = async (datos = null, mes
 export const generarFormularioControlCoccion = async (datos = null, mes = null, anio = null) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Control Cocción');
-  
+
   // ============= CONFIGURACIÓN DE COLUMNAS =============
   // Anchos exactos del script de Google Sheets para A4 vertical - Mejorados
   const columnWidths = [55, 70, 140, 85, 95, 95, 140, 125];
@@ -771,10 +771,10 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
   for (let row = 4; row <= 33; row++) {
     // Altura estándar para filas de datos
     worksheet.getRow(row).height = 22;
-    
+
     for (let col = 1; col <= 8; col++) {
       const cell = worksheet.getCell(row, col);
-      
+
       // Aplicar datos si existen
       if (datos && datos.length > 0) {
         const dataIndex = row - 4;
@@ -795,10 +795,10 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
 
       // Aplicar estilos
       cell.font = { name: 'Arial', size: 9 };
-      cell.alignment = { 
-        horizontal: [1,2,4,5,6].includes(col) ? 'center' : 'left', 
-        vertical: 'middle', 
-        wrapText: true 
+      cell.alignment = {
+        horizontal: [1, 2, 4, 5, 6].includes(col) ? 'center' : 'left',
+        vertical: 'middle',
+        wrapText: true
       };
       cell.border = {
         top: { style: 'thin', color: { argb: 'FF000000' } },
@@ -871,7 +871,7 @@ export const generarFormularioControlCoccion = async (datos = null, mes = null, 
 export const generarFormularioLavadoFrutas = async (datos = null, mes = null, anio = null, productoQuimico = null, concentracion = null) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Lavado Frutas-Verduras');
-  
+
   // ============= CONFIGURACIÓN DE COLUMNAS =============
   // Anchos optimizados para A4 horizontal - Mejorados
   const columnWidths = [60, 70, 125, 100, 100, 100, 85, 130, 110, 110];
@@ -1017,10 +1017,10 @@ export const generarFormularioLavadoFrutas = async (datos = null, mes = null, an
   for (let row = 4; row <= 34; row++) {
     // Altura estándar para filas de datos
     worksheet.getRow(row).height = 24;
-    
+
     for (let col = 1; col <= 10; col++) {
       const cell = worksheet.getCell(row, col);
-      
+
       // Si hay datos, llenar la celda
       if (datos && datos[row - 4]) {
         const fila = datos[row - 4];
@@ -1042,8 +1042,8 @@ export const generarFormularioLavadoFrutas = async (datos = null, mes = null, an
       cell.font = { name: 'Arial', size: 9 };
       // Centrar columnas específicas
       const columnasCentradas = [1, 2, 4, 5, 6, 7];
-      cell.alignment = { 
-        horizontal: columnasCentradas.includes(col) ? 'center' : 'left', 
+      cell.alignment = {
+        horizontal: columnasCentradas.includes(col) ? 'center' : 'left',
         vertical: 'middle',
         wrapText: true
       };
@@ -1104,7 +1104,7 @@ export const generarFormularioLavadoFrutas = async (datos = null, mes = null, an
 export const generarFormularioLavadoManos = async (datos = null, mes = null, anio = null) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Lavado Manos');
-  
+
   // ============= CONFIGURACIÓN DE COLUMNAS =============
   // Anchos optimizados para A4 vertical (en unidades de Excel) - 7 columnas - Mejorados
   const columnWidths = [12, 10, 14, 28, 18, 25, 20];
@@ -1143,8 +1143,8 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
   // ============= FILA 3: MES Y AÑO =============
   worksheet.mergeCells('A3:D3');
   const mesCell = worksheet.getCell('A3');
-  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const nombreMes = mes ? meses[mes - 1] : '';
   mesCell.value = `MES: ${nombreMes}`;
   mesCell.font = { name: 'Arial', size: 10, bold: true };
@@ -1198,18 +1198,18 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
   for (let row = 5; row <= 37; row++) {
     for (let col = 1; col <= 7; col++) {
       const cell = worksheet.getCell(row, col);
-      
+
       // Si hay datos, llenar la celda
       if (datos && datos[row - 5]) {
         const fila = datos[row - 5];
         switch (col) {
-          case 1: 
+          case 1:
             cell.value = fila.fecha ? format(new Date(fila.fecha), 'dd/MM/yyyy') : '';
             break;
           case 2: cell.value = fila.hora || ''; break;
           case 3: cell.value = fila.turno || ''; break;
           case 4: cell.value = fila.empleado_nombre || ''; break;
-          case 5: 
+          case 5:
             // Campo firma debe estar vacío para permitir firma manual del personal
             cell.value = '';
             break;
@@ -1222,8 +1222,8 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
       cell.font = { name: 'Arial', size: 8 };
       // Centrar columnas específicas (sin área o estación)
       const columnasCentradas = [1, 2, 3, 5];
-      cell.alignment = { 
-        horizontal: columnasCentradas.includes(col) ? 'center' : 'left', 
+      cell.alignment = {
+        horizontal: columnasCentradas.includes(col) ? 'center' : 'left',
         vertical: 'middle',
         wrapText: true
       };
@@ -1234,7 +1234,7 @@ export const generarFormularioLavadoManos = async (datos = null, mes = null, ani
         right: { style: 'thin', color: { argb: 'FF000000' } }
       };
     }
-    
+
     // Altura de las filas de datos - optimizada para A4
     worksheet.getRow(row).height = 22;
   }
@@ -1453,7 +1453,7 @@ const crearHojaTemperatura = (workbook, nombreHoja, titulo, rango, frecuencia, d
   // ============= FILAS DE DATOS (31 DÍAS) =============
   for (let dia = 1; dia <= 31; dia++) {
     const row = 6 + dia;
-    
+
     // DÍA
     const diaDataCell = worksheet.getCell(row, 1);
     diaDataCell.value = dia;
@@ -1473,13 +1473,13 @@ const crearHojaTemperatura = (workbook, nombreHoja, titulo, rango, frecuencia, d
         // Crear fecha sin problemas de zona horaria
         const fechaParts = item.fecha.split('-');
         const fechaItem = new Date(fechaParts[0], fechaParts[1] - 1, fechaParts[2]);
-        
+
         const mesActual = mes || (new Date().getMonth() + 1);
         const anioActual = anio || new Date().getFullYear();
-        
-        return fechaItem.getDate() === dia && 
-               (fechaItem.getMonth() + 1) === mesActual && 
-               fechaItem.getFullYear() === anioActual;
+
+        return fechaItem.getDate() === dia &&
+          (fechaItem.getMonth() + 1) === mesActual &&
+          fechaItem.getFullYear() === anioActual;
       });
     }
 
@@ -1689,22 +1689,22 @@ const descargarExcel = async (workbook, nombreArchivo) => {
   try {
     // Generar buffer del archivo Excel
     const buffer = await workbook.xlsx.writeBuffer();
-    
+
     // Verificar que el buffer no esté vacío
     if (!buffer || buffer.byteLength === 0) {
       throw new Error('El archivo Excel generado está vacío');
     }
-    
+
     // Crear blob con el tipo MIME correcto
-    const blob = new Blob([buffer], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
-    
+
     // Verificar que el blob se creó correctamente
     if (blob.size === 0) {
       throw new Error('Error al crear el archivo para descarga');
     }
-    
+
     // Usar la API moderna de descarga si está disponible
     if (window.navigator && window.navigator.msSaveOrOpenBlob) {
       // Para Internet Explorer
@@ -1713,25 +1713,25 @@ const descargarExcel = async (workbook, nombreArchivo) => {
       // Para navegadores modernos - crear URL temporal y elemento de descarga
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      
+
       // Configurar el enlace de descarga con atributos de seguridad
       link.style.display = 'none';
       link.href = url;
       link.download = nombreArchivo;
       link.setAttribute('rel', 'noopener noreferrer');
       link.setAttribute('target', '_self');
-      
+
       // Agregar al DOM, hacer clic y limpiar inmediatamente
       document.body.appendChild(link);
       link.click();
-      
+
       // Limpiar inmediatamente para evitar problemas de seguridad
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     }
-    
+
     console.log(`Archivo Excel descargado exitosamente: ${nombreArchivo}`);
-    
+
   } catch (error) {
     console.error('Error al descargar archivo Excel:', error);
     throw new Error(`Error al descargar archivo Excel: ${error.message}`);
@@ -1749,17 +1749,17 @@ export const exportarFormularioVacioAbarrotes = async (mes = null, anio = null) 
   try {
     const workbook = await generarFormularioRecepcionAbarrotes(null, mes, anio);
     const buffer = await workbook.xlsx.writeBuffer();
-    
-    const blob = new Blob([buffer], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
-    
+
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `HACCP_Control_Abarrotes_${mes || 'Mes'}_${anio || 'Año'}.xlsx`;
     link.click();
-    
+
     window.URL.revokeObjectURL(url);
   } catch (error) {
     console.error('Error al exportar formulario de abarrotes:', error);
@@ -1774,17 +1774,17 @@ export const exportarRecepcionAbarrotes = async (datos, mes = null, anio = null)
   try {
     const workbook = await generarFormularioRecepcionAbarrotes(datos, mes, anio);
     const buffer = await workbook.xlsx.writeBuffer();
-    
-    const blob = new Blob([buffer], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
-    
+
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `HACCP_Control_Abarrotes_Datos_${mes || 'Mes'}_${anio || 'Año'}.xlsx`;
     link.click();
-    
+
     window.URL.revokeObjectURL(url);
   } catch (error) {
     console.error('Error al exportar datos de abarrotes:', error);
@@ -1799,17 +1799,17 @@ export const exportarFormularioVacioFrutasVerduras = async (mes = null, anio = n
   try {
     const workbook = await generarFormularioRecepcionFrutasVerduras(null, mes, anio);
     const buffer = await workbook.xlsx.writeBuffer();
-    
-    const blob = new Blob([buffer], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
-    
+
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `HACCP_Control_Frutas_Verduras_${mes || 'Mes'}_${anio || 'Año'}.xlsx`;
     link.click();
-    
+
     window.URL.revokeObjectURL(url);
   } catch (error) {
     console.error('Error al exportar formulario de frutas y verduras:', error);
@@ -1824,17 +1824,17 @@ export const exportarRecepcionFrutasVerduras = async (datos, mes = null, anio = 
   try {
     const workbook = await generarFormularioRecepcionFrutasVerduras(datos, mes, anio);
     const buffer = await workbook.xlsx.writeBuffer();
-    
-    const blob = new Blob([buffer], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
-    
+
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `HACCP_Control_Frutas_Verduras_Datos_${mes || 'Mes'}_${anio || 'Año'}.xlsx`;
     link.click();
-    
+
     window.URL.revokeObjectURL(url);
   } catch (error) {
     console.error('Error al exportar datos de frutas y verduras:', error);
@@ -2014,7 +2014,7 @@ export const exportarAsistencias = async (datos, mes, anio) => {
   try {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Asistencias');
-    
+
     // Configurar columnas
     worksheet.columns = [
       { header: 'Fecha', key: 'fecha', width: 12 },
@@ -2024,7 +2024,7 @@ export const exportarAsistencias = async (datos, mes, anio) => {
       { header: 'Estado', key: 'estado', width: 15 },
       { header: 'Observaciones', key: 'observaciones', width: 30 }
     ];
-    
+
     // Estilo del encabezado
     worksheet.getRow(1).font = { bold: true };
     worksheet.getRow(1).fill = {
@@ -2032,7 +2032,7 @@ export const exportarAsistencias = async (datos, mes, anio) => {
       pattern: 'solid',
       fgColor: { argb: 'FFE6E6FA' }
     };
-    
+
     // Agregar datos
     datos.forEach(registro => {
       worksheet.addRow({
@@ -2044,7 +2044,7 @@ export const exportarAsistencias = async (datos, mes, anio) => {
         observaciones: registro.observaciones || ''
       });
     });
-    
+
     // Aplicar bordes a todas las celdas
     worksheet.eachRow((row, rowNumber) => {
       row.eachCell((cell) => {
@@ -2056,19 +2056,19 @@ export const exportarAsistencias = async (datos, mes, anio) => {
         };
       });
     });
-    
+
     // Descargar archivo
     const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
-    
+
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `Asistencias_${mes || 'Mes'}_${anio || 'Año'}.xlsx`;
     link.click();
-    
+
     window.URL.revokeObjectURL(url);
   } catch (error) {
     console.error('Error al exportar asistencias:', error);
@@ -2079,7 +2079,7 @@ export const exportarResumenNC = async (datos, mes, anio) => {
   try {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Resumen No Conformidades');
-    
+
     // Configurar columnas
     worksheet.columns = [
       { header: 'Fecha', key: 'fecha', width: 12 },
@@ -2090,7 +2090,7 @@ export const exportarResumenNC = async (datos, mes, anio) => {
       { header: 'Responsable', key: 'responsable', width: 20 },
       { header: 'Acción Correctiva', key: 'accionCorrectiva', width: 35 }
     ];
-    
+
     // Estilo del encabezado
     worksheet.getRow(1).font = { bold: true };
     worksheet.getRow(1).fill = {
@@ -2098,7 +2098,7 @@ export const exportarResumenNC = async (datos, mes, anio) => {
       pattern: 'solid',
       fgColor: { argb: 'FFFF6B6B' }
     };
-    
+
     // Agregar datos
     datos.forEach(nc => {
       worksheet.addRow({
@@ -2111,7 +2111,7 @@ export const exportarResumenNC = async (datos, mes, anio) => {
         accionCorrectiva: nc.accion_correctiva || nc.accionCorrectiva || ''
       });
     });
-    
+
     // Aplicar bordes a todas las celdas
     worksheet.eachRow((row, rowNumber) => {
       row.eachCell((cell) => {
@@ -2121,7 +2121,7 @@ export const exportarResumenNC = async (datos, mes, anio) => {
           bottom: { style: 'thin' },
           right: { style: 'thin' }
         };
-        
+
         // Colorear según severidad
         if (rowNumber > 1) {
           const severidad = row.getCell(4).value;
@@ -2141,22 +2141,378 @@ export const exportarResumenNC = async (datos, mes, anio) => {
         }
       });
     });
-    
+
     // Descargar archivo
     const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
-    
+
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `Resumen_No_Conformidades_${mes || 'Mes'}_${anio || 'Año'}.xlsx`;
     link.click();
-    
+
     window.URL.revokeObjectURL(url);
   } catch (error) {
     console.error('Error al exportar resumen de no conformidades:', error);
     throw error;
   }
+};
+
+// =====================================================
+// EXPORTAR TODOS LOS FORMULARIOS EN UN SOLO ARCHIVO
+// =====================================================
+
+/**
+ * Exportar todos los formularios HACCP vacíos en un solo archivo Excel
+ * Cada formulario en una hoja separada
+ */
+export const exportarTodosLosFormulariosVacios = async (mes = null, anio = null) => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+
+    // Obtener fecha actual si no se proporcionan mes/año
+    const mesActual = mes || new Date().getMonth() + 1;
+    const anioActual = anio || new Date().getFullYear();
+
+    // Nombres de los meses en español
+    const nombresMeses = [
+      'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
+      'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'
+    ];
+    const nombreMes = nombresMeses[mesActual - 1];
+
+    // ============= HOJA 1: RECEPCIÓN DE ABARROTES =============
+    const wsAbarrotes = workbook.addWorksheet('Recepción Abarrotes');
+    configurarHojaAbarrotes(wsAbarrotes, mesActual, anioActual, nombreMes);
+
+    // ============= HOJA 2: RECEPCIÓN DE FRUTAS Y VERDURAS =============
+    const wsFrutas = workbook.addWorksheet('Recepción Frutas Verduras');
+    configurarHojaFrutasVerduras(wsFrutas, mesActual, anioActual, nombreMes);
+
+    // ============= HOJA 3: CONTROL DE COCCIÓN =============
+    const wsCoccion = workbook.addWorksheet('Control Cocción');
+    configurarHojaCoccion(wsCoccion, mesActual, anioActual, nombreMes);
+
+    // ============= HOJA 4: LAVADO DE FRUTAS Y VERDURAS =============
+    const wsLavadoFrutas = workbook.addWorksheet('Lavado Frutas Verduras');
+    configurarHojaLavadoFrutas(wsLavadoFrutas, mesActual, anioActual, nombreMes);
+
+    // ============= HOJA 5: CONTROL DE LAVADO DE MANOS =============
+    const wsLavadoManos = workbook.addWorksheet('Lavado Manos');
+    configurarHojaLavadoManos(wsLavadoManos, mesActual, anioActual, nombreMes);
+
+    // ============= HOJA 6: TEMPERATURA DE CÁMARAS =============
+    const wsTemperatura = workbook.addWorksheet('Temperatura Cámaras');
+    configurarHojaTemperaturaCamaras(wsTemperatura, mesActual, anioActual, nombreMes);
+
+    // Descargar archivo
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `HACCP_Formularios_Completos_${nombreMes}_${anioActual}.xlsx`;
+    link.click();
+
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error al exportar todos los formularios:', error);
+    throw error;
+  }
+};
+
+// =====================================================
+// FUNCIONES AUXILIARES PARA CADA HOJA
+// =====================================================
+
+const configurarHojaAbarrotes = (ws, mes, anio, nombreMes) => {
+  // Configuración básica
+  ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1 };
+
+  // Título
+  ws.mergeCells('A1:P1');
+  const titulo = ws.getCell('A1');
+  titulo.value = 'CONTROL DE RECEPCIÓN DE ABARROTES';
+  titulo.font = { name: 'Arial', size: 14, bold: true };
+  titulo.alignment = { horizontal: 'center', vertical: 'middle' };
+  titulo.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
+  titulo.font.color = { argb: 'FFFFFFFF' };
+
+  // Mes y Año
+  ws.mergeCells('A2:H2');
+  ws.getCell('A2').value = `MES: ${nombreMes}`;
+  ws.getCell('A2').font = { name: 'Arial', size: 11, bold: true };
+  ws.mergeCells('I2:P2');
+  ws.getCell('I2').value = `AÑO: ${anio}`;
+  ws.getCell('I2').font = { name: 'Arial', size: 11, bold: true };
+
+  // Encabezados
+  const encabezados = ['N°', 'FECHA', 'HORA', 'PROVEEDOR', 'PRODUCTO', 'CANTIDAD', 'REG. SANITARIO', 'VENCIMIENTO', 'EMPAQUE', 'UNIFORME', 'TRANSPORTE', 'PUNTUALIDAD', 'CONFORMIDAD', 'OBSERVACIONES', 'ACCIÓN CORRECTIVA', 'SUPERVISOR'];
+  const headerRow = ws.getRow(4);
+  encabezados.forEach((enc, i) => {
+    const cell = headerRow.getCell(i + 1);
+    cell.value = enc;
+    cell.font = { name: 'Arial', size: 9, bold: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
+    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+  });
+  headerRow.height = 30;
+
+  // Filas vacías para datos (30 filas)
+  for (let i = 5; i <= 34; i++) {
+    const row = ws.getRow(i);
+    row.getCell(1).value = i - 4; // Número de fila
+    for (let j = 1; j <= 16; j++) {
+      const cell = row.getCell(j);
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    }
+    row.height = 18;
+  }
+
+  // Configurar anchos de columnas
+  ws.columns = [
+    { width: 4 }, { width: 10 }, { width: 8 }, { width: 15 }, { width: 15 },
+    { width: 10 }, { width: 10 }, { width: 10 }, { width: 10 }, { width: 10 },
+    { width: 10 }, { width: 10 }, { width: 10 }, { width: 20 }, { width: 20 }, { width: 15 }
+  ];
+};
+
+const configurarHojaFrutasVerduras = (ws, mes, anio, nombreMes) => {
+  ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1 };
+
+  ws.mergeCells('A1:O1');
+  const titulo = ws.getCell('A1');
+  titulo.value = 'CONTROL DE RECEPCIÓN DE FRUTAS Y VERDURAS';
+  titulo.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  titulo.alignment = { horizontal: 'center', vertical: 'middle' };
+  titulo.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2E7D32' } };
+
+  ws.mergeCells('A2:G2');
+  ws.getCell('A2').value = `MES: ${nombreMes}`;
+  ws.getCell('A2').font = { name: 'Arial', size: 11, bold: true };
+  ws.mergeCells('H2:O2');
+  ws.getCell('H2').value = `AÑO: ${anio}`;
+  ws.getCell('H2').font = { name: 'Arial', size: 11, bold: true };
+
+  const encabezados = ['N°', 'FECHA', 'HORA', 'PROVEEDOR', 'PRODUCTO', 'PESO/UNIDAD', 'ESTADO', 'UNIFORME', 'TRANSPORTE', 'PUNTUALIDAD', 'CONFORMIDAD', 'OBSERVACIONES', 'ACCIÓN CORRECTIVA', 'RESPONSABLE', 'SUPERVISOR'];
+  const headerRow = ws.getRow(4);
+  encabezados.forEach((enc, i) => {
+    const cell = headerRow.getCell(i + 1);
+    cell.value = enc;
+    cell.font = { name: 'Arial', size: 9, bold: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC8E6C9' } };
+    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+  });
+  headerRow.height = 30;
+
+  for (let i = 5; i <= 34; i++) {
+    const row = ws.getRow(i);
+    row.getCell(1).value = i - 4;
+    for (let j = 1; j <= 15; j++) {
+      const cell = row.getCell(j);
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    }
+    row.height = 18;
+  }
+
+  ws.columns = [
+    { width: 4 }, { width: 10 }, { width: 8 }, { width: 15 }, { width: 15 },
+    { width: 12 }, { width: 12 }, { width: 10 }, { width: 10 }, { width: 10 },
+    { width: 10 }, { width: 20 }, { width: 20 }, { width: 15 }, { width: 15 }
+  ];
+};
+
+const configurarHojaCoccion = (ws, mes, anio, nombreMes) => {
+  ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1 };
+
+  ws.mergeCells('A1:L1');
+  const titulo = ws.getCell('A1');
+  titulo.value = 'CONTROL DE COCCIÓN DE ALIMENTOS';
+  titulo.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  titulo.alignment = { horizontal: 'center', vertical: 'middle' };
+  titulo.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE65100' } };
+
+  ws.mergeCells('A2:F2');
+  ws.getCell('A2').value = `MES: ${nombreMes}`;
+  ws.getCell('A2').font = { name: 'Arial', size: 11, bold: true };
+  ws.mergeCells('G2:L2');
+  ws.getCell('G2').value = `AÑO: ${anio}`;
+  ws.getCell('G2').font = { name: 'Arial', size: 11, bold: true };
+
+  const encabezados = ['N°', 'FECHA', 'HORA', 'PRODUCTO', 'PROCESO', 'TEMP. (°C)', 'TIEMPO (min)', 'CONFORMIDAD', 'OBSERVACIONES', 'ACCIÓN CORRECTIVA', 'RESPONSABLE', 'SUPERVISOR'];
+  const headerRow = ws.getRow(4);
+  encabezados.forEach((enc, i) => {
+    const cell = headerRow.getCell(i + 1);
+    cell.value = enc;
+    cell.font = { name: 'Arial', size: 9, bold: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFCC80' } };
+    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+  });
+  headerRow.height = 30;
+
+  for (let i = 5; i <= 34; i++) {
+    const row = ws.getRow(i);
+    row.getCell(1).value = i - 4;
+    for (let j = 1; j <= 12; j++) {
+      const cell = row.getCell(j);
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    }
+    row.height = 18;
+  }
+
+  ws.columns = [
+    { width: 4 }, { width: 10 }, { width: 8 }, { width: 20 }, { width: 12 },
+    { width: 10 }, { width: 12 }, { width: 12 }, { width: 20 }, { width: 20 }, { width: 15 }, { width: 15 }
+  ];
+};
+
+const configurarHojaLavadoFrutas = (ws, mes, anio, nombreMes) => {
+  ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1 };
+
+  ws.mergeCells('A1:N1');
+  const titulo = ws.getCell('A1');
+  titulo.value = 'CONTROL DE LAVADO Y DESINFECCIÓN DE FRUTAS Y VERDURAS';
+  titulo.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  titulo.alignment = { horizontal: 'center', vertical: 'middle' };
+  titulo.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00796B' } };
+
+  ws.mergeCells('A2:G2');
+  ws.getCell('A2').value = `MES: ${nombreMes}`;
+  ws.getCell('A2').font = { name: 'Arial', size: 11, bold: true };
+  ws.mergeCells('H2:N2');
+  ws.getCell('H2').value = `AÑO: ${anio}`;
+  ws.getCell('H2').font = { name: 'Arial', size: 11, bold: true };
+
+  const encabezados = ['N°', 'FECHA', 'HORA', 'FRUTA/VERDURA', 'PRODUCTO QUÍMICO', 'CONCENTRACIÓN', 'LAVADO AGUA', 'DESINFECCIÓN', 'CONC. CORRECTA', 'TIEMPO (min)', 'OBSERVACIONES', 'ACCIÓN CORRECTIVA', 'RESPONSABLE', 'SUPERVISOR'];
+  const headerRow = ws.getRow(4);
+  encabezados.forEach((enc, i) => {
+    const cell = headerRow.getCell(i + 1);
+    cell.value = enc;
+    cell.font = { name: 'Arial', size: 9, bold: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB2DFDB' } };
+    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+  });
+  headerRow.height = 30;
+
+  for (let i = 5; i <= 34; i++) {
+    const row = ws.getRow(i);
+    row.getCell(1).value = i - 4;
+    for (let j = 1; j <= 14; j++) {
+      const cell = row.getCell(j);
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    }
+    row.height = 18;
+  }
+
+  ws.columns = [
+    { width: 4 }, { width: 10 }, { width: 8 }, { width: 18 }, { width: 15 },
+    { width: 12 }, { width: 10 }, { width: 10 }, { width: 12 }, { width: 10 },
+    { width: 18 }, { width: 18 }, { width: 15 }, { width: 15 }
+  ];
+};
+
+const configurarHojaLavadoManos = (ws, mes, anio, nombreMes) => {
+  ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1 };
+
+  ws.mergeCells('A1:K1');
+  const titulo = ws.getCell('A1');
+  titulo.value = 'CONTROL DE LAVADO DE MANOS';
+  titulo.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  titulo.alignment = { horizontal: 'center', vertical: 'middle' };
+  titulo.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1565C0' } };
+
+  ws.mergeCells('A2:E2');
+  ws.getCell('A2').value = `MES: ${nombreMes}`;
+  ws.getCell('A2').font = { name: 'Arial', size: 11, bold: true };
+  ws.mergeCells('F2:K2');
+  ws.getCell('F2').value = `AÑO: ${anio}`;
+  ws.getCell('F2').font = { name: 'Arial', size: 11, bold: true };
+
+  const encabezados = ['N°', 'FECHA', 'HORA', 'ÁREA', 'EMPLEADO', 'TURNO', 'PROCEDIMIENTO', 'OBSERVACIONES', 'ACCIÓN CORRECTIVA', 'RESPONSABLE', 'SUPERVISOR'];
+  const headerRow = ws.getRow(4);
+  encabezados.forEach((enc, i) => {
+    const cell = headerRow.getCell(i + 1);
+    cell.value = enc;
+    cell.font = { name: 'Arial', size: 9, bold: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBBDEFB' } };
+    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+  });
+  headerRow.height = 30;
+
+  for (let i = 5; i <= 34; i++) {
+    const row = ws.getRow(i);
+    row.getCell(1).value = i - 4;
+    for (let j = 1; j <= 11; j++) {
+      const cell = row.getCell(j);
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    }
+    row.height = 18;
+  }
+
+  ws.columns = [
+    { width: 4 }, { width: 10 }, { width: 8 }, { width: 15 }, { width: 20 },
+    { width: 10 }, { width: 12 }, { width: 20 }, { width: 20 }, { width: 15 }, { width: 15 }
+  ];
+};
+
+const configurarHojaTemperaturaCamaras = (ws, mes, anio, nombreMes) => {
+  ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1 };
+
+  ws.mergeCells('A1:L1');
+  const titulo = ws.getCell('A1');
+  titulo.value = 'CONTROL DE TEMPERATURA DE CÁMARAS';
+  titulo.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  titulo.alignment = { horizontal: 'center', vertical: 'middle' };
+  titulo.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF5E35B1' } };
+
+  ws.mergeCells('A2:F2');
+  ws.getCell('A2').value = `MES: ${nombreMes}`;
+  ws.getCell('A2').font = { name: 'Arial', size: 11, bold: true };
+  ws.mergeCells('G2:L2');
+  ws.getCell('G2').value = `AÑO: ${anio}`;
+  ws.getCell('G2').font = { name: 'Arial', size: 11, bold: true };
+
+  const encabezados = ['N°', 'FECHA', 'CÁMARA', 'TEMP. MAÑANA (°C)', 'CONF. MAÑANA', 'TEMP. TARDE (°C)', 'CONF. TARDE', 'OBSERVACIONES', 'ACCIÓN CORRECTIVA', 'RESPONSABLE', 'SUPERVISOR', 'HORA'];
+  const headerRow = ws.getRow(4);
+  encabezados.forEach((enc, i) => {
+    const cell = headerRow.getCell(i + 1);
+    cell.value = enc;
+    cell.font = { name: 'Arial', size: 9, bold: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1C4E9' } };
+    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+  });
+  headerRow.height = 35;
+
+  for (let i = 5; i <= 34; i++) {
+    const row = ws.getRow(i);
+    row.getCell(1).value = i - 4;
+    for (let j = 1; j <= 12; j++) {
+      const cell = row.getCell(j);
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    }
+    row.height = 18;
+  }
+
+  ws.columns = [
+    { width: 4 }, { width: 10 }, { width: 18 }, { width: 15 }, { width: 12 },
+    { width: 15 }, { width: 12 }, { width: 18 }, { width: 18 }, { width: 15 }, { width: 15 }, { width: 8 }
+  ];
 };
