@@ -384,7 +384,7 @@ fuser database/haccp.db
 
 ### Error: Google OAuth falla
 - Verificar que el Web Client ID hardcodeado en `routes/auth.js` (línea 12) coincide con Firebase Console
-- Web Client ID actual: `888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com`
+- Web Client ID actual: `<PROJECT_NUMBER>-<HASH>.apps.googleusercontent.com`
 - Comprobar que los 3 SHA-1 (Debug, Upload, Play Store) están registrados en Firebase
 - Ver logs: `console.log` en `routes/auth.js` línea ~200
 

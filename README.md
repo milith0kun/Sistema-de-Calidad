@@ -154,7 +154,7 @@ cat > .env << EOF
 PORT=3000
 HOST=0.0.0.0
 JWT_SECRET=tu_secret_key_cambiar_en_produccion
-GOOGLE_CLIENT_ID=888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com
+GOOGLE_CLIENT_ID=<PROJECT_NUMBER>-<HASH>.apps.googleusercontent.com
 DB_PATH=./database/haccp.db
 NODE_ENV=development
 EOF
@@ -207,15 +207,15 @@ RELEASE_KEY_PASSWORD=tu_password
 
 ### Firebase Console
 
-**Proyecto Firebase**: `sistema-de-calidad-463d4`  
-**Web Client ID**: `888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com`
+**Proyecto Firebase**: `<FIREBASE_PROJECT_ID>`  
+**Web Client ID**: `<PROJECT_NUMBER>-<HASH>.apps.googleusercontent.com`
 
-1. Ir a: https://console.firebase.google.com/project/sistema-de-calidad-463d4
+1. Ir a: https://console.firebase.google.com/project/<FIREBASE_PROJECT_ID>
 2. Project Settings → Your apps → Sistema de Calidad (Android)
 3. **Verificar 3 certificados SHA-1** estén registrados:
-   - **Debug**: `31:fa:5a:e9:46:6d:ca:fc:b2:73:48:8b:e4:61:20:fb:3e:c8:98:9d`
-   - **Upload**: `60:e8:b3:c3:f1:1e:9e:6a:3d:e4:7f:06:aa:6d:25:8d:c9:3e:e7:e8`
-   - **Play Store**: `c9:1d:5a:9b:02:7e:7c:22:3d:e6:b7:49:73:50:d1:93:b0:e3:3f:b2` ✅
+   - **Debug**: `<SHA1_DEBUG_KEYSTORE>`
+   - **Upload**: `<SHA1_UPLOAD_KEYSTORE>`
+   - **Play Store**: `<SHA1_PLAY_STORE_SIGNING>` ✅
 4. Descargar `google-services.json` (ya está en `Sistema de Calidad/app/`)
 
 ### Cómo funciona la autenticación
@@ -244,8 +244,8 @@ RELEASE_KEY_PASSWORD=tu_password
 3. Agregarlo en Firebase Console → Project Settings → Add Fingerprint
 ```pp Android** (`strings.xml`):
 ```xml
-<!-- Web Client ID de Firebase (proyecto: sistema-de-calidad-463d4) -->
-<string name="default_web_client_id">888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com</string>
+<!-- Web Client ID de Firebase (proyecto: <FIREBASE_PROJECT_ID>) -->
+<string name="default_web_client_id"><PROJECT_NUMBER>-<HASH>.apps.googleusercontent.com</string>
 ```
 
 ## 📡 Endpoints Principales de la API
@@ -496,9 +496,9 @@ Este proyecto es propietario y de uso interno.
 
 ## 🔗 Enlaces Útiles
 
-- [Firebase Console](https://console.firebase.google.com/project/sistema-de-calidad-463d4)
+- [Firebase Console](https://console.firebase.google.com/project/<FIREBASE_PROJECT_ID>)
 - [Google Play Console](https://play.google.com/console)
-- [Google Cloud Console](https://console.cloud.google.com/apis/credentials?project=sistema-de-calidad-463d4)
+- [Google Cloud Console](https://console.cloud.google.com/apis/credentials?project=<FIREBASE_PROJECT_ID>)
 - [AWS EC2 Dashboard](https://console.aws.amazon.com/ec2/)
 
 ---

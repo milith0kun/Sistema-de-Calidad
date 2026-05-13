@@ -160,9 +160,9 @@ interface ApiService {
 
 ### Configuración Firebase (ya completada ✅)
 
-**Proyecto Firebase**: `sistema-de-calidad-463d4`  
+**Proyecto Firebase**: `<FIREBASE_PROJECT_ID>`  
 **Package Name**: `com.sistemahaccp.calidad`  
-**Web Client ID**: `888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com`
+**Web Client ID**: `<PROJECT_NUMBER>-<HASH>.apps.googleusercontent.com`
 
 1. **Archivo `google-services.json`** (ya está en `app/`):
    - Contiene configuración del proyecto Firebase
@@ -171,20 +171,20 @@ interface ApiService {
 
 2. **Certificados SHA-1 registrados en Firebase** (3 de 3 ✅):
    ```
-   Debug:      31:fa:5a:e9:46:6d:ca:fc:b2:73:48:8b:e4:61:20:fb:3e:c8:98:9d
-   Upload:     60:e8:b3:c3:f1:1e:9e:6a:3d:e4:7f:06:aa:6d:25:8d:c9:3e:e7:e8
-   Play Store: c9:1d:5a:9b:02:7e:7c:22:3d:e6:b7:49:73:50:d1:93:b0:e3:3f:b2
+   Debug:      <SHA1_DEBUG_KEYSTORE>
+   Upload:     <SHA1_UPLOAD_KEYSTORE>
+   Play Store: <SHA1_PLAY_STORE_SIGNING>
    ```
 
 3. **Web Client ID en `app/src/main/res/values/strings.xml`**:
    ```xml
    <!-- Este es el Client ID que usa GoogleAuthUiClient.kt -->
-   <string name="default_web_client_id">888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com</string>
+   <string name="default_web_client_id"><PROJECT_NUMBER>-<HASH>.apps.googleusercontent.com</string>
    ```
 
 ### ⚠️ IMPORTANTE: Credenciales correctas
 
-- ✅ **USAR**: Web Client ID de Firebase (888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu)
+- ✅ **USAR**: Web Client ID de Firebase (<WEB_CLIENT_ID_HASH>)
 - ❌ **NO USAR**: Archivo `client_secret.json` (ya eliminado - era de proyecto antiguo)
 - La app usa **Credential Manager API** (no GoogleSignInClient legacy)
 - El backend valida tokens con `google-auth-library` en Node.js
@@ -635,7 +635,7 @@ SELECT * FROM usuarios;
 
 **Solución**:
 1. Ir a Play Console → App Integrity → App signing key certificate
-2. Copiar SHA-1: `c9:1d:5a:9b:02:7e:7c:22:3d:e6:b7:49:73:50:d1:93:b0:e3:3f:b2`
+2. Copiar SHA-1: `<SHA1_PLAY_STORE_SIGNING>`
 3. Ir a Firebase Console → Project Settings → Your apps → Add fingerprint
 4. Pegar SHA-1 y guardar
 5. Descargar nuevo `google-services.json` y reemplazar en `app/`
@@ -699,7 +699,7 @@ dependencies {
 - [WebPanel (Frontend Web)](../WebPanel/README.md)
 - [Documentación Principal](../README.md)
 - [Google Play Console](https://play.google.com/console)
-- [Firebase Console](https://console.firebase.google.com/project/sistema-de-calidad-463d4)
+- [Firebase Console](https://console.firebase.google.com/project/<FIREBASE_PROJECT_ID>)
 
 ---
 

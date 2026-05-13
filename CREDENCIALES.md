@@ -5,15 +5,17 @@
 ### Proyecto Firebase
 
 - **Nombre**: Sistema de Calidad HACCP
-- **Project ID**: `sistema-de-calidad-463d4`
-- **Project Number**: `888160830168`
-- **Console**: https://console.firebase.google.com/project/sistema-de-calidad-463d4
+- **Project ID**: `<FIREBASE_PROJECT_ID>` *(ver Firebase Console del proyecto)*
+- **Project Number**: `<FIREBASE_PROJECT_NUMBER>`
+- **Console**: https://console.firebase.google.com/
 
 ### Web Client ID (OAuth 2.0)
 
 ```
-888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu.apps.googleusercontent.com
+<PROJECT_NUMBER>-<HASH>.apps.googleusercontent.com
 ```
+
+> El Web Client ID real está en: Firebase Console → Project Settings → General → Web app, y se inyecta en `strings.xml` y backend desde variables de entorno (no se commitea).
 
 **Usado en**:
 - `Backend/routes/auth.js` (línea 12) - Hardcodeado para validar tokens
@@ -29,48 +31,55 @@
 
 1. **Debug Keystore** (desarrollo local):
    ```
-   31:fa:5a:e9:46:6d:ca:fc:b2:73:48:8b:e4:61:20:fb:3e:c8:98:9d
+   <SHA1_DEBUG_KEYSTORE>
    ```
    - Keystore: `~/.android/debug.keystore`
    - Alias: `androiddebugkey`
-   - Password: `android`
+   - Password: `android` (default público de Android SDK)
 
 2. **Upload Keystore** (firma de AAB para Play Console):
    ```
-   60:e8:b3:c3:f1:1e:9e:6a:3d:e4:7f:06:aa:6d:25:8d:c9:3e:e7:e8
+   <SHA1_UPLOAD_KEYSTORE>
    ```
-   - Keystore: `Sistema de Calidad/app/keystore/haccp-release-upload.jks`
+   - Keystore: `Sistema de Calidad/app/keystore/haccp-release-upload.jks` *(no en git)*
    - Alias: `haccp-key`
    - Password: (en `keystore.properties`, no en git)
 
 3. **Play Store Signing Key** (Google Play re-firma automáticamente):
    ```
-   c9:1d:5a:9b:02:7e:7c:22:3d:e6:b7:49:73:50:d1:93:b0:e3:3f:b2
+   <SHA1_PLAY_STORE_SIGNING>
    ```
    - Manejado por Google Play Console → App Integrity
    - **ESTE es el más importante para producción**
 
+> Los valores reales de los SHA-1 se obtienen con `keytool -list -v ...` (ver sección "Cómo obtener SHA-1") y están registrados en Firebase Console → Project Settings → SHA fingerprints. No es necesario commitearlos.
+
 ### API Key de Firebase
 
 ```
-AIzaSyD1Y8W9XBTYgeQe9oK7ktgnAOlnkG2RBzw
+<FIREBASE_API_KEY>
 ```
 
-**Ubicación**: `Sistema de Calidad/app/google-services.json`
+**Ubicación**: `Sistema de Calidad/app/google-services.json` (el archivo real, no este doc)
 
-**Propósito**: 
+**Propósito**:
 - Autenticación con servicios de Firebase (Auth, Firestore, etc.)
-- NO es secreto (puede estar en cliente)
-- Protegido por restricciones de API (SHA-1, package name)
+- Técnicamente NO es secreto en el sentido tradicional (Firebase la diseña para estar en el cliente Android)
+- **PERO** debe estar protegida en Google Cloud Console con:
+  - Restricciones de package name (`com.sistemahaccp.calidad`)
+  - Restricciones de SHA-1 (solo APKs firmados con keystores registrados)
+  - Firebase Security Rules estrictas
+
+> Aun así, evita pegarla en docs públicos. Mantén el valor solo en `google-services.json`.
 
 ---
 
 ## ❌ Credenciales OBSOLETAS (ya eliminadas)
 
-### Proyecto Antiguo: app-bienestar-478220
+### Proyecto Antiguo: app-bienestar (revocado)
 
-- **Client ID**: `802542269966-ul9gdhgsl5u5ja7ionfqa1ffceqog7di.apps.googleusercontent.com`
-- **Client Secret**: `GOCSPX-8g-rC[REDACTED]` ❌ **REVOCADO Y ELIMINADO**
+- **Client ID**: `<OLD_CLIENT_ID>.apps.googleusercontent.com` ❌ **REVOCADO**
+- **Client Secret**: `[REDACTED]` ❌ **REVOCADO Y ELIMINADO**
 - **Archivo**: `Sistema de Calidad/app/client_secret.json` ❌ **ELIMINADO**
 
 **Por qué se eliminó**:
@@ -97,7 +106,7 @@ AIzaSyD1Y8W9XBTYgeQe9oK7ktgnAOlnkG2RBzw
 │    Servers      │
 └────────┬────────┘
          │ 2. Retorna Google ID Token
-         │    audience: 888160830168-0uo7dusf7eiij5pgq9nkctl2luih6vuu
+         │    audience: <WEB_CLIENT_ID>
          ▼
 ┌─────────────────┐
 │   App Android   │
@@ -202,7 +211,7 @@ keytool -list -v -keystore "Sistema de Calidad/app/keystore/haccp-release-upload
    - Reemplaza en `app/`
 3. Si subes nueva versión a Play Store:
    - Google Play auto-firma con su propio certificado
-   - El SHA-1 ya está registrado (c9:1d:5a:9b:...)
+   - El SHA-1 ya está registrado (ver Firebase Console)
    - No requiere cambios
 
 ### Si el login de Google falla
